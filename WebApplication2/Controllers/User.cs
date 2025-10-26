@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace WebApplication2.Controllers
+namespace SmartGrader.Controllers
 {
     public class User : Controller
     {
