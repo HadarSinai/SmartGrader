@@ -12,21 +12,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>namespace WebApplication2.Entities
-{
-    public class Student
-    {
-        public int Id { get; set; }
-        public string FullName { get; set; }
-        public string ClassName { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        // קשרים
-        public ICollection<Submission> Submissions { get; set; }
-        public ICollection<LessonResult> LessonResults { get; set; }
-    }
-}
-
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
