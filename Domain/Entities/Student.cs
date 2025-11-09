@@ -1,11 +1,11 @@
-﻿namespace SmartGrader.Entities
+﻿namespace Domain.Entities
 {
     public class Student
     {
-        public int Id { get; set; }
+        public int Id { get; private set; }
         public string FullName { get; set; }
         public string ClassName { get; set; }
-       public DateTime CreateAt { get; set; } = DateTime.UtcNow;
+       public DateTime CreateAt { get; private set; } = DateTime.UtcNow;
 
 // קשרים
 public ICollection<Submission> Submissions { get; set; }

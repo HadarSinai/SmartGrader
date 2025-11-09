@@ -1,12 +1,12 @@
-﻿namespace SmartGrader.Entities
+﻿namespace Domain.Entities
 {
     public class Log
     {
-        public int Id { get; set; }
+        public int Id { get; private set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-        public int? UserId { get; set; }
-        public int? LessonId { get; set; }
-        public int? AssignmentId { get; set; }
+        public int? UserId { get; private set; }
+        public int? LessonId { get; private set; }
+        public int? AssignmentId { get; private set; }
         public string ActionType { get; set; }
         public string Message { get; set; }
         public string Status { get; set; }

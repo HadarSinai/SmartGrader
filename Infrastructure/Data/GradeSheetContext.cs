@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SmartGrader.Entities;
+﻿
+using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
-namespace SmartGrader
+namespace Infrastructure.Data
 {
     public class GradeSheetContext : DbContext
     {
