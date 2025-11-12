@@ -1,5 +1,5 @@
 ﻿
-using Domain.Entities;
+using SmartGrader.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data

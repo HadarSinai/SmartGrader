@@ -1,5 +1,5 @@
 ﻿// SmartGrader.Domain/Abstractions/ILessonResultRepository.cs
-using Domain.Entities;
+using SmartGrader.Domain.Entities;
 namespace SmartGrader.Domain.Abstractions;
 public interface ILessonResultRepository
 {

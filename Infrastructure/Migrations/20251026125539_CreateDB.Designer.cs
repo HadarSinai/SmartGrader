@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartGrader;
-
+using Infrastructure.Data;
 #nullable disable
 
 namespace SmartGrader.Migrations

@@ -1,4 +1,4 @@
-﻿namespace Domain.Entities
+﻿namespace SmartGrader.Domain.Entities
 {
     public class Submission
     {

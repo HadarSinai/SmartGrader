@@ -4,8 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-     <AssemblyName>SmartGrade</AssemblyName>
-  <RootNamespace>SmartGrade</RootNamespace>
+     <AssemblyName>Api</AssemblyName>
+  <RootNamespace>Api</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Repositories\" />
     <Folder Include="Services\" />
   </ItemGroup>
 
