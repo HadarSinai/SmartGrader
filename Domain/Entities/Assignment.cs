@@ -4,8 +4,8 @@
     {
         public int Id { get; private set; }
         public int LessonId { get; private set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
         public bool IsBonus { get; set; }
         public double BonusValue { get; set; }
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;

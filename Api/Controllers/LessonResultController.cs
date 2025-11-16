@@ -1,36 +1,41 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using AutoMapper;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using SmartGrader.Api.Dtos;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 
 namespace SmartGrader.Api.Controllers;
 
 [ApiController]
 [Route("api/lesson-results")]
-public class LessonResultsController : ControllerBase
+public class LessonResultController : ControllerBase
 {
-    private readonly CompleteLessonHandler _complete;
-  
-
-    public LessonResultsController(
-        CompleteLessonHandler complete
-        )
+    private readonly IMediator _mediator;
+    private readonly IMapper _mapper;
+    public LessonResultController(
+       IMediator mediator,IMapper mapper
+         )
     {
-        _complete = complete;
-        
-    }
+        _mediator = mediator;
+        _mapper = mapper;
 
-    /// <summary>
-    /// משלימה שיעור עם ציון סופי (יוצרת LessonResult אם לא קיים).
-    /// </summary>
+
+    }
+//    | סוג                  | מתי?               | דוגמה                                    |
+//| -------------------- | ------------------ | ---------------------------------------- |
+//| **שמות עצם(Nouns)** | CRUD / משאב ברור   | `/api/students`, `/api/lessonresults/10` |
+//| **פעלים(Verbs)**    | פעולה עסקית מיוחדת | `/api/lessonresults/complete`            |
+
     [HttpPost("complete")]
-    public async Task<IActionResult> Complete([FromBody] CompleteLessonCommand cmd, CancellationToken ct)
+    public async Task<IActionResult> Complete([FromBody] CompleteLessonRequestDto dto)
     {
-        if (cmd.FinalScore is < 0 or > 100)
-            return BadRequest("FinalScore must be between 0 and 100.");
+        var command = _mapper.Map<CompleteLessonCommand>(dto);
+        var result = await _mediator.Send(command);
+        var response = _mapper.Map<LessonResultResponseDto>(result);
 
-        await _complete.Handle(cmd, ct);
-        return NoContent();
+        return Ok(response);
     }
 
-   
-  
+
 }
