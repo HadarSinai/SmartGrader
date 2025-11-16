@@ -1,10 +1,11 @@
 ﻿using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
+using Microsoft.Extensions.Configuration;
+
 
 namespace SmartGrader.Infrastructure
 {
@@ -15,11 +16,9 @@ namespace SmartGrader.Infrastructure
             // הגדרת החיבור למסד הנתונים
             services.AddDbContext<GradeSheetContext>(options =>
                 options.UseSqlite(configuration.GetConnectionString("Default")));
-            // אם את עובדת עם SQL Server אפשר לשנות ל:
-            // options.UseSqlServer(configuration.GetConnectionString("Default"))
 
-            // רישום ה-Repository וה-UnitOfWork
             services.AddScoped<ILessonResultRepository, LessonResultRepository>();
+            services.AddScoped<ILessonRepository, LessonRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             return services;

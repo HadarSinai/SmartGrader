@@ -1,4 +1,5 @@
 ﻿
+using Api.Dtos.LessonResults;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -22,10 +23,6 @@ public class LessonResultController : ControllerBase
 
 
     }
-//    | סוג                  | מתי?               | דוגמה                                    |
-//| -------------------- | ------------------ | ---------------------------------------- |
-//| **שמות עצם(Nouns)** | CRUD / משאב ברור   | `/api/students`, `/api/lessonresults/10` |
-//| **פעלים(Verbs)**    | פעולה עסקית מיוחדת | `/api/lessonresults/complete`            |
 
     [HttpPost("complete")]
     public async Task<IActionResult> Complete([FromBody] CompleteLessonRequestDto dto)
