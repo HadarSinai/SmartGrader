@@ -2,6 +2,7 @@ using SmartGrader.Api;
 using SmartGrader.Api.Mapping;
 using SmartGrader.Application;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
+using SmartGrader.Application.UseCases.Lessons.GetLessons;
 using SmartGrader.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +13,13 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
-builder.Services.AddAutoMapper(typeof(SmartGraderMappingProfile).Assembly);
+
+//builder.Services.AddAutoMapper(typeof(LessonProfile).Assembly);
+//builder.Services.AddAutoMapper(typeof(LessonResultProfile).Assembly);
+//builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(typeof(LessonProfile).Assembly);
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(GetLessonsQuery).Assembly));
 
 var app = builder.Build();
 app.UseSwagger(); app.UseSwaggerUI();
