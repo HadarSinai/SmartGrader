@@ -22,7 +22,6 @@ namespace Infrastructure.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // קשרים בין טבלאות
             modelBuilder.Entity<Student>()
                 .HasMany(s => s.Submissions)
                 .WithOne(s => s.Student)

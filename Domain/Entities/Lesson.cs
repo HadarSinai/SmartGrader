@@ -9,7 +9,6 @@
         public string TeacherName { get; set; }
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
-        // קשרים
-        public ICollection<Assignment> Assignments { get; set; }
+        public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
     }
 }

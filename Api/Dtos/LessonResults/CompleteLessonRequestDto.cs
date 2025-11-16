@@ -1,4 +1,4 @@
-﻿namespace SmartGrader.Api.Dtos
+﻿namespace Api.Dtos.LessonResults
 {
     public class CompleteLessonRequestDto
     {

@@ -1,7 +1,8 @@
-﻿using SmartGrader.Api.Dtos;
-using AutoMapper;
+﻿using AutoMapper;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 using SmartGrader.Domain.Entities;
+using Api.Dtos.LessonResults;
+using SmartGrader.Api.Dtos;
 
 namespace SmartGrader.Api.Mapping
 {

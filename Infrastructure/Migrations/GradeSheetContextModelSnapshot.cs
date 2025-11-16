@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace SmartGrader.Migrations
+namespace Infrastructure.Migrations
 {
     [DbContext(typeof(GradeSheetContext))]
     partial class GradeSheetContextModelSnapshot : ModelSnapshot
@@ -30,7 +30,6 @@ namespace SmartGrader.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsBonus")
@@ -40,7 +39,6 @@ namespace SmartGrader.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Title")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

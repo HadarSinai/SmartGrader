@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace SmartGrader.Migrations
+namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -70,8 +70,8 @@ namespace SmartGrader.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     LessonId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Title = table.Column<string>(type: "TEXT", nullable: false),
-                    Description = table.Column<string>(type: "TEXT", nullable: false),
+                    Title = table.Column<string>(type: "TEXT", nullable: true),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
                     IsBonus = table.Column<bool>(type: "INTEGER", nullable: false),
                     BonusValue = table.Column<double>(type: "REAL", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
@@ -95,9 +95,9 @@ namespace SmartGrader.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     StudentId = table.Column<int>(type: "INTEGER", nullable: false),
                     LessonId = table.Column<int>(type: "INTEGER", nullable: false),
-                    FinalScore = table.Column<double>(type: "REAL", nullable: false),
+                    FinalScore = table.Column<double>(type: "REAL", nullable: true),
                     IsComplete = table.Column<bool>(type: "INTEGER", nullable: false),
-                    CalculatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    CalculatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
