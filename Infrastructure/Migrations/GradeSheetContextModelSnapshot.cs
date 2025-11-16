@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace SmartGrader.Migrations
+namespace Infrastructure.Migrations
 {
     [DbContext(typeof(GradeSheetContext))]
     partial class GradeSheetContextModelSnapshot : ModelSnapshot

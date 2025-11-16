@@ -10,10 +10,12 @@
         public DateTime? CalculatedAt { get; private set; } = DateTime.UtcNow;
 
         protected LessonResult() { }
-        public static LessonResult Create(int studentId, int lessonId) 
-         {  if (studentId <= 0) throw new ArgumentException("Invalid student id.", nameof(studentId));
-        if (lessonId  <= 0) throw new ArgumentException("Invalid lesson id.",  nameof(lessonId));
-           return new LessonResult{ StudentId = studentId, LessonId = lessonId };}
+        public static LessonResult Create(int studentId, int lessonId)
+        {
+            if (studentId <= 0) throw new ArgumentException("Invalid student id.", nameof(studentId));
+            if (lessonId <= 0) throw new ArgumentException("Invalid lesson id.", nameof(lessonId));
+            return new LessonResult { StudentId = studentId, LessonId = lessonId };
+        }
         public void CompleteWith(double score)
         {
             if (IsComplete) throw new InvalidOperationException("Already completed.");
@@ -24,9 +26,9 @@
             CalculatedAt = DateTime.UtcNow;
         }
 
-        // קשרים
         public Student Student { get; set; } = null!;
         public Lesson Lesson { get; set; } = null!;
+
     }
 }
 

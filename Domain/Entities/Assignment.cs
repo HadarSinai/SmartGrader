@@ -10,7 +10,6 @@
         public double BonusValue { get; set; }
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
-        // connections
         public Lesson Lesson { get; set; }
         public ICollection<Submission> Submissions { get; set; }
     }

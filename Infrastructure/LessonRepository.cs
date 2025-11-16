@@ -1,9 +1,8 @@
-﻿// Infrastructure/Repositories/LessonRepository.cs
-using Infrastructure.Data;
+﻿using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
-using System;
+
 
 namespace SmartGrader.Infrastructure.Repositories
 {

@@ -14,9 +14,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 
-//builder.Services.AddAutoMapper(typeof(LessonProfile).Assembly);
-//builder.Services.AddAutoMapper(typeof(LessonResultProfile).Assembly);
-//builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddAutoMapper(typeof(LessonProfile).Assembly);
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(GetLessonsQuery).Assembly));

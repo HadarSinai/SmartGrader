@@ -13,7 +13,6 @@ namespace SmartGrader.Infrastructure
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            // הגדרת החיבור למסד הנתונים
             services.AddDbContext<GradeSheetContext>(options =>
                 options.UseSqlite(configuration.GetConnectionString("Default")));
 
