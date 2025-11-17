@@ -1,5 +1,6 @@
 ﻿// SmartGrader.Application/UseCases/Lessons/UpdateLesson/UpdateLessonHandler.cs
 using MediatR;
+using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
 
@@ -25,8 +26,12 @@ namespace SmartGrader.Application.UseCases.Lessons.UpdateLesson
         {
             var lesson = await _repository.GetByIdAsync(request.Id, cancellationToken);
 
-            if (lesson == null)
-                throw new KeyNotFoundException($"Lesson {request.Id} not found.");
+
+            if (lesson is null)
+            {
+                // כאן השיעור לא נמצא → זורקים NotFoundException
+                throw new NotFoundException(nameof(Lesson), request.Id);
+            }
 
             lesson.Name = request.Name;
             lesson.Subject = request.Subject;
