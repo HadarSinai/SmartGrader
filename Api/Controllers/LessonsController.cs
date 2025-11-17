@@ -2,16 +2,17 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SmartGrader.Api.Dtos.Lessons;
-using SmartGrader.Application.UseCases.Lessons.GetLessons;
-using SmartGrader.Application.UseCases.Lessons.GetLessonById;
 using SmartGrader.Application.UseCases.Lessons.CreateLesson;
-using SmartGrader.Application.UseCases.Lessons.UpdateLesson;
 using SmartGrader.Application.UseCases.Lessons.DeleteLesson;
+using SmartGrader.Application.UseCases.Lessons.GetLessonById;
+using SmartGrader.Application.UseCases.Lessons.GetLessons;
+using SmartGrader.Application.UseCases.Lessons.UpdateLesson;
+using System.Threading;
 
 namespace SmartGrader.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]  // => api/lessons
+    [Route("api/[controller]")]  
     public class LessonsController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -25,7 +26,7 @@ namespace SmartGrader.Api.Controllers
 
         // 1️⃣ GET api/lessons
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             var lessons = await _mediator.Send(new GetLessonsQuery());
 
@@ -36,7 +37,7 @@ namespace SmartGrader.Api.Controllers
 
         // 2️⃣ GET api/lessons/{id}
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
             var lesson = await _mediator.Send(new GetLessonByIdQuery(id));
             if (lesson == null)
@@ -46,47 +47,33 @@ namespace SmartGrader.Api.Controllers
             return Ok(response);
         }
 
-        //// 3️⃣ POST api/lessons
-        //[HttpPost]
-        //public async Task<IActionResult> Create([FromBody] CreateLessonRequestDto dto)
-        //{
-        //    if (!ModelState.IsValid)
-        //        return BadRequest(ModelState);
-
-        //    var command = _mapper.Map<CreateLessonCommand>(dto);
-        //    var lesson = await _mediator.Send(command);
-        //    var response = _mapper.Map<LessonResponseDto>(lesson);
-
-        //    return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
-        //}
+       
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateLessonRequestDto dto)
+        public async Task<IActionResult> Create([FromBody] CreateLessonRequestDto dto,
+            CancellationToken cancellationToken)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+     
 
-            var command = new CreateLessonCommand(
-                dto.Name,
-                dto.Subject,
-                dto.LessonDate,
-                dto.TeacherName
-            );
+            // מיפוי DTO → Command באופן אוטומטי
+            var command = _mapper.Map<CreateLessonCommand>(dto);
 
+            // שליחת הבקשה למערכת העסקית (Application Layer)
             var lesson = await _mediator.Send(command);
 
+            // מיפוי Entity → Response DTO
             var response = _mapper.Map<LessonResponseDto>(lesson);
 
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
-
-        // 4️⃣ PUT api/lessons/{id}
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateLessonRequestDto dto)
+        public async Task<IActionResult> Update(
+      int id,
+      [FromBody] UpdateLessonRequestDto dto,
+      CancellationToken cancellationToken)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
 
+            // בניית ה־Command באופן מפורש וברור
             var command = new UpdateLessonCommand(
                 id,
                 dto.Name,
@@ -95,17 +82,20 @@ namespace SmartGrader.Api.Controllers
                 dto.TeacherName
             );
 
-            var updatedLesson = await _mediator.Send(command);
+            // שליחת הבקשה לשכבת ה־Application עם token
+            var updatedLesson = await _mediator.Send(command, cancellationToken);
+
+            // מיפוי ה־Entity ל־Response DTO
             var response = _mapper.Map<LessonResponseDto>(updatedLesson);
 
             return Ok(response);
-            // אם תרצי בלי Response אפשר:
-            // return NoContent();
         }
+
+
 
         // 5️⃣ DELETE api/lessons/{id}
         [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id,CancellationToken cancellationToken)
         {
             await _mediator.Send(new DeleteLessonCommand(id));
             return NoContent();

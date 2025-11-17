@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
-using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 using SmartGrader.Domain.Entities;
-using Api.Dtos.LessonResults;
 using SmartGrader.Api.Dtos.Lessons;
+using SmartGrader.Application.UseCases.Lessons.CreateLesson;
+using SmartGrader.Application.UseCases.Lessons.UpdateLesson;
 
 
 namespace SmartGrader.Api.Mapping
@@ -11,8 +11,8 @@ namespace SmartGrader.Api.Mapping
     {
         public LessonProfile()
         {
-            CreateMap<CreateLessonRequestDto, Lesson>();
-            CreateMap<UpdateLessonRequestDto, Lesson>();
+            CreateMap<CreateLessonRequestDto, CreateLessonCommand>();
+            CreateMap<UpdateLessonRequestDto, UpdateLessonCommand>();
 
             CreateMap<Lesson, LessonResponseDto>()
                 .ForMember(d => d.AssignmentsCount,
