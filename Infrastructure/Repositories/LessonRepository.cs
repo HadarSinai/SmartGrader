@@ -15,17 +15,23 @@ namespace Infrastructure.Repositories
             _context = context;
         }
 
+
         public async Task<IReadOnlyList<Lesson>> GetAllAsync(CancellationToken ct = default)
         {
-            return await _context.Lessons.AsNoTracking().ToListAsync(ct);
+            return await _context.Lessons
+                .Include(l => l.Assignments)
+                .AsNoTracking()
+                .ToListAsync(ct);
         }
 
         public async Task<Lesson?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _context.Lessons
-                .Include(l => l.Assignments) // אם תרצי גם משימות
+                .Include(l => l.Assignments)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(l => l.Id == id, ct);
         }
+
 
         public async Task AddAsync(Lesson lesson, CancellationToken ct = default)
         {
