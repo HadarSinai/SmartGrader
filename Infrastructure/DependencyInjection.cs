@@ -7,6 +7,7 @@ using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
 using Infrastructure.Repositories;
+using SmartGrader.Infrastructure.Repositorie;
 
 
 namespace SmartGrader.Infrastructure
@@ -20,7 +21,7 @@ namespace SmartGrader.Infrastructure
 
             services.AddScoped<ILessonResultRepository, LessonResultRepository>();
             services.AddScoped<ILessonRepository, LessonRepository>();
-            services.AddScoped<IStudentRepository, IStudentRepository>();
+            services.AddScoped<IStudentRepository, StudentRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             return services;
