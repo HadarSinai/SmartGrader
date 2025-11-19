@@ -4,6 +4,7 @@ using SmartGrader.Api.Middlewares;
 using SmartGrader.Application;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Infrastructure;
+using SmartGrader.Infrastructure.Repositorie;
 using SmartGrader.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);

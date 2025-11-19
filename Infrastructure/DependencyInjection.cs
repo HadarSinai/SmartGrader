@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SmartGrader.Domain.Abstractions;
+using Domain.Abstractions;
 using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +20,7 @@ namespace SmartGrader.Infrastructure
 
             services.AddScoped<ILessonResultRepository, LessonResultRepository>();
             services.AddScoped<ILessonRepository, LessonRepository>();
+            services.AddScoped<IStudentRepository, IStudentRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             return services;
