@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartGrader.Infrastructure.Repositorie
+namespace Infrastructure.Repositories
 {
     public class StudentRepository : IStudentRepository
     {

@@ -7,7 +7,6 @@ using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
 using Infrastructure.Repositories;
-using SmartGrader.Infrastructure.Repositorie;
 
 
 namespace SmartGrader.Infrastructure
