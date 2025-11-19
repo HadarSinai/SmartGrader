@@ -10,15 +10,15 @@ namespace SmartGrader.Application.UseCases.Lessons.GetLessons
         private readonly ILessonRepository _repository;
 
         public GetLessonsHandler(ILessonRepository repository)
-        {
-            _repository = repository;
-        }
+            => _repository = repository;
 
         public async Task<IReadOnlyList<Lesson>> Handle(
             GetLessonsQuery request,
             CancellationToken cancellationToken)
         {
-            return await _repository.GetAllAsync(cancellationToken);
+            var lessons = await _repository.GetAllAsync(cancellationToken);
+
+            return lessons;
         }
     }
 }

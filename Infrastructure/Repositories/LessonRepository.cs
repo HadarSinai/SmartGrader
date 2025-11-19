@@ -4,7 +4,7 @@ using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
 
 
-namespace SmartGrader.Infrastructure.Repositories
+namespace Infrastructure.Repositories
 {
     public class LessonRepository : ILessonRepository
     {
@@ -17,9 +17,7 @@ namespace SmartGrader.Infrastructure.Repositories
 
         public async Task<IReadOnlyList<Lesson>> GetAllAsync(CancellationToken ct = default)
         {
-            return await _context.Lessons
-                .AsNoTracking()
-                .ToListAsync(ct);
+            return await _context.Lessons.AsNoTracking().ToListAsync(ct);
         }
 
         public async Task<Lesson?> GetByIdAsync(int id, CancellationToken ct = default)

@@ -12,13 +12,8 @@ namespace SmartGrader.Application.UseCases.Lessons.UpdateLesson
         private readonly ILessonRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public UpdateLessonHandler(
-            ILessonRepository repository,
-            IUnitOfWork unitOfWork)
-        {
-            _repository = repository;
-            _unitOfWork = unitOfWork;
-        }
+        public UpdateLessonHandler(ILessonRepository repository, IUnitOfWork unitOfWork)
+            => (_repository, _unitOfWork) = (repository, unitOfWork);
 
         public async Task<Lesson> Handle(
             UpdateLessonCommand request,
@@ -29,7 +24,6 @@ namespace SmartGrader.Application.UseCases.Lessons.UpdateLesson
 
             if (lesson is null)
             {
-                // כאן השיעור לא נמצא → זורקים NotFoundException
                 throw new NotFoundException(nameof(Lesson), request.Id);
             }
 
