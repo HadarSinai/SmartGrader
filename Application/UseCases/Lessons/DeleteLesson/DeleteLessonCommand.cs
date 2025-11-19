@@ -2,5 +2,5 @@
 
 namespace SmartGrader.Application.UseCases.Lessons.DeleteLesson
 {
-    public record DeleteLessonCommand(int Id) : IRequest;
+    public record DeleteLessonCommand(int Id) : IRequest<Unit>;
 }

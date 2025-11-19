@@ -11,13 +11,8 @@ namespace SmartGrader.Application.UseCases.Lessons.CreateLesson
         private readonly ILessonRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public CreateLessonHandler(
-            ILessonRepository repository,
-            IUnitOfWork unitOfWork)
-        {
-            _repository = repository;
-            _unitOfWork = unitOfWork;
-        }
+        public CreateLessonHandler(ILessonRepository repository, IUnitOfWork unitOfWork)
+           => (_repository, _unitOfWork) = (repository, unitOfWork);
 
         public async Task<Lesson> Handle(
             CreateLessonCommand request,

@@ -5,6 +5,7 @@ using SmartGrader.Domain.Abstractions;
 using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
+using Infrastructure.Repositories;
 
 
 namespace SmartGrader.Infrastructure

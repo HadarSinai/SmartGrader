@@ -1,40 +1,31 @@
 ﻿using MediatR;
+using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Domain.Abstractions;
+using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.UseCases.Lessons.DeleteLesson
 {
-    public class DeleteLessonHandler : IRequestHandler<DeleteLessonCommand>
+    public class DeleteLessonHandler : IRequestHandler<DeleteLessonCommand,Unit>
     {
         private readonly ILessonRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeleteLessonHandler(
-            ILessonRepository repository,
-            IUnitOfWork unitOfWork)
-        {
-            _repository = repository;
-            _unitOfWork = unitOfWork;
-        }
+        public DeleteLessonHandler(ILessonRepository repository, IUnitOfWork unitOfWork)
+            => (_repository, _unitOfWork) = (repository, unitOfWork);
 
-        public async Task<Unit> Handle(
-            DeleteLessonCommand request,
-            CancellationToken cancellationToken)
+        public async Task<Unit> Handle(DeleteLessonCommand request, CancellationToken cancellationToken)
         {
             var lesson = await _repository.GetByIdAsync(request.Id, cancellationToken);
 
-            if (lesson == null)
-                throw new KeyNotFoundException($"Lesson {request.Id} not found.");
+            if (lesson is null)
+                throw new NotFoundException(nameof(Lesson), request.Id);
 
             await _repository.DeleteAsync(lesson, cancellationToken);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // IRequest בלי טיפוס מחזיר Unit
             return Unit.Value;
         }
 
-        Task IRequestHandler<DeleteLessonCommand>.Handle(DeleteLessonCommand request, CancellationToken cancellationToken)
-        {
-            return Handle(request, cancellationToken);
-        }
     }
 }
