@@ -21,6 +21,7 @@ namespace SmartGrader.Infrastructure
             services.AddScoped<ILessonResultRepository, LessonResultRepository>();
             services.AddScoped<ILessonRepository, LessonRepository>();
             services.AddScoped<IStudentRepository, StudentRepository>();
+            services.AddScoped<ISubmissionRepository, SubmissionRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             return services;
