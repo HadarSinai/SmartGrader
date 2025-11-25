@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using SmartGrader.Application.Dtos.Student;
 using SmartGrader.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -8,5 +9,5 @@ using System.Threading.Tasks;
 
 namespace SmartGrader.Application.UseCases.Students.GetStudentById
 {
-    public record GetStudentByIdQuery(int Id) : IRequest<Student?>;
+    public record GetStudentByIdQuery(int Id) : IRequest<StudentResponseDto>;
 }

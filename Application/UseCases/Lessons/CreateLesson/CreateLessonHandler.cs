@@ -1,37 +1,42 @@
-﻿// SmartGrader.Application/UseCases/Lessons/CreateLesson/CreateLessonHandler.cs
+﻿using AutoMapper;
 using MediatR;
+using SmartGrader.Application.Dtos.Lessons;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.UseCases.Lessons.CreateLesson
 {
     public class CreateLessonHandler
-        : IRequestHandler<CreateLessonCommand, Lesson>
+        : IRequestHandler<CreateLessonCommand, LessonResponseDto>
     {
         private readonly ILessonRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public CreateLessonHandler(ILessonRepository repository, IUnitOfWork unitOfWork)
-           => (_repository, _unitOfWork) = (repository, unitOfWork);
+        public CreateLessonHandler(
+            ILessonRepository repository,
+            IUnitOfWork unitOfWork,
+            IMapper mapper)
+        {
+            _repository = repository;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+        }
 
-        public async Task<Lesson> Handle(
+        public async Task<LessonResponseDto> Handle(
             CreateLessonCommand request,
             CancellationToken cancellationToken)
         {
-            var lesson = new Lesson
-            {
-                Name = request.Name,
-                Subject = request.Subject,
-                LessonDate = request.LessonDate,
-                TeacherName = request.TeacherName
-                // CreatedAt מוגדר אוטומטית ב-ctor / default
-            };
+            // בדיקה אופציונלית – להגן מפני null
+            if (request.Dto == null)
+                throw new ArgumentNullException(nameof(request.Dto));
+
+            var lesson = _mapper.Map<Lesson>(request.Dto);
 
             await _repository.AddAsync(lesson, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return lesson;
+            return _mapper.Map<LessonResponseDto>(lesson);
         }
     }
 }
-

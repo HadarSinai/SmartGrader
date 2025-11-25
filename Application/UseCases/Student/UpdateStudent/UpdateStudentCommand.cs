@@ -1,16 +1,10 @@
 ﻿using MediatR;
-using SmartGrader.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SmartGrader.Application.Dtos.Student;
 
 namespace SmartGrader.Application.UseCases.Students.UpdateStudent
 {
     public record UpdateStudentCommand(
         int Id,
-        string FullName,
-        string ClassName
-    ) : IRequest<Student>;
+        UpdateStudentRequestDto Dto
+    ) : IRequest<StudentResponseDto>;
 }

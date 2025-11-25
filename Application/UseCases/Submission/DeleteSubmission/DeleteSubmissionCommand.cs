@@ -1,11 +1,7 @@
 ﻿using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.UseCases.Submissions.DeleteSubmission
 {
-    public record DeleteSubmissionCommand(int Id) : IRequest<Unit>;
+    public record DeleteSubmissionCommand(int StudentId,int SubmissionId) : IRequest;
 }

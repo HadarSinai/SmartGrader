@@ -1,11 +1,8 @@
 ﻿using Domain.Abstractions;
 using MediatR;
+using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Domain.Abstractions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.UseCases.Students.DeleteStudent
 {
@@ -22,25 +19,17 @@ namespace SmartGrader.Application.UseCases.Students.DeleteStudent
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Unit> Handle(
+        public async Task Handle(
             DeleteStudentCommand request,
             CancellationToken cancellationToken)
         {
             var student = await _repository.GetByIdAsync(request.Id, cancellationToken);
 
-            if (student == null)
-                throw new KeyNotFoundException($"Student {request.Id} not found.");
+            if (student is null)
+                throw new NotFoundException("Student", request.Id);
 
             await _repository.DeleteAsync(student, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            // IRequest בלי טיפוס מחזיר Unit
-            return Unit.Value;
-        }
-
-        Task IRequestHandler<DeleteStudentCommand>.Handle(DeleteStudentCommand request, CancellationToken cancellationToken)
-        {
-            return Handle(request, cancellationToken);
         }
     }
 }

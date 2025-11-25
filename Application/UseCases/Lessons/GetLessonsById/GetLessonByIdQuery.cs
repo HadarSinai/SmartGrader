@@ -1,8 +1,7 @@
 ﻿using MediatR;
-using SmartGrader.Domain.Entities;
+using SmartGrader.Application.Dtos.Lessons;
 
 namespace SmartGrader.Application.UseCases.Lessons.GetLessonById
 {
-    public record GetLessonByIdQuery(int Id) : IRequest<Lesson?>;
+    public record GetLessonByIdQuery(int Id) : IRequest<LessonResponseDto>;
 }
-

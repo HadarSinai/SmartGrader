@@ -1,9 +1,8 @@
 ﻿
-using Api.Dtos.LessonResults;
+using SmartGrader.Application.Dtos.LessonResults;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using SmartGrader.Api.Dtos;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 
 namespace SmartGrader.Api.Controllers;
@@ -24,15 +23,15 @@ public class LessonResultController : ControllerBase
 
     }
 
-    [HttpPost("complete")]
-    public async Task<IActionResult> Complete([FromBody] CompleteLessonRequestDto dto)
-    {
-        var command = _mapper.Map<CompleteLessonCommand>(dto);
-        var result = await _mediator.Send(command);
-        var response = _mapper.Map<LessonResultResponseDto>(result);
+    //[HttpPost("complete")]
+    //public async Task<IActionResult> Complete([FromBody] CompleteLessonRequestDto dto)
+    //{
+    //    var command = _mapper.Map<CompleteLessonCommand>(dto);
+    //    var result = await _mediator.Send(command);
+    //    var response = _mapper.Map<LessonResultResponseDto>(result);
 
-        return Ok(response);
-    }
+    //    return Ok(response);
+    //}
 
 
 }
