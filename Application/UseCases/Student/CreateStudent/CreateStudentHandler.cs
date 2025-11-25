@@ -1,45 +1,41 @@
-﻿using Domain.Abstractions;
+﻿using AutoMapper;
+using Domain.Abstractions;
 using MediatR;
-using SmartGrader.Application.UseCases.Students.CreateStudent;
+using SmartGrader.Application.Dtos.Student;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartGrader.Application.UseCases.Students.CreateStudent
 {
     public class CreateStudentHandler
-        : IRequestHandler<CreateStudentCommand, Student>
+        : IRequestHandler<CreateStudentCommand, StudentResponseDto>
     {
         private readonly IStudentRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
         public CreateStudentHandler(
             IStudentRepository repository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IMapper mapper)
         {
             _repository = repository;
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
-        public async Task<Student> Handle(
+        public async Task<StudentResponseDto> Handle(
             CreateStudentCommand request,
             CancellationToken cancellationToken)
         {
-            var student = new Student
-            {
-                FullName = request.FullName,
-                ClassName = request.ClassName
-                // CreatedAt מוגדר אוטומטית ב-ctor / default
-            };
+            // DTO → Entity
+            var student = _mapper.Map<Student>(request.Dto);
 
             await _repository.AddAsync(student, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return student;
+            // Entity → ResponseDto
+            return _mapper.Map<StudentResponseDto>(student);
         }
     }
 }

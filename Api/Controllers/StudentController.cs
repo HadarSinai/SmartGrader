@@ -1,13 +1,19 @@
-﻿using Api.Dtos.Student;
-using AutoMapper;
+﻿
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SmartGrader.Application.Dtos.Student;
+using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Application.UseCases.Students.CreateStudent;
 using SmartGrader.Application.UseCases.Students.DeleteStudent;
 using SmartGrader.Application.UseCases.Students.GetStudentById;
 using SmartGrader.Application.UseCases.Students.GetStudents;
 using SmartGrader.Application.UseCases.Students.UpdateStudent;
+using SmartGrader.Application.UseCases.Submissions.CreateSubmission;
+using SmartGrader.Application.UseCases.Submissions.DeleteSubmission;
+using SmartGrader.Application.UseCases.Submissions.GetSubmissionById;
+using SmartGrader.Application.UseCases.Submissions.GetSubmissions;
+using SmartGrader.Application.UseCases.Submissions.UpdateSubmission;
+using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Api.Controllers
 {
@@ -16,69 +22,141 @@ namespace SmartGrader.Api.Controllers
     public class StudentsController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
 
-        public StudentsController(IMediator mediator, IMapper mapper)
+        public StudentsController(IMediator mediator)
         {
             _mediator = mediator;
-            _mapper = mapper;
         }
 
-        // 1️⃣ GET api/students
+    
+
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
-            var students = await _mediator.Send(new GetStudentQuery());
-            var response = _mapper.Map<IEnumerable<StudentResponseDto>>(students);
-            return Ok(response);
+            IReadOnlyList<StudentResponseDto> result =
+                await _mediator.Send(new GetStudentsQuery(), cancellationToken);
+
+            return Ok(result);
         }
 
-        // 2️⃣ GET api/students/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
-            var student = await _mediator.Send(new GetStudentByIdQuery(id));
-            if (student == null)
-                return NotFound();
+            StudentResponseDto student =
+                await _mediator.Send(new GetStudentByIdQuery(id), cancellationToken);
 
-            var response = _mapper.Map<StudentResponseDto>(student);
-            return Ok(response);
+            return Ok(student);
         }
 
-        // 3️⃣ POST api/students
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateStudentRequestDto dto,
+        public async Task<IActionResult> Create(
+            [FromBody] CreateStudentRequestDto dto,
             CancellationToken cancellationToken)
         {
-            var command = _mapper.Map<CreateStudentCommand>(dto);
-            var student = await _mediator.Send(command);
-            var response = _mapper.Map<StudentResponseDto>(student);
-            return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
+            StudentResponseDto created =
+                await _mediator.Send(new CreateStudentCommand(dto), cancellationToken);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = created.Id },
+                created);
         }
 
-        // 4️⃣ PUT api/students/{id}
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id,
+        public async Task<IActionResult> Update(
+            int id,
             [FromBody] UpdateStudentRequestDto dto,
             CancellationToken cancellationToken)
         {
-            var command = new UpdateStudentCommand(
-                id,
-                dto.FullName,
-                dto.ClassName
-            );
+            StudentResponseDto updated =
+                await _mediator.Send(new UpdateStudentCommand(id, dto), cancellationToken);
 
-            var updatedStudent = await _mediator.Send(command, cancellationToken);
-            var response = _mapper.Map<StudentResponseDto>(updatedStudent);
-            return Ok(response);
+            return Ok(updated);
         }
 
-        // 5️⃣ DELETE api/students/{id}
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new DeleteStudentCommand(id));
+            await _mediator.Send(new DeleteStudentCommand(id), cancellationToken);
+            return NoContent();
+        }
+
+     
+
+        // GET: api/students/{studentId}/submissions
+        [HttpGet("{studentId:int}/submissions")]
+        public async Task<IActionResult> GetSubmissions(
+            int studentId,
+            CancellationToken cancellationToken)
+        {
+            IReadOnlyList<SubmissionResponseDto> result =
+                await _mediator.Send(new GetSubmissionsQuery(studentId), cancellationToken);
+
+            return Ok(result);
+        }
+
+        // GET: api/students/{studentId}/submissions/{submissionId}
+        [HttpGet("{studentId:int}/submissions/{submissionId:int}")]
+        public async Task<IActionResult> GetSubmissionById(
+            int studentId,
+            int submissionId,
+            CancellationToken cancellationToken)
+        {
+            SubmissionResponseDto result =
+                await _mediator.Send(
+                    new GetSubmissionByIdQuery(studentId, submissionId),
+                    cancellationToken);
+
+            return Ok(result);
+        }
+
+        // POST: api/students/{studentId}/submissions
+        [HttpPost("{studentId:int}/submissions")]
+        public async Task<IActionResult> CreateSubmission(
+            int studentId,
+            [FromBody] CreateSubmissionRequestDto dto,
+            CancellationToken cancellationToken)
+        {
+            SubmissionResponseDto created =
+                await _mediator.Send(
+                    new CreateSubmissionCommand(studentId,  dto),
+                    cancellationToken);
+
+            return CreatedAtAction(
+                nameof(GetSubmissionById),
+                new { studentId = studentId, submissionId = created.Id },
+                created);
+        }
+
+        // PUT: api/students/{studentId}/submissions/{submissionId}
+        [HttpPut("{studentId:int}/submissions/{submissionId:int}")]
+        public async Task<IActionResult> UpdateSubmission(
+            int studentId,
+            int submissionId,
+            [FromBody] UpdateSubmissionRequestDto dto,
+            CancellationToken cancellationToken)
+        {
+            SubmissionResponseDto updated =
+                await _mediator.Send(
+                    new UpdateSubmissionCommand(studentId, submissionId, dto),
+                    cancellationToken);
+
+            return Ok(updated);
+        }
+
+        // DELETE: api/students/{studentId}/submissions/{submissionId}
+        [HttpDelete("{studentId:int}/submissions/{submissionId:int}")]
+        public async Task<IActionResult> DeleteSubmission(
+            int studentId,
+            int submissionId,
+            CancellationToken cancellationToken)
+        {
+            await _mediator.Send(
+                new DeleteSubmissionCommand(studentId,submissionId),
+                cancellationToken);
+
             return NoContent();
         }
     }
 }
+

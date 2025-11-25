@@ -1,13 +1,8 @@
 ﻿using MediatR;
-using SmartGrader.Domain.Entities;
+using SmartGrader.Application.Dtos.Lessons;
 
 namespace SmartGrader.Application.UseCases.Lessons.CreateLesson
 {
-    public record CreateLessonCommand(
-        string Name,
-        string Subject,
-        DateTime LessonDate,
-        string TeacherName
-    ) : IRequest<Lesson>;
+    public record CreateLessonCommand(CreateLessonRequestDto Dto) : IRequest<LessonResponseDto>;
 }
 

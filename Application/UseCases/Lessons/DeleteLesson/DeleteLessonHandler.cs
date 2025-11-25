@@ -18,7 +18,7 @@ namespace SmartGrader.Application.UseCases.Lessons.DeleteLesson
             var lesson = await _repository.GetByIdAsync(request.Id, cancellationToken);
 
             if (lesson is null)
-                throw new NotFoundException(nameof(Lesson), request.Id);
+                throw new NotFoundException("Lesson", request.Id);
 
             await _repository.DeleteAsync(lesson, cancellationToken);
 

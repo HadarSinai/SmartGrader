@@ -1,9 +1,4 @@
 ﻿using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartGrader.Application.UseCases.Students.UpdateStudent
 {
@@ -17,12 +12,12 @@ namespace SmartGrader.Application.UseCases.Students.UpdateStudent
                 .WithMessage("Student ID must be greater than 0");
 
             // שם מלא
-            RuleFor(x => x.FullName)
+            RuleFor(x => x.Dto.FullName)
                 .NotEmpty().WithMessage("FullName is required")
                 .MaximumLength(100).WithMessage("FullName cannot exceed 100 characters");
 
             // שם כיתה
-            RuleFor(x => x.ClassName)
+            RuleFor(x => x.Dto.ClassName)
                 .NotEmpty().WithMessage("ClassName is required")
                 .MaximumLength(50).WithMessage("ClassName cannot exceed 50 characters");
         }

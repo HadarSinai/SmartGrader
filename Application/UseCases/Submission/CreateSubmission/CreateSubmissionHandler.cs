@@ -1,48 +1,61 @@
-﻿using MediatR;
+﻿using AutoMapper;
+using Domain.Abstractions;
+using MediatR;
+using SmartGrader.Application.Common.Exceptions;
+using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
 {
     public class CreateSubmissionHandler
-        : IRequestHandler<CreateSubmissionCommand, Submission>
+        : IRequestHandler<CreateSubmissionCommand, SubmissionResponseDto>
     {
         private readonly ISubmissionRepository _repository;
+        private readonly IStudentRepository _studentRepository;
+        private readonly IAssignmentRepository _assignmentRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
         public CreateSubmissionHandler(
             ISubmissionRepository repository,
-            IUnitOfWork unitOfWork)
-            => (_repository, _unitOfWork) = (repository, unitOfWork);
+            IStudentRepository studentRepository,
+            IAssignmentRepository assignmentRepository,
+            IUnitOfWork unitOfWork,
+            IMapper mapper)
+        {
+            _repository = repository;
+            _studentRepository = studentRepository;
+            _assignmentRepository = assignmentRepository;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+        }
 
-        public async Task<Submission> Handle(
+        public async Task<SubmissionResponseDto> Handle(
             CreateSubmissionCommand request,
             CancellationToken cancellationToken)
         {
-            //var submission = Submission.Create(
-            //   request.StudentId,
-            //   request.AssignmentId,
-            //   request.SourceCode,
-            //   request.Comments
-            //);
-            var submission = new Submission
-            {
-                StudentId = request.StudentId,
-                AssignmentId = request.AssignmentId,
-                SourceCode = request.SourceCode,
-                Score = request.Score,
-                Comments = request.Comments
-            };
+            var dto = request.Dto;
 
+            // ✔ בדיקה שהתלמיד קיים
+            var student = await _studentRepository.GetByIdAsync(request.StudentId, cancellationToken);
+            if (student is null)
+                throw new NotFoundException(nameof(Student), request.StudentId);
+
+            // ✔ בדיקה שהמשימה קיימת
+            var assignment = await _assignmentRepository.GetByIdAsync(dto.AssignmentId, cancellationToken);
+            if (assignment is null)
+                throw new NotFoundException(nameof(Assignment), dto.AssignmentId);
+
+            // ✔ מעבר DTO → Entity
+            var submission = _mapper.Map<Submission>(dto);
+
+            // ✔ שמירה ב־DB
             await _repository.AddAsync(submission, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return submission;
+            // ✔ Entity → DTO
+            return _mapper.Map<SubmissionResponseDto>(submission);
         }
     }
 }

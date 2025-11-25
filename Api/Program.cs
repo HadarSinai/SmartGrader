@@ -1,4 +1,5 @@
 
+using Application.Common.Mapping;
 using SmartGrader.Api.Mapping;
 using SmartGrader.Api.Middlewares;
 using SmartGrader.Application;

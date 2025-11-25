@@ -8,7 +8,7 @@ namespace SmartGrader.Application.UseCases.Lessons.GetLessonById
         {
             RuleFor(x => x.Id)
                 .GreaterThan(0)
-                .WithMessage("Id must be greater than zero.");
+                .WithMessage("Lesson Id must be greater than 0.");
         }
     }
 }

@@ -1,49 +1,44 @@
-﻿using Domain.Abstractions;
+﻿using AutoMapper;
+using Domain.Abstractions;
 using MediatR;
 using SmartGrader.Application.Common.Exceptions;
+using SmartGrader.Application.Dtos.Student;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartGrader.Application.UseCases.Students.UpdateStudent
 {
     public class UpdateStudentHandler
-        : IRequestHandler<UpdateStudentCommand, Student>
+        : IRequestHandler<UpdateStudentCommand, StudentResponseDto>
     {
         private readonly IStudentRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
         public UpdateStudentHandler(
             IStudentRepository repository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IMapper mapper)
         {
             _repository = repository;
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
-        public async Task<Student> Handle(
+        public async Task<StudentResponseDto> Handle(
             UpdateStudentCommand request,
             CancellationToken cancellationToken)
         {
             var student = await _repository.GetByIdAsync(request.Id, cancellationToken);
 
             if (student is null)
-            {
-                // כאן התלמיד לא נמצא → זורקים NotFoundException
                 throw new NotFoundException(nameof(Student), request.Id);
-            }
 
-            student.FullName = request.FullName;
-            student.ClassName = request.ClassName;
+            _mapper.Map(request.Dto, student);
 
-            await _repository.UpdateAsync(student, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return student;
+            return _mapper.Map<StudentResponseDto>(student);
         }
     }
 }
