@@ -18,9 +18,7 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
                 .NotEmpty()
                 .WithMessage("SourceCode is required");
 
-            RuleFor(x => x.Dto.Comments)
-                .MaximumLength(500)
-                .WithMessage("Comments cannot exceed 500 characters");
+        
         }
     }
 }

@@ -10,6 +10,9 @@
             public double BonusValue { get; set; }
             public DateTime CreatedAt { get; set; }
             public int SubmissionsCount { get; set; }
-        }
+            public string FunctionName { get; set; }
+           public string ReturnType { get; set; }
+           public string TestsJson { get; set; }
+    }
 
     }

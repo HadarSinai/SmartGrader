@@ -17,34 +17,12 @@
 
 
 
-        //protected Submission() { }
+        public void MarkCheckedByAi(double score, string comments)
+        {
+            Score = score;
+            Comments = comments;
+            CheckedByAI = true;
+        }
 
-        //public static Submission Create(int studentId, int assignmentId, string sourceCode, string comments = "")
-        //{
-        //    if (studentId <= 0) throw new ArgumentException("Invalid student id.", nameof(studentId));
-        //    if (assignmentId <= 0) throw new ArgumentException("Invalid assignment id.", nameof(assignmentId));
-        //    if (string.IsNullOrWhiteSpace(sourceCode)) throw new ArgumentException("SourceCode cannot be empty.", nameof(sourceCode));
-
-        //    return new Submission
-        //    {
-        //        StudentId = studentId,
-        //        AssignmentId = assignmentId,
-        //        SourceCode = sourceCode,
-        //        Comments = comments,
-        //        CheckedByAI = false,
-        //        SubmittedAt = DateTime.UtcNow
-        //    };
-        //}
-
-        //public void MarkCheckedByAI(double score, string comments = "")
-        //{
-        //    if (CheckedByAI) throw new InvalidOperationException("Already checked by AI.");
-        //    if (score < 0 || score > 100) throw new ArgumentOutOfRangeException(nameof(score));
-
-        //    Score = score;
-        //    CheckedByAI = true;
-        //    if (!string.IsNullOrWhiteSpace(comments))
-        //        Comments = comments;
-        //}
     }
 }

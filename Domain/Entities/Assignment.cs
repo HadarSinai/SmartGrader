@@ -9,6 +9,9 @@
         public bool IsBonus { get; set; }
         public double BonusValue { get; set; }
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+        public string FunctionName { get; set; }     // לדוגמה "Sum"
+        public string ReturnType { get; set; }       // לדוגמה "int"
+        public string TestsJson { get; set; }        // רשימת בדיקות בפורמט JSON
 
         public Lesson Lesson { get; set; }
         public ICollection<Submission> Submissions { get; set; }
