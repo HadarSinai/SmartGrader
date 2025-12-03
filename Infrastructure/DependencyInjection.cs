@@ -1,12 +1,14 @@
-﻿using Infrastructure.Data;
+﻿using Domain.Abstractions;
+using Infrastructure.Data;
+using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SmartGrader.Application.Common.Services;
 using SmartGrader.Domain.Abstractions;
-using Domain.Abstractions;
 using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
-using Microsoft.Extensions.Configuration;
-using Infrastructure.Repositories;
+//using SmartGrader.Infrastructure.Services;
 
 
 namespace SmartGrader.Infrastructure
@@ -24,6 +26,7 @@ namespace SmartGrader.Infrastructure
             services.AddScoped<ISubmissionRepository, SubmissionRepository>();
             services.AddScoped<IAssignmentRepository, AssignmentRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+          //  services.AddSingleton<ICompilerService, RoslynCompilerService>();
 
             return services;
         }

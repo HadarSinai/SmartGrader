@@ -2,6 +2,7 @@
 using Domain.Abstractions;
 using MediatR;
 using SmartGrader.Application.Common.Exceptions;
+using SmartGrader.Application.Common.Services;
 using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
@@ -15,6 +16,7 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
         private readonly IStudentRepository _studentRepository;
         private readonly IAssignmentRepository _assignmentRepository;
         private readonly IUnitOfWork _unitOfWork;
+     //   private readonly ICompilerService _compilerService;
         private readonly IMapper _mapper;
 
         public CreateSubmissionHandler(
@@ -22,12 +24,14 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
             IStudentRepository studentRepository,
             IAssignmentRepository assignmentRepository,
             IUnitOfWork unitOfWork,
+        //    ICompilerService compilerService,
             IMapper mapper)
         {
             _repository = repository;
             _studentRepository = studentRepository;
             _assignmentRepository = assignmentRepository;
             _unitOfWork = unitOfWork;
+         //   _compilerService = compilerService;
             _mapper = mapper;
         }
 
@@ -47,14 +51,39 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
             if (assignment is null)
                 throw new NotFoundException(nameof(Assignment), dto.AssignmentId);
 
-            // ✔ מעבר DTO → Entity
-            var submission = _mapper.Map<Submission>(dto);
+            // ✔ יצירת ישות Submission (לפי המבנה שלך – תתאימי אם הקונסטרקטור מעט שונה)
+            var submission = new Submission
+            {
+                StudentId = request.StudentId,
+                AssignmentId = dto.AssignmentId,
+                SourceCode = dto.SourceCode,
+                Score = 0,
+                Comments = string.Empty
+            };
 
-            // ✔ שמירה ב־DB
+            // ✔ קומפילציה של הקוד
+        //    var compileResult = await _compilerService.CompileAsync(dto.SourceCode, cancellationToken);
+
+           // if (compileResult.IsSuccess)
+            //{
+            //    // הצלחה – ציון מלא והערה חיובית
+            //    submission.MarkCheckedByAi(
+            //        score: 100,
+            //        comments: "Compilation succeeded");
+            //}
+            //else
+            //{
+            //    var errorsText = string.Join(Environment.NewLine, compileResult.Errors);
+
+            //    submission.MarkCheckedByAi(
+            //        score: 0,
+            //        comments: errorsText);
+
+            //}
+
             await _repository.AddAsync(submission, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // ✔ Entity → DTO
             return _mapper.Map<SubmissionResponseDto>(submission);
         }
     }

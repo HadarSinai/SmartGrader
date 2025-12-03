@@ -11,8 +11,7 @@
         public string Comments { get; set; } = string.Empty;
         public DateTime SubmittedAt { get; set; }
 
-        // אופציונלי – אם תרצי להציג פרטים נוספים
-        public string? StudentName { get; set; }   // לא חובה
-        public string? AssignmentName { get; set; } // לא חובה
+        public string? StudentName { get; set; }   
+        public string? AssignmentName { get; set; } 
     }
 }
