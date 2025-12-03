@@ -10,19 +10,7 @@ namespace Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "FunctionName",
-                table: "Assignments",
-                type: "TEXT",
-                nullable: false,
-                defaultValue: "");
-
-            migrationBuilder.AddColumn<string>(
-                name: "ReturnType",
-                table: "Assignments",
-                type: "TEXT",
-                nullable: false,
-                defaultValue: "");
+      
 
             migrationBuilder.AddColumn<string>(
                 name: "TestsJson",

@@ -1,6 +1,6 @@
-﻿using SmartGrader.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SmartGrader.Application.Common.Exceptions;
+using SmartGrader.Domain.Entities;
 
 namespace Infrastructure.Data
 {
@@ -41,6 +41,7 @@ namespace Infrastructure.Data
                 .HasMany(s => s.LessonResults)
                 .WithOne(r => r.Student)
                 .HasForeignKey(r => r.StudentId);
+
         }
 
         // 👇 זה החלק החדש – טיפול בשגיאת UNIQUE

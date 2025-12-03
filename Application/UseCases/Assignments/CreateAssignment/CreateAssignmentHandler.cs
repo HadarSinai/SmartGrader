@@ -39,6 +39,14 @@ namespace SmartGrader.Application.UseCases.Assignments.CreateAssignment
 
             var assignment = _mapper.Map<Assignment>(request.Dto);
             assignment.LessonId = request.LessonId;
+            if (request.Dto.Tests is not null && request.Dto.Tests.Any())
+            {
+                // נניח שיש לך TestCaseDto עם Input ו-Expected
+                foreach (var testDto in request.Dto.Tests)
+                {
+                    assignment.AddTest(testDto.Input, testDto.Expected);
+                }
+            }
 
             await _assignmentRepository.AddAsync(assignment, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

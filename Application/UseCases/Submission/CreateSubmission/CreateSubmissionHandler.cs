@@ -2,7 +2,6 @@
 using Domain.Abstractions;
 using MediatR;
 using SmartGrader.Application.Common.Exceptions;
-using SmartGrader.Application.Common.Services;
 using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
