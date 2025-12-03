@@ -4,7 +4,6 @@ using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SmartGrader.Application.Common.Services;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
