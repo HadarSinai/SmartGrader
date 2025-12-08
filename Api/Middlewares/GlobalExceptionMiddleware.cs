@@ -91,7 +91,7 @@ namespace SmartGrader.Api.Middlewares
                 {
                     Status = StatusCodes.Status500InternalServerError,
                     Title = "Server error.",
-                    Detail = "An unexpected error occurred.",
+                    Detail = ex.ToString(),//"An unexpected error occurred.",
                     Type = "https://httpstatuses.com/500",
                     Instance = context.Request.Path
                 };
