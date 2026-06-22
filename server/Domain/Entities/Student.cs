@@ -9,8 +9,8 @@
         protected Student() { }
 
         // קשרים
-        public ICollection<Submission> Submissions { get; set; }
-public ICollection<LessonResult> LessonResults { get; set; }
+        public ICollection<Submission> Submissions { get; set; } = new List<Submission>();
+        public ICollection<LessonResult> LessonResults { get; set; } = new List<LessonResult>();
     }
 }
 

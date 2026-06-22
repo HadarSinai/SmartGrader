@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Domain.Abstractions;
+
 using MediatR;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.Dtos.Student;

@@ -1,10 +1,10 @@
-﻿using Infrastructure.Data;
+﻿
 using Microsoft.EntityFrameworkCore;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
+using SmartGrader.Infrastructure.Data;
 
-
-namespace Infrastructure.Repositories
+namespace SmartGrader.Infrastructure.Repositories
 {
     public class LessonRepository : ILessonRepository
     {
@@ -50,3 +50,4 @@ namespace Infrastructure.Repositories
         }
     }
 }
+

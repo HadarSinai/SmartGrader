@@ -84,13 +84,19 @@ namespace SmartGrader.Api.Middlewares
             }
             catch (BusinessRuleException ex)
             {
-                context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsJsonAsync(new
+                _logger.LogWarning(ex, "Business rule violation");
+
+                var problem = new ProblemDetails
                 {
-                    title = "Business rule violation",
-                    status = 400,
-                    detail = ex.Message
-                });
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Business rule violation.",
+                    Detail = ex.Message,
+                    Type = "https://httpstatuses.com/400",
+                    Instance = context.Request.Path
+                };
+
+                AddTraceId(problem, context);
+                await WriteProblemDetailsAsync(context, problem);
             }
             // ------------------------- 500 - Unknown Errors -------------------------
             catch (Exception ex)

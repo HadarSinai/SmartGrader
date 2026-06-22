@@ -27,10 +27,6 @@ namespace SmartGrader.Application.UseCases.Lessons.CreateLesson
             CreateLessonCommand request,
             CancellationToken cancellationToken)
         {
-            // בדיקה אופציונלית – להגן מפני null
-            if (request.Dto == null)
-                throw new ArgumentNullException(nameof(request.Dto));
-
             var lesson = _mapper.Map<Lesson>(request.Dto);
 
             await _repository.AddAsync(lesson, cancellationToken);

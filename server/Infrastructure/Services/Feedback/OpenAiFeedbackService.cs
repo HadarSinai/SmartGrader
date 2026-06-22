@@ -4,8 +4,9 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using System.Linq;
+using SmartGrader.Application.Services.Feedback;
 
-namespace SmartGrader.Application.Services.Feedback
+namespace SmartGrader.Infrastructure.Services.Feedback
 {
     public class OpenAiFeedbackService : IFeedbackService
     {

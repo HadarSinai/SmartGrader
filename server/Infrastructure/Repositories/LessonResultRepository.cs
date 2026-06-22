@@ -1,4 +1,4 @@
-﻿using Infrastructure.Data;
+﻿
 using Microsoft.EntityFrameworkCore;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;

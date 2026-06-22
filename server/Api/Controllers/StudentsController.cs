@@ -13,7 +13,6 @@ using SmartGrader.Application.UseCases.Submissions.DeleteSubmission;
 using SmartGrader.Application.UseCases.Submissions.GetSubmissionById;
 using SmartGrader.Application.UseCases.Submissions.GetSubmissions;
 using SmartGrader.Application.UseCases.Submissions.UpdateSubmission;
-using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Api.Controllers
 {

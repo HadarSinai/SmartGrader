@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SmartGrader.Infrastructure.Data;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
-using Infrastructure.Data;
 
-namespace Infrastructure.Repositories
+
+namespace SmartGrader.Infrastructure.Repositories
 {
     public class AssignmentRepository : IAssignmentRepository
     {
@@ -45,3 +46,4 @@ namespace Infrastructure.Repositories
         }
     }
 }
+

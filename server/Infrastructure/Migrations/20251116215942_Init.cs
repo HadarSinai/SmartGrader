@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Infrastructure.Migrations
+namespace SmartGrader.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class Init : Migration

@@ -1,5 +1,5 @@
-﻿using Domain.Abstractions;
-using Infrastructure.Data;
+﻿
+
 using Microsoft.EntityFrameworkCore;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
@@ -9,7 +9,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Repositories
+using SmartGrader.Infrastructure.Data;
+
+namespace SmartGrader.Infrastructure.Repositories
 {
     public class StudentRepository : IStudentRepository
     {
@@ -28,6 +30,7 @@ namespace Infrastructure.Repositories
         public async Task<Student?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _context.Students
+                .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == id, ct);
         }
         public async Task AddAsync(Student student, CancellationToken ct = default)
@@ -47,3 +50,5 @@ namespace Infrastructure.Repositories
         }
     }
 }
+
+

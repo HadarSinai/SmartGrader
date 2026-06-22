@@ -4,7 +4,7 @@ using SmartGrader.Application.UseCases.Lessons.CreateLesson;
 using SmartGrader.Application.UseCases.Lessons.UpdateLesson;
 using AutoMapper;
 
-namespace Application.Common.Mapping
+namespace SmartGrader.Application.Common.Mapping
 {
     public class LessonProfile : Profile
     {
@@ -17,7 +17,8 @@ namespace Application.Common.Mapping
             CreateMap<CreateLessonRequestDto, Lesson>();
 
             CreateMap<UpdateLessonRequestDto, Lesson>()
-                .ForMember(d => d.Id, opt => opt.Ignore());
+                .ForMember(d => d.Id, opt => opt.Ignore())
+                .ForMember(d => d.CreatedAt, opt => opt.Ignore());
 
         }
     }

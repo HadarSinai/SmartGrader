@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Abstractions
+namespace SmartGrader.Domain.Abstractions
 {
     public interface IStudentRepository
     {

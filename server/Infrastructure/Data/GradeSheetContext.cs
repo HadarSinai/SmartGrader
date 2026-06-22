@@ -1,10 +1,8 @@
 ﻿
 using SmartGrader.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using SmartGrader.Application.Common.Exceptions;
-using SmartGrader.Domain.Entities;
 
-namespace Infrastructure.Data
+namespace SmartGrader.Infrastructure.Data
 {
     public class GradeSheetContext : DbContext
     {
@@ -46,29 +44,5 @@ namespace Infrastructure.Data
 
         }
 
-        // 👇 זה החלק החדש – טיפול בשגיאת UNIQUE
-        public override async Task<int> SaveChangesAsync(
-            CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await base.SaveChangesAsync(cancellationToken);
-    }
-            catch (DbUpdateException ex)
-            {
-                // בודקים אם השגיאה קשורה ל-UNIQUE / constraint
-                var message = ex.InnerException?.Message ?? ex.Message;
-
-                if (message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase) ||
-                    message.Contains("constraint failed", StringComparison.OrdinalIgnoreCase))
-                {
-                    // זורקים שגיאה לוגית שלנו – המידלוור יתפוס ויחזיר 409
-                    throw new UniqueConstraintException("Duplicate value – record already exists.");
-}
-
-                // אם זו לא שגיאת UNIQUE – ממשיכים כרגיל
-                throw;
-            }
-        }
     }
 }

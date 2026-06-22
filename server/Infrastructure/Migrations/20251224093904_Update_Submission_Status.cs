@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Infrastructure.Migrations
+namespace SmartGrader.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class Update_Submission_Status : Migration

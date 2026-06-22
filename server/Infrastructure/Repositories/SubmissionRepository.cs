@@ -1,4 +1,4 @@
-﻿using Infrastructure.Data;
+﻿
 using Microsoft.EntityFrameworkCore;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
@@ -8,7 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Repositories
+using SmartGrader.Infrastructure.Data;
+
+namespace SmartGrader.Infrastructure.Repositories
 {
     public class SubmissionRepository : ISubmissionRepository
     {
@@ -63,3 +65,5 @@ namespace Infrastructure.Repositories
         }
     }
 }
+
+
