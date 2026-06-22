@@ -1,0 +1,313 @@
+<section class="sg-page">
+  <div class="grid align-items-start pt-3 pb-5 lg:flex-row-reverse">
+    <!-- Main table area -->
+    <div class="col-12 lg:col-9">
+      <p-card styleClass="sg-card">
+        <ng-template pTemplate="header">
+          <div
+            class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
+          >
+            <div class="sg-title">
+              <div class="sg-h1">סטודנטים</div>
+              <div class="sg-h2">ניהול פרופילי תלמידים ומעקב אחר ביצועים</div>
+            </div>
+
+            <span class="p-input-icon-right sg-search">
+              <i class="pi pi-search" aria-hidden="true"></i>
+              <input
+                pInputText
+                type="text"
+                [(ngModel)]="query"
+                placeholder="חיפוש תלמידים..."
+                aria-label="חיפוש תלמידים"
+              />
+            </span>
+          </div>
+
+          <!-- Active filters (Figma-like chips) -->
+          <div class="sg-active-filters px-4 pb-3" aria-label="מסננים פעילים">
+            <p-chip
+              *ngIf="query.trim()"
+              label="שם: {{ query.trim() }}"
+              [removable]="true"
+              (onRemove)="query = ''"
+            ></p-chip>
+            <p-chip
+              *ngIf="classFilter"
+              label="כיתה: {{ classFilter }}"
+              [removable]="true"
+              (onRemove)="classFilter = null"
+            ></p-chip>
+            <p-chip
+              *ngIf="gradeMin !== 0"
+              label="ממוצע: {{ gradeMin }}%+"
+              [removable]="true"
+              (onRemove)="gradeMin = 0"
+            ></p-chip>
+          </div>
+        </ng-template>
+
+        <div class="sg-table-wrap">
+          <p-table
+            #dt
+            [value]="students"
+            [loading]="loading"
+            [rows]="rows"
+            [rowsPerPageOptions]="[5, 10, 40, 50]"
+            responsiveLayout="scroll"
+            styleClass="sg-table"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th class="text-center">שם התלמיד/ה</th>
+                <th class="text-center">כיתה</th>
+                <th class="text-center">ממוצע ציון</th>
+                <th class="text-center">נוכחות</th>
+                <th class="text-center">הוגש בזמן</th>
+                <th class="text-center">נקודות</th>
+                <th class="text-center">סטטוס</th>
+                <th class="text-center">פעולות</th>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-student>
+              <tr>
+                <!-- RTL order (right-to-left) -->
+                <td>
+                  <div
+                    class="flex align-items-center justify-content-between gap-3"
+                  >
+                    <div class="font-bold text-color">
+                      {{ student.fullName || "—" }}
+                    </div>
+                  </div>
+                </td>
+
+                <td class="text-center">
+                  <p-tag
+                    [value]="student.className || '—'"
+                    styleClass="sg-class-tag"
+                  ></p-tag>
+                </td>
+
+                <td class="text-center">
+                  <p-knob
+                    [readonly]="true"
+                    [size]="58"
+                    [min]="0"
+                    [max]="100"
+                    [value]="student.gradeAvg"
+                    valueTemplate=""
+                    aria-label="ממוצע ציון"
+                  ></p-knob>
+                </td>
+
+                <td class="text-center">
+                  <p-knob
+                    [readonly]="true"
+                    [size]="46"
+                    [min]="0"
+                    [max]="100"
+                    [value]="student.attendance"
+                    valueTemplate=""
+                    aria-label="נוכחות"
+                  ></p-knob>
+                </td>
+
+                <td class="text-center">
+                  <div class="sg-frac" aria-label="הוגש בזמן">
+                    <div class="sg-frac-top">
+                      {{ student.onTimeFraction.a }}
+                    </div>
+                    <div class="sg-frac-line"></div>
+                    <div class="sg-frac-bot">
+                      {{ student.onTimeFraction.b }}
+                    </div>
+                  </div>
+                </td>
+
+                <td class="text-center">
+                  <div
+                    class="flex align-items-center justify-content-center gap-2 font-bold text-color"
+                  >
+                    <i
+                      class="pi pi-star-fill sg-icon-accent"
+                      aria-hidden="true"
+                    ></i>
+                    <span>0</span>
+                  </div>
+                </td>
+
+                <td class="text-center">
+                  <div class="flex justify-content-center">
+                    <i
+                      class="pi pi-check-circle sg-icon-success"
+                      aria-hidden="true"
+                    ></i>
+                  </div>
+                </td>
+
+                <td class="text-center">
+                  <div class="flex justify-content-center gap-1">
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      [text]="true"
+                      aria-label="מחיקת סטודנט"
+                      (onClick)="confirmDelete(student)"
+                    ></p-button>
+
+                    <p-button
+                      icon="pi pi-pencil"
+                      [text]="true"
+                      aria-label="עריכת סטודנט"
+                      (onClick)="navigateToEdit(student.id)"
+                    ></p-button>
+
+                    <p-button
+                      icon="pi pi-eye"
+                      [text]="true"
+                      aria-label="צפייה בהגשות"
+                      (onClick)="viewSubmissions(student.id)"
+                    ></p-button>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td
+                  colspan="8"
+                  class="text-center px-3 py-6 text-color-secondary"
+                >
+                  לא נמצאו סטודנטים, תרצו להוסיף סטודנטים חדשים?
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+
+        <ng-template pTemplate="footer">
+          <div class="sg-footer-actions">
+            <div class="flex align-items-center gap-2 flex-wrap">
+              <p-button
+                label="סטודנט חדש"
+                icon="pi pi-plus"
+                styleClass="sg-btn-primary"
+                (onClick)="navigateToCreate()"
+              ></p-button>
+              <p-button
+                label="ייצוא"
+                icon="pi pi-download"
+                [outlined]="true"
+                styleClass="sg-btn-secondary"
+                aria-label="ייצוא"
+              ></p-button>
+            </div>
+
+            <!-- Center navigation buttons (like in Figma) -->
+            <div
+              class="flex-1 flex align-items-center justify-content-center gap-2"
+              aria-label="ניווט עמודים"
+            >
+              <p-button
+                label="הקודם"
+                icon="pi pi-arrow-right"
+                [outlined]="true"
+                styleClass="sg-btn-mini"
+                aria-label="הקודם"
+              ></p-button>
+              <p-button
+                icon="pi pi-arrow-left"
+                label="הבא"
+                [outlined]="true"
+                styleClass="  flex-row-reverse  ms-auto sg-btn-mini"
+                aria-label="הבא"
+              ></p-button>
+            </div>
+
+            <div class="flex align-items-center gap-2">
+              <p-dropdown
+                [options]="pageSizeOptions"
+                [(ngModel)]="rows"
+                optionLabel="label"
+                optionValue="value"
+                aria-label="מספר תלמידים לתצוגה"
+                placeholder="6 תלמידים לתצוגה"
+              ></p-dropdown>
+            </div>
+          </div>
+        </ng-template>
+      </p-card>
+    </div>
+
+    <!-- Right filters panel (Figma) -->
+    <aside class="col-12 lg:col-3" aria-label="סינון ומיון">
+      <p-card styleClass="sg-filters-card">
+        <ng-template pTemplate="header">
+          <div class="sg-filters-title">
+            <span>מיון לפי</span>
+            <i class="pi pi-sliders-h" aria-hidden="true"></i>
+          </div>
+        </ng-template>
+
+        <div class="sg-filter-block">
+          <label class="sg-label" for="classFilter">כיתה</label>
+          <p-dropdown
+            inputId="classFilter"
+            [options]="classOptions"
+            [(ngModel)]="classFilter"
+            optionLabel="label"
+            optionValue="value"
+            aria-label="סינון לפי כיתה"
+          ></p-dropdown>
+        </div>
+
+        <div class="sg-filter-block">
+          <label class="sg-label" for="minGrade">ממוצע ציון</label>
+          <div class="sg-slider-row">
+            <label class="sr-only" for="minGrade">סינון ממוצע ציון</label>
+            <p-slider
+              inputId="minGrade"
+              [(ngModel)]="gradeMin"
+              [min]="0"
+              [max]="100"
+              [step]="1"
+              [range]="false"
+              styleClass="sg-grade-slider"
+              ariaLabel="סינון ממוצע ציון מינימלי"
+            ></p-slider>
+            <div class="sg-slider-value" aria-live="polite">
+              {{ gradeMin }}%
+            </div>
+          </div>
+          <div class="sg-hint">לדוגמה: 80% ומעלה</div>
+        </div>
+
+        <div class="sg-filter-block">
+          <label class="sg-label" for="studentName">שם התלמיד/ה</label>
+          <input
+            id="studentName"
+            pInputText
+            type="text"
+            [(ngModel)]="query"
+            placeholder="חיפוש לפי שם"
+            aria-label="חיפוש לפי שם"
+          />
+        </div>
+
+        <div class="sg-filter-block">
+          <p-button
+            label="איפוס"
+            [text]="true"
+            (onClick)="resetFilters()"
+            aria-label="איפוס סינון"
+          ></p-button>
+        </div>
+      </p-card>
+    </aside>
+  </div>
+</section>
+
+<p-confirmDialog></p-confirmDialog>

@@ -1,0 +1,315 @@
+import { CommonModule } from "@angular/common";
+import { Component, OnInit, inject } from "@angular/core";
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
+import { ActivatedRoute, Router } from "@angular/router";
+import { AssignmentResponseDto } from "@models/assignment.model";
+import { LessonResponseDto } from "@models/lesson.model";
+import {
+  CreateSubmissionRequestDto,
+  SubmissionResponseDto,
+  UpdateSubmissionRequestDto,
+} from "@models/submission.model";
+import { AssignmentsService } from "@services/assignments.service";
+import { LessonsService } from "@services/lessons.service";
+import { SubmissionsService } from "@services/submissions.service";
+import { MessageService } from "primeng/api";
+import { ButtonModule } from "primeng/button";
+import { CardModule } from "primeng/card";
+import { DropdownModule } from "primeng/dropdown";
+import { EditorModule } from "primeng/editor";
+import { InputNumberModule } from "primeng/inputnumber";
+
+interface AssignmentOption {
+  label: string;
+  value: number;
+}
+
+@Component({
+  selector: "app-submission-form",
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    CardModule,
+    InputNumberModule,
+    DropdownModule,
+    ButtonModule,
+    EditorModule,
+  ],
+  template: `
+    <section class="sg-page">
+      <div class="pt-3 pb-5">
+        <p-card styleClass="sg-card sg-form-card">
+          <ng-template pTemplate="header">
+            <div
+              class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
+            >
+              <div class="sg-title">
+                <div class="sg-h1">
+                  {{ isEditMode ? "עריכת הגשה" : "הגשה חדשה" }}
+                </div>
+                <div class="sg-h2">בחירת תרגיל והדבקת קוד</div>
+              </div>
+            </div>
+          </ng-template>
+
+          <form class="px-4 pb-4" [formGroup]="form" (ngSubmit)="onSubmit()">
+            <div class="formgrid grid">
+              <div class="field col-12 md:col-6" *ngIf="!isEditMode">
+                <label class="block font-bold mb-2" for="lesson">שיעור *</label>
+                <p-dropdown
+                  inputId="lesson"
+                  styleClass="w-full"
+                  [options]="lessonOptions"
+                  formControlName="lessonId"
+                  placeholder="בחירת שיעור"
+                  (onChange)="onLessonChange()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="true"
+                >
+                </p-dropdown>
+              </div>
+
+              <div class="field col-12 md:col-6" *ngIf="!isEditMode">
+                <label class="block font-bold mb-2" for="assignment"
+                  >תרגיל *</label
+                >
+                <p-dropdown
+                  inputId="assignment"
+                  styleClass="w-full"
+                  [options]="assignmentOptions"
+                  formControlName="assignmentId"
+                  placeholder="בחירת תרגיל"
+                  optionLabel="label"
+                  optionValue="value"
+                  [disabled]="!form.get('lessonId')?.value"
+                  [showClear]="true"
+                >
+                </p-dropdown>
+              </div>
+
+              <div class="field col-12">
+                <label class="block font-bold mb-2" for="sourceCode"
+                  >קוד *</label
+                >
+                <div class="sg-code-editor">
+                  <p-editor
+                    formControlName="sourceCode"
+                    [style]="{ height: '400px' }"
+                    placeholder="הדביקי כאן קוד..."
+                  >
+                    <ng-template pTemplate="header">
+                      <span class="ql-formats">
+                        <button type="button" class="ql-code-block"></button>
+                        <button type="button" class="ql-clean"></button>
+                      </span>
+                    </ng-template>
+                  </p-editor>
+                </div>
+              </div>
+            </div>
+
+            <div class="sg-form-actions">
+              <p-button
+                label="ביטול"
+                severity="secondary"
+                [outlined]="true"
+                (onClick)="onCancel()"
+                type="button"
+              ></p-button>
+              <p-button
+                [label]="isEditMode ? 'שמירה' : 'יצירה'"
+                type="submit"
+                styleClass="sg-btn-primary"
+                [loading]="loading"
+                [disabled]="form.invalid"
+              ></p-button>
+            </div>
+          </form>
+        </p-card>
+      </div>
+    </section>
+  `,
+  styles: [],
+})
+export class SubmissionFormComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly submissionsService = inject(SubmissionsService);
+  private readonly assignmentsService = inject(AssignmentsService);
+  private readonly lessonsService = inject(LessonsService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly messageService = inject(MessageService);
+
+  form: FormGroup;
+  loading = false;
+  isEditMode = false;
+  studentId!: number;
+  submissionId: number | null = null;
+
+  lessons: LessonResponseDto[] = [];
+  lessonOptions: AssignmentOption[] = [];
+  assignments: AssignmentResponseDto[] = [];
+  assignmentOptions: AssignmentOption[] = [];
+
+  constructor() {
+    this.form = this.fb.group({
+      lessonId: [null],
+      assignmentId: [null, Validators.required],
+      sourceCode: ["", Validators.required],
+    });
+  }
+
+  ngOnInit(): void {
+    const studentIdParam = this.route.snapshot.paramMap.get("studentId");
+    const submissionIdParam = this.route.snapshot.paramMap.get("submissionId");
+
+    if (studentIdParam) {
+      this.studentId = parseInt(studentIdParam, 10);
+    }
+
+    if (submissionIdParam) {
+      this.isEditMode = true;
+      this.submissionId = parseInt(submissionIdParam, 10);
+      this.loadSubmission(this.studentId, this.submissionId);
+    } else {
+      this.loadLessons();
+    }
+  }
+
+  loadLessons(): void {
+    this.lessonsService.getAll().subscribe({
+      next: (lessons: LessonResponseDto[]) => {
+        this.lessons = lessons;
+        this.lessonOptions = lessons.map((l) => ({
+          label: l.name || "Unnamed",
+          value: l.id,
+        }));
+      },
+      error: (_error: unknown) => {
+        this.messageService.add({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to load lessons",
+        });
+      },
+    });
+  }
+
+  onLessonChange(): void {
+    const lessonId = this.form.get("lessonId")?.value;
+    if (lessonId) {
+      this.form.patchValue({ assignmentId: null });
+      this.assignmentsService.getByLesson(lessonId).subscribe({
+        next: (assignments: AssignmentResponseDto[]) => {
+          this.assignments = assignments;
+          this.assignmentOptions = assignments.map(
+            (a: AssignmentResponseDto) => ({
+              label: a.title || "Unnamed",
+              value: a.id,
+            }),
+          );
+        },
+        error: (_error: unknown) => {
+          this.messageService.add({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to load assignments",
+          });
+        },
+      });
+    } else {
+      this.assignmentOptions = [];
+    }
+  }
+
+  loadSubmission(studentId: number, submissionId: number): void {
+    this.loading = true;
+    this.submissionsService.getById(studentId, submissionId).subscribe({
+      next: (submission: SubmissionResponseDto) => {
+        this.form.patchValue({
+          sourceCode: submission.sourceCode,
+        });
+        this.loading = false;
+      },
+      error: (_error: unknown) => {
+        this.messageService.add({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to load submission",
+        });
+        this.loading = false;
+      },
+    });
+  }
+
+  onSubmit(): void {
+    if (this.form.invalid) {
+      return;
+    }
+
+    this.loading = true;
+    const formValue = this.form.value;
+
+    if (this.isEditMode) {
+      const request: UpdateSubmissionRequestDto = {
+        sourceCode: formValue.sourceCode,
+      };
+
+      this.submissionsService
+        .update(this.studentId, this.submissionId!, request)
+        .subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: "success",
+              summary: "Success",
+              detail: "Submission updated successfully",
+            });
+            this.router.navigate(["/students", this.studentId, "submissions"]);
+          },
+          error: (_error: unknown) => {
+            this.messageService.add({
+              severity: "error",
+              summary: "Error",
+              detail: "Failed to update submission",
+            });
+            this.loading = false;
+          },
+        });
+    } else {
+      const request: CreateSubmissionRequestDto = {
+        assignmentId: formValue.assignmentId,
+        sourceCode: formValue.sourceCode,
+      };
+
+      this.submissionsService.create(this.studentId, request).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: "success",
+            summary: "Success",
+            detail: "Submission created successfully",
+          });
+          this.router.navigate(["/students", this.studentId, "submissions"]);
+        },
+        error: (_error: unknown) => {
+          this.messageService.add({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to create submission",
+          });
+          this.loading = false;
+        },
+      });
+    }
+  }
+
+  onCancel(): void {
+    this.router.navigate(["/students", this.studentId, "submissions"]);
+  }
+}

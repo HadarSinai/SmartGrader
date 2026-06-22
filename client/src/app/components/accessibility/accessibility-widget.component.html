@@ -1,0 +1,62 @@
+<button
+  pButton
+  icon="pi pi-universal-access"
+  class="a11y-fab"
+  type="button"
+  (click)="visible = true"
+  aria-label="Open accessibility menu">
+</button>
+
+<p-sidebar [(visible)]="visible" position="right" styleClass="a11y-sidebar">
+  <div class="flex flex-column gap-3">
+    <div class="flex align-items-center justify-content-between">
+      <h3 class="m-0">נגישות</h3>
+      <p-button label="איפוס" icon="pi pi-refresh" [text]="true" (onClick)="reset()"></p-button>
+    </div>
+
+    <div class="flex align-items-center justify-content-between">
+      <div>
+        <div class="font-semibold">מצב כהה</div>
+        <small class="text-500">נוחות בעבודה בלילה</small>
+      </div>
+      <p-inputSwitch [(ngModel)]="isDark" (onChange)="applyTheme()"></p-inputSwitch>
+    </div>
+
+    <div class="flex align-items-center justify-content-between">
+      <div>
+        <div class="font-semibold">טקסט גדול</div>
+        <small class="text-500">הגדלת גופן בכל המערכת</small>
+      </div>
+      <p-inputSwitch [(ngModel)]="largeText" (onChange)="applyFontScale()"></p-inputSwitch>
+    </div>
+
+    <div class="flex align-items-center justify-content-between">
+      <div>
+        <div class="font-semibold">הפחתת אנימציות</div>
+        <small class="text-500">מינימום תנועה ואפקטים</small>
+      </div>
+      <p-inputSwitch [(ngModel)]="reduceMotion" (onChange)="applyReducedMotion()"></p-inputSwitch>
+    </div>
+
+    <div class="border-top-1 pt-3" style="border-color: var(--app-border);">
+      <label class="font-semibold block mb-2">גודל טקסט מדויק</label>
+      <p-slider
+        [min]="1"
+        [max]="1.4"
+        [step]="0.1"
+        [ngModel]="a11y.state.scale"
+        (onChange)="a11y.update({ scale: $event.value })">
+      </p-slider>
+    </div>
+
+    <div class="flex align-items-center justify-content-between">
+      <span class="font-semibold">ניגודיות גבוהה</span>
+      <p-inputSwitch [ngModel]="a11y.state.highContrast" (onChange)="a11y.update({ highContrast: $event.checked })"></p-inputSwitch>
+    </div>
+
+    <div class="flex align-items-center justify-content-between">
+      <span class="font-semibold">הדגשת קישורים</span>
+      <p-inputSwitch [ngModel]="a11y.state.highlightLinks" (onChange)="a11y.update({ highlightLinks: $event.checked })"></p-inputSwitch>
+    </div>
+  </div>
+</p-sidebar>

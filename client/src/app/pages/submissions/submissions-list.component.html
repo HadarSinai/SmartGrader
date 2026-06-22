@@ -1,0 +1,202 @@
+<section class="sg-page">
+  <div class="pt-3 pb-5">
+    <p-card styleClass="sg-card">
+      <ng-template pTemplate="header">
+        <div
+          class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
+        >
+          <div class="sg-title">
+            <div class="sg-h1">הגשות</div>
+            <div class="sg-h2">מעקב, צפייה ועריכה של הגשות סטודנטים</div>
+          </div>
+
+          <div class="flex align-items-center gap-2 flex-wrap">
+            <p-button
+              label="חזרה לסטודנטים"
+              icon="pi pi-arrow-left"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="navigateToStudents()"
+            >
+            </p-button>
+
+            <p-button
+              label="הגשה חדשה"
+              icon="pi pi-plus"
+              styleClass="sg-btn-primary"
+              (onClick)="navigateToCreate()"
+            >
+            </p-button>
+          </div>
+        </div>
+      </ng-template>
+
+      <!-- Desktop table -->
+      <div class="sg-table-wrap desktop-only">
+        <p-table
+          [value]="submissions"
+          [loading]="loading"
+          responsiveLayout="scroll"
+          [paginator]="true"
+          [rows]="10"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          styleClass="sg-table"
+        >
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="7">
+                <div
+                  class="flex flex-column align-items-center justify-content-center py-6 text-color-secondary"
+                >
+                  <i class="pi pi-inbox text-4xl mb-3" aria-hidden="true"></i>
+                  <div class="font-bold text-lg mb-2 text-color">
+                    עוד אין הגשות
+                  </div>
+                  <p-button
+                    label="הגשה חדשה"
+                    icon="pi pi-plus"
+                    styleClass="sg-btn-primary"
+                    (onClick)="navigateToCreate()"
+                  ></p-button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th>תרגיל</th>
+              <th>נשלח</th>
+              <th>סטטוס</th>
+              <th>ציון</th>
+              <th style="width: 9rem">פעולות</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-submission>
+            <tr>
+              <td>
+                <div class="flex flex-column gap-1">
+                  <strong>{{
+                    submission.assignmentName ||
+                      "תרגיל #" + submission.assignmentId
+                  }}</strong>
+                  <div
+                    class="sg-code-preview mt-2"
+                    *ngIf="submission.codePreview"
+                  >
+                    <code>{{ submission.codePreview }}</code>
+                  </div>
+                </div>
+              </td>
+
+              <td>
+                <div
+                  class="inline-flex align-items-center gap-2 text-color-secondary"
+                >
+                  <i class="pi pi-calendar"></i>
+                  <span>{{ submission.submittedAt | date: "short" }}</span>
+                </div>
+              </td>
+
+              <td>
+                <p-tag
+                  [severity]="statusSeverity(submission.status)"
+                  [value]="submission.status || 'לא ידוע'"
+                ></p-tag>
+              </td>
+
+              <td>
+                <span
+                  class="font-semibold"
+                  [ngClass]="
+                    submission.score === null || submission.score === undefined
+                      ? 'opacity-70 font-normal'
+                      : ''
+                  "
+                >
+                  {{ submission.score ?? "—" }}
+                </span>
+              </td>
+
+              <td class="flex justify-content-end gap-1">
+                <p-button
+                  icon="pi pi-eye"
+                  [text]="true"
+                  pTooltip="צפייה"
+                  (onClick)="navigateToView(submission.id)"
+                ></p-button>
+                <p-button
+                  icon="pi pi-pencil"
+                  [text]="true"
+                  pTooltip="עריכה"
+                  (onClick)="navigateToEdit(submission.id)"
+                ></p-button>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="mobile-only px-3 pb-3">
+        <p-dataView [value]="submissions" [loading]="loading" layout="list">
+          <ng-template pTemplate="empty">
+            <div
+              class="flex flex-column align-items-center justify-content-center py-6 text-color-secondary"
+            >
+              <i class="pi pi-inbox text-4xl mb-3" aria-hidden="true"></i>
+              <div class="font-bold text-lg mb-2 text-color">עוד אין הגשות</div>
+              <p-button
+                label="הגשה חדשה"
+                icon="pi pi-plus"
+                styleClass="sg-btn-primary"
+                (onClick)="navigateToCreate()"
+              ></p-button>
+            </div>
+          </ng-template>
+
+          <ng-template pTemplate="list" let-items>
+            <div class="card-list">
+              <div *ngFor="let item of items" class="mobile-card">
+                <div class="mobile-card__header">
+                  <div class="mobile-card__title">
+                    {{ item.assignmentName || "תרגיל #" + item.assignmentId }}
+                  </div>
+                  <p-tag
+                    [severity]="statusSeverity(item.status)"
+                    [value]="item.status || 'לא ידוע'"
+                  ></p-tag>
+                </div>
+
+                <div class="mobile-card__meta">
+                  <div>
+                    <span class="label">נשלח</span>
+                    {{ item.submittedAt | date: "short" }}
+                  </div>
+                  <div>
+                    <span class="label">ציון</span> {{ item.score ?? "—" }}
+                  </div>
+                </div>
+
+                <div class="mobile-card__actions">
+                  <p-button
+                    label="צפייה"
+                    icon="pi pi-eye"
+                    [outlined]="true"
+                    (onClick)="navigateToView(item.id)"
+                  ></p-button>
+                  <p-button
+                    icon="pi pi-pencil"
+                    [text]="true"
+                    (onClick)="navigateToEdit(item.id)"
+                  ></p-button>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </p-dataView>
+      </div>
+    </p-card>
+  </div>
+</section>

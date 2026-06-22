@@ -1,0 +1,26 @@
+.a11y-fab{
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  z-index: 2000;
+  box-shadow: 0 12px 28px rgba(0,0,0,.18);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.a11y-fab:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 16px 36px rgba(0,0,0,.22);
+}
+
+.a11y-sidebar{ width: 22rem; }
+.a11y-title{ margin-bottom: 1rem; }
+
+.a11y-block{ margin-bottom: 1.25rem; }
+.a11y-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: .65rem 0;
+}

@@ -1,0 +1,18 @@
+# .NET
+bin/
+obj/
+*.db
+*.db-shm
+*.db-wal
+appsettings.Development.json
+.vs/
+*.user
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+
+# Env
+.env
+.env.local
