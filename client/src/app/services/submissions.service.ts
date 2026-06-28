@@ -32,7 +32,7 @@ export class SubmissionsService {
         this.api.url(`/api/students/${a}/submissions/${b}`)
       );
     }
-    return this.api.http.get<SubmissionResponseDto>(this.api.url(`/api/submissions/${a}`));
+    return this.api.http.get<SubmissionResponseDto>(this.api.url(`/api/students/submissions/${a}`));
   }
 
   create(studentId: number, request: CreateSubmissionRequestDto): Observable<SubmissionResponseDto> {
@@ -57,12 +57,12 @@ export class SubmissionsService {
   getRecent(limit: number): Observable<SubmissionResponseDto[]> {
     // If your backend uses a different query name, adjust here.
     return this.api.http.get<SubmissionResponseDto[]>(
-      this.api.url(`/api/submissions/recent?limit=${limit}`)
+      this.api.url(`/api/students/submissions/recent?limit=${limit}`)
     );
   }
 
   // Flat endpoints (optional)
-  getAll(): Observable<SubmissionResponseDto[]> {
-    return this.api.http.get<SubmissionResponseDto[]>(this.api.url('/api/submissions'));
+  getAll(studentId: number): Observable<SubmissionResponseDto[]> {
+    return this.api.http.get<SubmissionResponseDto[]>(this.api.url(`/api/students/${studentId}/submissions`));
   }
 }

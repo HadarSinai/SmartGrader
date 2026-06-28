@@ -200,8 +200,8 @@ export class DashboardComponent implements OnInit {
     Promise.all([
       this.lessonsService.getAll().toPromise(),
       this.studentsService.getAll().toPromise(),
-      this.assignmentsService.getAll().toPromise(),
-      this.submissionsService.getAll().toPromise(),
+      this.assignmentsService.getAll(1).toPromise(),
+      this.submissionsService.getAll(1).toPromise(),
     ]).then(([lessons, students, assignments, submissions]) => {
       const totalLessons = lessons?.length || 0;
       const totalStudents = students?.length || 0;
