@@ -13,6 +13,7 @@
 
         public string Status { get; set; } = string.Empty;
         public string? AiError { get; set; }
+        public string? CompileError { get; set; }
 
         public DateTime SubmittedAt { get; set; }
 

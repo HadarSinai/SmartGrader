@@ -161,3 +161,33 @@ Step 3: MarkDone(score, aiJson) → SaveChanges
 - Submit code with a syntax error → `Status = CompilationFailed`, `CompileError` is populated
 - Submit valid code → `Status = Done`, `Score` reflects real test results
 - `passedTests = 0, totalTests = 0` TODO comment is fully removed
+
+---
+
+## Implementation Log
+
+**Date:** 2026-06-28  
+**Status:** ✅ Completed — `dotnet build` passed (4/4 projects succeeded, 0 errors, 0 warnings)
+
+### Changes Made
+
+| File                                        | Change                                                                                        |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `server/Api/BackgroundServices/AiWorker.cs` | Replaced all commented-out legacy code with new `IGradeSubmissionJob` implementation          |
+| `server/Api/Program.cs`                     | Added `using` statements and registered `services.AddScoped<IGradeSubmissionJob, AiWorker>()` |
+
+### Notes
+
+- `SubmissionRepository.GetByIdAsync` already included `.Include(s => s.Assignment)` — **no change needed**.
+- `Assignment.Tests` is a `[NotMapped]` computed property that deserializes from `TestsJson` — no extra EF include required.
+- `AiWorker` is `Scoped` (not Singleton) because it depends on scoped EF Core services (`ISubmissionRepository`, `IUnitOfWork`).
+- Hangfire resolves `IGradeSubmissionJob` per-job invocation via the DI container, so `AddScoped` is correct.
+
+### Build Output
+
+```
+Domain     net8.0  succeeded
+Application net8.0 succeeded
+Infrastructure net8.0 succeeded
+Api        net8.0  succeeded (1.5s total)
+```

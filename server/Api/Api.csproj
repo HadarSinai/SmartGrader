@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
      <AssemblyName>Api</AssemblyName>
   <RootNamespace>Api</RootNamespace>
+    <UserSecretsId>50a3abe5-2c61-4c38-a83e-8ea0eefaea34</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.10">

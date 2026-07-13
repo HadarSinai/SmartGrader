@@ -11,7 +11,6 @@ import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { DataViewModule } from "primeng/dataview";
 import { DropdownModule } from "primeng/dropdown";
 import { InputTextModule } from "primeng/inputtext";
-import { KnobModule } from "primeng/knob";
 import { RatingModule } from "primeng/rating";
 import { SliderModule } from "primeng/slider";
 import { TableModule } from "primeng/table";
@@ -19,13 +18,6 @@ import { TagModule } from "primeng/tag";
 
 import { StudentResponseDto } from "@models/student.model";
 import { StudentsService } from "@services/students.service";
-
-type StudentRowVm = StudentResponseDto & {
-  gradeAvg: number; // 0-100
-  attendance: number; // 0-100
-  onTimeFraction: { a: number; b: number };
-  stars: number; // 0-5
-};
 
 @Component({
   selector: "app-students-list",
@@ -40,7 +32,6 @@ type StudentRowVm = StudentResponseDto & {
     ConfirmDialogModule,
     InputTextModule,
     DropdownModule,
-    KnobModule,
     RatingModule,
     TagModule,
     SliderModule,
@@ -56,7 +47,7 @@ export class StudentsListComponent implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
 
-  students: StudentRowVm[] = [];
+  students: StudentResponseDto[] = [];
   loading = false;
 
   // Filters (right panel)
@@ -91,7 +82,7 @@ export class StudentsListComponent implements OnInit {
 
     this.studentsService.getAll().subscribe({
       next: (data) => {
-        this.students = data.map((s, idx) => this.toVm(s, idx));
+        this.students = data;
         this.loading = false;
       },
       error: () => {
@@ -103,23 +94,6 @@ export class StudentsListComponent implements OnInit {
         this.loading = false;
       },
     });
-  }
-
-  private toVm(s: StudentResponseDto, idx: number): StudentRowVm {
-    // Demo values (until backend provides real metrics)
-    const gradeAvg = [0, 70, 0, 100, 0][idx % 5] ?? 0;
-    const attendance = [0, 0, 0, 100, 0][idx % 5] ?? 0;
-    const onTimeA = [12, 12, 0, 1, 0][idx % 5] ?? 0;
-    const onTimeB = [40, 40, 30, 30, 30][idx % 5] ?? 30;
-    const stars = [0, 0, 0, 0, 0][idx % 5] ?? 0;
-
-    return {
-      ...s,
-      gradeAvg,
-      attendance,
-      onTimeFraction: { a: onTimeA, b: onTimeB },
-      stars,
-    };
   }
 
   navigateToCreate(): void {
@@ -136,10 +110,10 @@ export class StudentsListComponent implements OnInit {
 
   confirmDelete(student: StudentResponseDto): void {
     this.confirmationService.confirm({
-      message: `בטוחה שברצונך למחוק את "${student.fullName ?? ""}"?`,
+      message: `האם למחוק את "${student.fullName ?? ""}"? לא ניתן לשחזר פעולה זו.`,
       header: "אישור מחיקה",
       icon: "pi pi-exclamation-triangle",
-      acceptLabel: "מחקי",
+      acceptLabel: "מחיקה",
       rejectLabel: "ביטול",
       accept: () => this.deleteStudent(student.id),
     });

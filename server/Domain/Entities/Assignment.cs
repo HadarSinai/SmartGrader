@@ -11,6 +11,7 @@ namespace SmartGrader.Domain.Entities
         public string? Description { get; set; }
         public bool IsBonus { get; set; }
         public double BonusValue { get; set; }
+        public string MethodName { get; set; } = "";
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         //הכנסת השאלה
         public string TestsJson { get; private set; } = "[]";

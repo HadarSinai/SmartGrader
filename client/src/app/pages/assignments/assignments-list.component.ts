@@ -2,7 +2,6 @@ import { CommonModule } from "@angular/common";
 import { Component, OnInit, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
-import { AssignmentExtended } from "@models/assignment-extended.model";
 import { AssignmentResponseDto } from "@models/assignment.model";
 import { AssignmentsService } from "@services/assignments.service";
 import { ConfirmationService, MessageService } from "primeng/api";
@@ -108,24 +107,6 @@ import { TooltipModule } from "primeng/tooltip";
                   <th pSortableColumn="title" class="text-center">
                     שם <p-sortIcon field="title"></p-sortIcon>
                   </th>
-                  <th pSortableColumn="difficulty" class="text-center">
-                    רמה <p-sortIcon field="difficulty"></p-sortIcon>
-                  </th>
-                  <th pSortableColumn="status" class="text-center">
-                    סטטוס <p-sortIcon field="status"></p-sortIcon>
-                  </th>
-                  <th pSortableColumn="dueDate" class="text-center">
-                    דדליין <p-sortIcon field="dueDate"></p-sortIcon>
-                  </th>
-                  <th pSortableColumn="maxScore" class="text-center">
-                    נקודות <p-sortIcon field="maxScore"></p-sortIcon>
-                  </th>
-                  <th pSortableColumn="completionRate" class="text-center">
-                    השלמה <p-sortIcon field="completionRate"></p-sortIcon>
-                  </th>
-                  <th pSortableColumn="averageScore" class="text-center">
-                    ממוצע <p-sortIcon field="averageScore"></p-sortIcon>
-                  </th>
                   <th class="text-center">בדיקות/הגשות</th>
                   <th class="text-center" style="width: 10rem">פעולות</th>
                 </tr>
@@ -145,6 +126,12 @@ import { TooltipModule } from "primeng/tooltip";
                           icon="pi pi-star"
                           styleClass="sg-bonus-chip"
                         ></p-chip>
+                        <p-tag
+                          *ngIf="assignment.isBonus"
+                          [value]="'+' + assignment.bonusValue"
+                          severity="success"
+                          styleClass="sg-bonus-tag"
+                        ></p-tag>
                       </div>
                       <div
                         class="text-color-secondary text-sm overflow-hidden text-overflow-ellipsis white-space-nowrap"
@@ -152,78 +139,6 @@ import { TooltipModule } from "primeng/tooltip";
                       >
                         {{ assignment.description }}
                       </div>
-                    </div>
-                  </td>
-
-                  <td class="text-center">
-                    <p-chip
-                      *ngIf="assignment.difficulty"
-                      [label]="assignment.difficulty"
-                      [styleClass]="
-                        'difficulty-' + assignment.difficulty?.toLowerCase()
-                      "
-                    ></p-chip>
-                    <span *ngIf="!assignment.difficulty">—</span>
-                  </td>
-
-                  <td class="text-center">
-                    <p-tag
-                      *ngIf="assignment.status"
-                      [value]="assignment.status"
-                      [severity]="getStatusSeverity(assignment.status)"
-                    ></p-tag>
-                    <span *ngIf="!assignment.status">—</span>
-                  </td>
-
-                  <td class="text-center">
-                    <div
-                      class="inline-flex align-items-center gap-2 text-color-secondary"
-                    >
-                      <i class="pi pi-calendar" aria-hidden="true"></i>
-                      <span>{{ assignment.dueDate | date: "short" }}</span>
-                    </div>
-                  </td>
-
-                  <td class="text-center">
-                    <div class="inline-flex align-items-center gap-2">
-                      <span class="font-bold">{{ assignment.maxScore }}</span>
-                      <span class="text-color-secondary text-sm">pts</span>
-                      <p-tag
-                        *ngIf="assignment.isBonus"
-                        [value]="'+' + assignment.bonusValue"
-                        severity="success"
-                        styleClass="sg-bonus-tag"
-                      ></p-tag>
-                    </div>
-                  </td>
-
-                  <td class="text-center">
-                    <div
-                      class="flex flex-column gap-1"
-                      style="min-width: 120px"
-                    >
-                      <span class="text-sm font-semibold text-color-secondary"
-                        >{{ assignment.completionRate }}%</span
-                      >
-                      <p-progressBar
-                        [value]="assignment.completionRate"
-                        [showValue]="false"
-                        [style]="{ height: '6px' }"
-                      ></p-progressBar>
-                    </div>
-                  </td>
-
-                  <td class="text-center">
-                    <div
-                      class="inline-flex align-items-baseline gap-2 font-semibold"
-                    >
-                      <span
-                        [style.color]="getScoreColor(assignment.averageScore)"
-                        >{{ assignment.averageScore }}</span
-                      >
-                      <span class="text-color-secondary text-sm"
-                        >/ {{ assignment.maxScore }}</span
-                      >
                     </div>
                   </td>
 
@@ -255,6 +170,9 @@ import { TooltipModule } from "primeng/tooltip";
                         [text]="true"
                         pTooltip="עריכה"
                         tooltipPosition="top"
+                        [attr.aria-label]="
+                          'עריכת תרגיל: ' + (assignment.title || '')
+                        "
                         (onClick)="navigateToEdit(assignment.id)"
                       ></p-button>
                       <p-button
@@ -263,6 +181,9 @@ import { TooltipModule } from "primeng/tooltip";
                         severity="danger"
                         pTooltip="מחיקה"
                         tooltipPosition="top"
+                        [attr.aria-label]="
+                          'מחיקת תרגיל: ' + (assignment.title || '')
+                        "
                         (onClick)="confirmDelete(assignment)"
                       ></p-button>
                     </div>
@@ -273,7 +194,7 @@ import { TooltipModule } from "primeng/tooltip";
               <ng-template pTemplate="emptymessage">
                 <tr>
                   <td
-                    colspan="9"
+                    colspan="3"
                     class="text-center px-3 py-6 text-color-secondary"
                   >
                     אין תרגילים להצגה.
@@ -302,13 +223,6 @@ import { TooltipModule } from "primeng/tooltip";
 
                     <div class="mobile-card__meta">
                       <div>
-                        <span class="label">דדליין</span>
-                        {{ item.dueDate | date: "shortDate" }}
-                      </div>
-                      <div>
-                        <span class="label">נקודות</span> {{ item.maxScore }}
-                      </div>
-                      <div>
                         <span class="label">בדיקות</span>
                         {{ item.tests?.length ?? 0 }}
                       </div>
@@ -322,12 +236,14 @@ import { TooltipModule } from "primeng/tooltip";
                       <p-button
                         icon="pi pi-pencil"
                         [text]="true"
+                        [attr.aria-label]="'עריכת תרגיל: ' + (item.title || '')"
                         (onClick)="navigateToEdit(item.id)"
                       ></p-button>
                       <p-button
                         icon="pi pi-trash"
                         severity="danger"
                         [text]="true"
+                        [attr.aria-label]="'מחיקת תרגיל: ' + (item.title || '')"
                         (onClick)="confirmDelete(item)"
                       ></p-button>
                     </div>
@@ -368,13 +284,13 @@ export class AssignmentsListComponent implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
 
-  assignments: AssignmentExtended[] = [];
+  assignments: AssignmentResponseDto[] = [];
   loading = false;
   lessonId!: number;
 
   query = "";
 
-  get filteredAssignments(): AssignmentExtended[] {
+  get filteredAssignments(): AssignmentResponseDto[] {
     const q = this.query.trim().toLowerCase();
     if (!q) return this.assignments;
 
@@ -396,15 +312,15 @@ export class AssignmentsListComponent implements OnInit {
   loadAssignments(): void {
     this.loading = true;
     this.assignmentsService.getByLesson(this.lessonId).subscribe({
-      next: (data: AssignmentExtended[]) => {
+      next: (data: AssignmentResponseDto[]) => {
         this.assignments = data;
         this.loading = false;
       },
       error: (_error: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: "Failed to load assignments",
+          summary: "שגיאה",
+          detail: "טעינת התרגילים נכשלה",
         });
         this.loading = false;
       },
@@ -431,9 +347,11 @@ export class AssignmentsListComponent implements OnInit {
 
   confirmDelete(assignment: AssignmentResponseDto): void {
     this.confirmationService.confirm({
-      message: `Are you sure you want to delete "${assignment.title}"?`,
-      header: "Confirm Delete",
+      message: `האם למחוק את התרגיל "${assignment.title}"? לא ניתן לשחזר פעולה זו.`,
+      header: "אישור מחיקה",
       icon: "pi pi-exclamation-triangle",
+      acceptLabel: "מחיקה",
+      rejectLabel: "ביטול",
       accept: () => this.deleteAssignment(assignment.id),
     });
   }
@@ -443,35 +361,18 @@ export class AssignmentsListComponent implements OnInit {
       next: () => {
         this.messageService.add({
           severity: "success",
-          summary: "Success",
-          detail: "Assignment deleted successfully",
+          summary: "הצלחה",
+          detail: "התרגיל נמחק בהצלחה",
         });
         this.loadAssignments();
       },
       error: (_error: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: "Failed to delete assignment",
+          summary: "שגיאה",
+          detail: "מחיקת התרגיל נכשלה",
         });
       },
     });
-  }
-
-  getStatusSeverity(
-    status: string | undefined,
-  ): "success" | "info" | "warning" | "danger" | "secondary" | "contrast" {
-    if (status === "Closed") return "success";
-    if (status === "Active") return "info";
-    if (status === "Draft") return "warning";
-    return "secondary";
-  }
-
-  getScoreColor(score: number | undefined): string {
-    if (score === undefined || score === null) return "#64748b";
-    if (score >= 90) return "#10b981";
-    if (score >= 80) return "#3b82f6";
-    if (score >= 70) return "#f59e0b";
-    return "#ef4444";
   }
 }

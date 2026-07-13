@@ -21,8 +21,7 @@ import { MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { DropdownModule } from "primeng/dropdown";
-import { EditorModule } from "primeng/editor";
-import { InputNumberModule } from "primeng/inputnumber";
+import { InputTextareaModule } from "primeng/inputtextarea";
 
 interface AssignmentOption {
   label: string;
@@ -36,10 +35,9 @@ interface AssignmentOption {
     CommonModule,
     ReactiveFormsModule,
     CardModule,
-    InputNumberModule,
     DropdownModule,
     ButtonModule,
-    EditorModule,
+    InputTextareaModule,
   ],
   template: `
     <section class="sg-page">
@@ -60,58 +58,84 @@ interface AssignmentOption {
 
           <form class="px-4 pb-4" [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="formgrid grid">
-              <div class="field col-12 md:col-6" *ngIf="!isEditMode">
-                <label class="block font-bold mb-2" for="lesson">שיעור *</label>
-                <p-dropdown
-                  inputId="lesson"
-                  styleClass="w-full"
-                  [options]="lessonOptions"
-                  formControlName="lessonId"
-                  placeholder="בחירת שיעור"
-                  (onChange)="onLessonChange()"
-                  optionLabel="label"
-                  optionValue="value"
-                  [showClear]="true"
-                >
-                </p-dropdown>
-              </div>
+              <ng-container *ngIf="!isEditMode; else assignmentReadonly">
+                <div class="field col-12 md:col-6">
+                  <label class="block font-bold mb-2" for="lesson"
+                    >שיעור *</label
+                  >
+                  <p-dropdown
+                    inputId="lesson"
+                    styleClass="w-full"
+                    [options]="lessonOptions"
+                    formControlName="lessonId"
+                    placeholder="בחירת שיעור"
+                    (onChange)="onLessonChange()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [showClear]="true"
+                  >
+                  </p-dropdown>
+                </div>
 
-              <div class="field col-12 md:col-6" *ngIf="!isEditMode">
-                <label class="block font-bold mb-2" for="assignment"
-                  >תרגיל *</label
-                >
-                <p-dropdown
-                  inputId="assignment"
-                  styleClass="w-full"
-                  [options]="assignmentOptions"
-                  formControlName="assignmentId"
-                  placeholder="בחירת תרגיל"
-                  optionLabel="label"
-                  optionValue="value"
-                  [disabled]="!form.get('lessonId')?.value"
-                  [showClear]="true"
-                >
-                </p-dropdown>
-              </div>
+                <div class="field col-12 md:col-6">
+                  <label class="block font-bold mb-2" for="assignment"
+                    >תרגיל *</label
+                  >
+                  <p-dropdown
+                    inputId="assignment"
+                    styleClass="w-full"
+                    [options]="assignmentOptions"
+                    formControlName="assignmentId"
+                    placeholder="בחירת תרגיל"
+                    optionLabel="label"
+                    optionValue="value"
+                    [disabled]="!form.get('lessonId')?.value"
+                    [showClear]="true"
+                  >
+                  </p-dropdown>
+                  <small
+                    class="p-error"
+                    *ngIf="
+                      form.get('assignmentId')?.invalid &&
+                      form.get('assignmentId')?.touched
+                    "
+                  >
+                    יש לבחור תרגיל
+                  </small>
+                </div>
+              </ng-container>
+
+              <ng-template #assignmentReadonly>
+                <div class="field col-12">
+                  <label class="block font-bold mb-2">תרגיל</label>
+                  <div class="sg-readonly-field">
+                    {{ submission?.assignmentName || "—" }}
+                  </div>
+                </div>
+              </ng-template>
 
               <div class="field col-12">
                 <label class="block font-bold mb-2" for="sourceCode"
                   >קוד *</label
                 >
-                <div class="sg-code-editor">
-                  <p-editor
-                    formControlName="sourceCode"
-                    [style]="{ height: '400px' }"
-                    placeholder="הדביקי כאן קוד..."
-                  >
-                    <ng-template pTemplate="header">
-                      <span class="ql-formats">
-                        <button type="button" class="ql-code-block"></button>
-                        <button type="button" class="ql-clean"></button>
-                      </span>
-                    </ng-template>
-                  </p-editor>
-                </div>
+                <textarea
+                  pInputTextarea
+                  id="sourceCode"
+                  class="w-full sg-code-textarea"
+                  formControlName="sourceCode"
+                  rows="16"
+                  placeholder="הדביקי כאן קוד..."
+                  (blur)="form.get('sourceCode')?.markAsTouched()"
+                ></textarea>
+                <small
+                  class="p-error"
+                  *ngIf="
+                    form.get('sourceCode')?.invalid &&
+                    form.get('sourceCode')?.touched
+                  "
+                >
+                  יש להדביק קוד
+                </small>
               </div>
             </div>
 
@@ -136,7 +160,24 @@ interface AssignmentOption {
       </div>
     </section>
   `,
-  styles: [],
+  styles: [
+    `
+      .sg-code-textarea {
+        font-family: "Consolas", "Courier New", monospace;
+        direction: ltr;
+        text-align: left;
+        resize: vertical;
+      }
+
+      .sg-readonly-field {
+        padding: 0.65rem 0.85rem;
+        border-radius: var(--border-radius, 6px);
+        background: rgba(0, 0, 0, 0.04);
+        border: 1px solid var(--app-border, #d9d9d9);
+        font-weight: 600;
+      }
+    `,
+  ],
 })
 export class SubmissionFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -152,6 +193,7 @@ export class SubmissionFormComponent implements OnInit {
   isEditMode = false;
   studentId!: number;
   submissionId: number | null = null;
+  submission: SubmissionResponseDto | null = null;
 
   lessons: LessonResponseDto[] = [];
   lessonOptions: AssignmentOption[] = [];
@@ -161,7 +203,7 @@ export class SubmissionFormComponent implements OnInit {
   constructor() {
     this.form = this.fb.group({
       lessonId: [null],
-      assignmentId: [null, Validators.required],
+      assignmentId: [null],
       sourceCode: ["", Validators.required],
     });
   }
@@ -179,6 +221,8 @@ export class SubmissionFormComponent implements OnInit {
       this.submissionId = parseInt(submissionIdParam, 10);
       this.loadSubmission(this.studentId, this.submissionId);
     } else {
+      this.form.get("assignmentId")?.setValidators(Validators.required);
+      this.form.get("assignmentId")?.updateValueAndValidity();
       this.loadLessons();
     }
   }
@@ -233,6 +277,7 @@ export class SubmissionFormComponent implements OnInit {
     this.loading = true;
     this.submissionsService.getById(studentId, submissionId).subscribe({
       next: (submission: SubmissionResponseDto) => {
+        this.submission = submission;
         this.form.patchValue({
           sourceCode: submission.sourceCode,
         });

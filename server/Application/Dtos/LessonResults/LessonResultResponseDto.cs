@@ -8,6 +8,8 @@
         public double? FinalScore { get; set; }
         public bool IsComplete { get; set; }
         public DateTime? CalculatedAt { get; set; }
+        public int TotalAssignments { get; set; }
+        public int CompletedAssignments { get; set; }
     }
 }
 

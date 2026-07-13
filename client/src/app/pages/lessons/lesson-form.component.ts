@@ -13,10 +13,11 @@ import {
   UpdateLessonRequestDto,
 } from "@models/lesson.model";
 import { LessonsService } from "@services/lessons.service";
-import { MessageService } from "primeng/api";
+import { ConfirmationService, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CalendarModule } from "primeng/calendar";
 import { CardModule } from "primeng/card";
+import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { InputTextModule } from "primeng/inputtext";
 
 @Component({
@@ -29,7 +30,9 @@ import { InputTextModule } from "primeng/inputtext";
     InputTextModule,
     CalendarModule,
     ButtonModule,
+    ConfirmDialogModule,
   ],
+  providers: [ConfirmationService],
   template: `
     <section class="sg-page">
       <div class="pt-3 pb-5">
@@ -60,6 +63,12 @@ import { InputTextModule } from "primeng/inputtext";
                   formControlName="name"
                   placeholder="לדוגמה: שיעור פתיחה"
                 />
+                <small
+                  class="p-error"
+                  *ngIf="form.get('name')?.invalid && form.get('name')?.touched"
+                >
+                  שם השיעור הוא שדה חובה
+                </small>
               </div>
 
               <div class="field col-12 md:col-6">
@@ -71,6 +80,14 @@ import { InputTextModule } from "primeng/inputtext";
                   formControlName="subject"
                   placeholder="לדוגמה: מתמטיקה"
                 />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    form.get('subject')?.invalid && form.get('subject')?.touched
+                  "
+                >
+                  נושא השיעור הוא שדה חובה
+                </small>
               </div>
 
               <div class="field col-12 md:col-6">
@@ -87,6 +104,15 @@ import { InputTextModule } from "primeng/inputtext";
                   placeholder="בחרי תאריך ושעה"
                 >
                 </p-calendar>
+                <small
+                  class="p-error"
+                  *ngIf="
+                    form.get('lessonDate')?.invalid &&
+                    form.get('lessonDate')?.touched
+                  "
+                >
+                  תאריך ושעה הם שדה חובה
+                </small>
               </div>
 
               <div class="field col-12 md:col-6">
@@ -100,6 +126,15 @@ import { InputTextModule } from "primeng/inputtext";
                   formControlName="teacherName"
                   placeholder="לדוגמה: הדר"
                 />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    form.get('teacherName')?.invalid &&
+                    form.get('teacherName')?.touched
+                  "
+                >
+                  שם המורה הוא שדה חובה
+                </small>
               </div>
             </div>
 
@@ -123,6 +158,8 @@ import { InputTextModule } from "primeng/inputtext";
         </p-card>
       </div>
     </section>
+
+    <p-confirmDialog></p-confirmDialog>
   `,
   styles: [],
 })
@@ -132,6 +169,7 @@ export class LessonFormComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   form: FormGroup;
   loading = false;
@@ -171,8 +209,8 @@ export class LessonFormComponent implements OnInit {
       error: (_error: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: "Failed to load lesson",
+          summary: "שגיאה",
+          detail: "טעינת השיעור נכשלה",
         });
         this.loading = false;
       },
@@ -204,16 +242,18 @@ export class LessonFormComponent implements OnInit {
       next: () => {
         this.messageService.add({
           severity: "success",
-          summary: "Success",
-          detail: `Lesson ${this.isEditMode ? "updated" : "created"} successfully`,
+          summary: "בוצע",
+          detail: this.isEditMode
+            ? "השיעור עודכן בהצלחה"
+            : "השיעור נוצר בהצלחה",
         });
         this.router.navigate(["/lessons"]);
       },
       error: (_error: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: `Failed to ${this.isEditMode ? "update" : "create"} lesson`,
+          summary: "שגיאה",
+          detail: this.isEditMode ? "עדכון השיעור נכשל" : "יצירת השיעור נכשלה",
         });
         this.loading = false;
       },
@@ -221,6 +261,17 @@ export class LessonFormComponent implements OnInit {
   }
 
   onCancel(): void {
+    if (this.form.dirty) {
+      this.confirmationService.confirm({
+        message: "יש לך שינויים שלא נשמרו. לצאת בכל זאת?",
+        header: "שינויים שלא נשמרו",
+        icon: "pi pi-exclamation-triangle",
+        acceptLabel: "יציאה",
+        rejectLabel: "ביטול",
+        accept: () => this.router.navigate(["/lessons"]),
+      });
+      return;
+    }
     this.router.navigate(["/lessons"]);
   }
 }

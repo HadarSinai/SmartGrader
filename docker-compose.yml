@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  judge0-server:
+    image: judge0/judge0:latest
+    container_name: judge0
+    ports:
+      - "2358:2358"
+    environment:
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgres://judge0:judge0@postgres:5432/judge0
+      WORKERS_NUM: 2
+      MAX_CPU_TIME_LIMIT: 10
+      MAX_MEMORY_LIMIT: 262144 # 256MB in KB
+    depends_on:
+      - redis
+      - postgres
+    privileged: true # required for Docker-in-Docker sandbox
+    restart: unless-stopped
+
+  judge0-workers:
+    image: judge0/judge0:latest
+    command: ["./scripts/workers"]
+    environment:
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgres://judge0:judge0@postgres:5432/judge0
+    depends_on:
+      - redis
+      - postgres
+    privileged: true
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0
+      POSTGRES_DB: judge0
+    volumes:
+      - judge0_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  judge0_postgres_data:

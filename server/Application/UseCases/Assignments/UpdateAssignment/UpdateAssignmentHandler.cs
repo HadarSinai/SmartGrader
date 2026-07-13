@@ -38,6 +38,8 @@ namespace SmartGrader.Application.UseCases.Assignments.UpdateAssignment
             assignment.Description = request.Dto.Description;
             assignment.IsBonus = request.Dto.IsBonus;
             assignment.BonusValue = request.Dto.BonusValue;
+            if (request.Dto.MethodName is not null)
+                assignment.MethodName = request.Dto.MethodName;
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

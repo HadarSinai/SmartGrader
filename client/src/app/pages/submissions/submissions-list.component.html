@@ -102,7 +102,7 @@
               <td>
                 <p-tag
                   [severity]="statusSeverity(submission.status)"
-                  [value]="submission.status || 'לא ידוע'"
+                  [value]="getStatusLabel(submission.status)"
                 ></p-tag>
               </td>
 
@@ -124,13 +124,29 @@
                   icon="pi pi-eye"
                   [text]="true"
                   pTooltip="צפייה"
+                  [attr.aria-label]="
+                    'צפייה בהגשה: ' + (submission.assignmentName || '')
+                  "
                   (onClick)="navigateToView(submission.id)"
                 ></p-button>
                 <p-button
                   icon="pi pi-pencil"
                   [text]="true"
                   pTooltip="עריכה"
+                  [attr.aria-label]="
+                    'עריכת הגשה: ' + (submission.assignmentName || '')
+                  "
                   (onClick)="navigateToEdit(submission.id)"
+                ></p-button>
+                <p-button
+                  icon="pi pi-trash"
+                  severity="danger"
+                  [text]="true"
+                  pTooltip="מחיקה"
+                  [attr.aria-label]="
+                    'מחיקת הגשה: ' + (submission.assignmentName || '')
+                  "
+                  (onClick)="confirmDelete(submission)"
                 ></p-button>
               </td>
             </tr>
@@ -165,7 +181,7 @@
                   </div>
                   <p-tag
                     [severity]="statusSeverity(item.status)"
-                    [value]="item.status || 'לא ידוע'"
+                    [value]="getStatusLabel(item.status)"
                   ></p-tag>
                 </div>
 
@@ -189,7 +205,19 @@
                   <p-button
                     icon="pi pi-pencil"
                     [text]="true"
+                    [attr.aria-label]="
+                      'עריכת הגשה: ' + (item.assignmentName || '')
+                    "
                     (onClick)="navigateToEdit(item.id)"
+                  ></p-button>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    [attr.aria-label]="
+                      'מחיקת הגשה: ' + (item.assignmentName || '')
+                    "
+                    (onClick)="confirmDelete(item)"
                   ></p-button>
                 </div>
               </div>
@@ -200,3 +228,5 @@
     </p-card>
   </div>
 </section>
+
+<p-confirmDialog></p-confirmDialog>

@@ -1,3 +1,18 @@
+export type SubmissionStatus =
+  | "PendingAi"
+  | "ProcessingAi"
+  | "Done"
+  | "AiFailed"
+  | "CompilationFailed";
+
+export const STATUS_LABELS_HE: Record<string, string> = {
+  PendingAi: "ממתין לבדיקה",
+  ProcessingAi: "בבדיקה...",
+  Done: "נבדק",
+  AiFailed: "שגיאת בדיקה",
+  CompilationFailed: "שגיאת קומפילציה",
+};
+
 export interface SubmissionResponseDto {
   id: number;
   studentId: number;
@@ -5,8 +20,9 @@ export interface SubmissionResponseDto {
   sourceCode: string | null;
   score: number | null;
   comments: string | null;
-  status: string | null;
+  status: SubmissionStatus | null;
   aiError: string | null;
+  compileError: string | null;
   submittedAt: string;
   studentName: string | null;
   assignmentName: string | null;

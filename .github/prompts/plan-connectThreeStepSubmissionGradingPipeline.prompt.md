@@ -1,6 +1,6 @@
 # Plan: Connect 3-Step Submission Grading Pipeline
 
-## Status: Draft — Awaiting user approval
+## Status: ✅ Completed (executed via task1–task7 prompt files, with architecture revisions — see Decisions)
 
 ## Summary
 
@@ -29,40 +29,40 @@ The 3-step grading pipeline (Compile → Test → AI) is partially built but dis
 
 ## Plan
 
-### Phase 1: Domain — Add MethodName to Assignment
+### Phase 1: Domain — Add MethodName to Assignment ✅ Done
 
 - Add `MethodName` string property to `Assignment` entity
 - Add `MethodName` to `CreateAssignmentRequestDto` and `UpdateAssignmentRequestDto`
 - Add EF migration
 
-### Phase 2: Domain — Add CompilationFailed status
+### Phase 2: Domain — Add CompilationFailed status ✅ Done
 
 - Add `CompilationFailed = 4` to `SubmissionStatus` enum
 - Add `MarkCompilationFailed(string error)` method on `Submission` entity (from PendingAi or ProcessingAi)
 - Add EF migration for enum change (if stored as int, no migration needed)
 
-### Phase 3: Application — ICodeRunnerService interface
+### Phase 3: Application — ICodeRunnerService interface ✅ Done
 
 - Create `Application/Services/CodeRunner/ICodeRunnerService.cs`
 - Create `Application/Services/CodeRunner/RunnerResult.cs` (Passed, Total, HasCompileError, CompileError, Details)
 - Create `Application/Services/CodeRunner/TestCaseResult.cs` (Input, Expected, Actual, Passed, Error)
 
-### Phase 4: Infrastructure — LocalProcessCodeRunner
+### Phase 4: Infrastructure — Code Runner ✅ Done (revised: Judge0CodeRunner, not LocalProcessCodeRunner)
 
-- Create `Infrastructure/Services/CodeRunner/LocalProcessCodeRunner.cs`
-- Spawns `Runner.exe` as child process via `Process.Start`
-- Writes JSON to stdin, reads JSON from stdout
+- ~~Create `Infrastructure/Services/CodeRunner/LocalProcessCodeRunner.cs`~~ Superseded — implemented `Judge0CodeRunner.cs` instead, calling the Judge0 HTTP API (sandboxed Docker execution) rather than spawning the local `Runner.exe` process
 - Maps response to `RunnerResult`
-- Register `ICodeRunnerService → LocalProcessCodeRunner` in `Infrastructure/DependencyInjection.cs` (uncomment/add)
-- Add `RunnerOptions { ExePath }` config class + `appsettings.json` entry
+- Registered `ICodeRunnerService → Judge0CodeRunner` in `Infrastructure/DependencyInjection.cs` via `AddHttpClient<ICodeRunnerService, Judge0CodeRunner>()`
+- Added `Judge0Options` config class + `appsettings.json` / `Judge0` config section
+- Judge0 sandbox itself provisioned via `docker-compose.yml` (see task7)
 
-### Phase 5: Api — Update AiWorker
+### Phase 5: Api — Update AiWorker ✅ Done (revised: Hangfire job, not Channel queue)
 
 - Inject `ICodeRunnerService` into `AiWorker`
 - Step 1: Call `RunAsync(sourceCode, assignment.MethodName, assignment.Tests)`
 - Step 2: If `HasCompileError` → `MarkCompilationFailed(error)` → SaveChanges → continue
 - Step 3: Use real `passedTests`/`totalTests` in `GetFeedbackAsync`
 - Step 4: `MarkDone(score, aiJson)` as before
+- `AiWorker` now implements `IGradeSubmissionJob` and is dispatched via Hangfire (`IBackgroundJobClient`) instead of the in-memory `Channel<int>` (`IAiJobQueue`), so pending submissions survive server restarts
 
 ## Relevant Files
 
@@ -85,6 +85,8 @@ The 3-step grading pipeline (Compile → Test → AI) is partially built but dis
 
 ## Decisions
 
-- Runner stays as separate process (security sandboxing — student code runs isolated)
 - CompilationFailed added as new status (semantically cleaner than AiFailed)
-- MethodName added to Assignment (required for Runner to know which method to invoke)
+- MethodName added to Assignment (required for the code runner to know which method to invoke)
+- **Revised during implementation:** the standalone `Runner` Roslyn console app was dropped in favor of **Judge0** (external sandboxed execution service, run via Docker Compose) — safer isolation than an in-process/local child process, and no longer requires maintaining the Runner project. `server/Runner/Program.cs` is now unused/dead code.
+- **Revised during implementation:** the in-memory `Channel<int>` queue (`IAiJobQueue`/`AiJobQueue`) was replaced with **Hangfire** (`IGradeSubmissionJob`, DB-persisted jobs) so queued submissions aren't lost on server restart.
+- Actual implementation was carried out via the task1–task7 prompt files (`.github/prompts/task1-domain-methodname-compilationfailed.prompt.md` through `task7-infrastructure-docker-compose.prompt.md`), which superseded this plan's phase breakdown.

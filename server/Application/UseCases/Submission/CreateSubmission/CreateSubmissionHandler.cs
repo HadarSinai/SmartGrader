@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Hangfire;
 using MediatR;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.Dtos.Submissions;
@@ -16,22 +17,22 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
         private readonly IAssignmentRepository _assignmentRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IAiJobQueue _aiQueue;
+        private readonly IBackgroundJobClient _jobClient;
 
         public CreateSubmissionHandler(
             ISubmissionRepository submissionRepository,
             IStudentRepository studentRepository,
             IAssignmentRepository assignmentRepository,
             IUnitOfWork unitOfWork,
-            IMapper mapper, IAiJobQueue aiQueue)
+            IMapper mapper,
+            IBackgroundJobClient jobClient)
         {
             _submissionRepository = submissionRepository;
             _studentRepository = studentRepository;
             _assignmentRepository = assignmentRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _aiQueue = aiQueue;
-
+            _jobClient = jobClient;
         }
 
         public async Task<SubmissionResponseDto> Handle(
@@ -64,7 +65,7 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
             // ✔ שמירה ב־DB (בלי AI, בלי ציונים)
             await _submissionRepository.AddAsync(submission, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _aiQueue.EnqueueAsync(submission.Id, cancellationToken);
+            _jobClient.Enqueue<IGradeSubmissionJob>(job => job.ExecuteAsync(submission.Id));
 
             // ✔ החזרה ללקוח
             return _mapper.Map<SubmissionResponseDto>(submission);

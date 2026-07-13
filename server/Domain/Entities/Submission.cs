@@ -77,7 +77,8 @@ namespace SmartGrader.Domain.Entities
         PendingAi = 0,
         ProcessingAi = 1,
         Done = 2,
-        AiFailed = 3
+        AiFailed = 3,
+        CompilationFailed = 4
     }
 
     public class Submission
@@ -94,6 +95,7 @@ namespace SmartGrader.Domain.Entities
 
         public SubmissionStatus Status { get; private set; } = SubmissionStatus.PendingAi;
         public string? AiError { get; private set; }
+        public string? CompileError { get; private set; }
 
         public DateTime SubmittedAt { get; private set; } = DateTime.UtcNow;
 
@@ -153,6 +155,16 @@ namespace SmartGrader.Domain.Entities
 
             Status = SubmissionStatus.AiFailed;
             AiError = error;
+        }
+
+        public void MarkCompilationFailed(string error)
+        {
+            if (Status != SubmissionStatus.PendingAi && Status != SubmissionStatus.ProcessingAi)
+                throw new InvalidOperationException(
+                    $"Cannot mark CompilationFailed from {Status}");
+
+            Status = SubmissionStatus.CompilationFailed;
+            CompileError = error;
         }
 
     }

@@ -61,11 +61,8 @@
               <tr>
                 <th class="text-center">שם התלמיד/ה</th>
                 <th class="text-center">כיתה</th>
-                <th class="text-center">ממוצע ציון</th>
-                <th class="text-center">נוכחות</th>
-                <th class="text-center">הוגש בזמן</th>
-                <th class="text-center">נקודות</th>
-                <th class="text-center">סטטוס</th>
+                <th class="text-center">הגשות</th>
+                <th class="text-center">תוצאות שיעור</th>
                 <th class="text-center">פעולות</th>
               </tr>
             </ng-template>
@@ -91,60 +88,18 @@
                 </td>
 
                 <td class="text-center">
-                  <p-knob
-                    [readonly]="true"
-                    [size]="58"
-                    [min]="0"
-                    [max]="100"
-                    [value]="student.gradeAvg"
-                    valueTemplate=""
-                    aria-label="ממוצע ציון"
-                  ></p-knob>
+                  <span class="font-bold text-color" aria-label="מספר הגשות">
+                    {{ student.submissionsCount }}
+                  </span>
                 </td>
 
                 <td class="text-center">
-                  <p-knob
-                    [readonly]="true"
-                    [size]="46"
-                    [min]="0"
-                    [max]="100"
-                    [value]="student.attendance"
-                    valueTemplate=""
-                    aria-label="נוכחות"
-                  ></p-knob>
-                </td>
-
-                <td class="text-center">
-                  <div class="sg-frac" aria-label="הוגש בזמן">
-                    <div class="sg-frac-top">
-                      {{ student.onTimeFraction.a }}
-                    </div>
-                    <div class="sg-frac-line"></div>
-                    <div class="sg-frac-bot">
-                      {{ student.onTimeFraction.b }}
-                    </div>
-                  </div>
-                </td>
-
-                <td class="text-center">
-                  <div
-                    class="flex align-items-center justify-content-center gap-2 font-bold text-color"
+                  <span
+                    class="font-bold text-color"
+                    aria-label="מספר תוצאות שיעור"
                   >
-                    <i
-                      class="pi pi-star-fill sg-icon-accent"
-                      aria-hidden="true"
-                    ></i>
-                    <span>0</span>
-                  </div>
-                </td>
-
-                <td class="text-center">
-                  <div class="flex justify-content-center">
-                    <i
-                      class="pi pi-check-circle sg-icon-success"
-                      aria-hidden="true"
-                    ></i>
-                  </div>
+                    {{ student.lessonResultsCount }}
+                  </span>
                 </td>
 
                 <td class="text-center">
@@ -153,21 +108,27 @@
                       icon="pi pi-trash"
                       severity="danger"
                       [text]="true"
-                      aria-label="מחיקת סטודנט"
+                      [attr.aria-label]="
+                        'מחיקת סטודנט: ' + (student.fullName || '')
+                      "
                       (onClick)="confirmDelete(student)"
                     ></p-button>
 
                     <p-button
                       icon="pi pi-pencil"
                       [text]="true"
-                      aria-label="עריכת סטודנט"
+                      [attr.aria-label]="
+                        'עריכת סטודנט: ' + (student.fullName || '')
+                      "
                       (onClick)="navigateToEdit(student.id)"
                     ></p-button>
 
                     <p-button
                       icon="pi pi-eye"
                       [text]="true"
-                      aria-label="צפייה בהגשות"
+                      [attr.aria-label]="
+                        'צפייה בהגשות: ' + (student.fullName || '')
+                      "
                       (onClick)="viewSubmissions(student.id)"
                     ></p-button>
                   </div>
@@ -178,7 +139,7 @@
             <ng-template pTemplate="emptymessage">
               <tr>
                 <td
-                  colspan="8"
+                  colspan="5"
                   class="text-center px-3 py-6 text-color-secondary"
                 >
                   לא נמצאו סטודנטים, תרצו להוסיף סטודנטים חדשים?

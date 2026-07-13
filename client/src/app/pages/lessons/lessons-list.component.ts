@@ -11,6 +11,7 @@ import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { DataViewModule } from "primeng/dataview";
 import { InputTextModule } from "primeng/inputtext";
 import { TableModule } from "primeng/table";
+import { TooltipModule } from "primeng/tooltip";
 
 import { LessonResponseDto } from "@models/lesson.model";
 import { LessonsService } from "@services/lessons.service";
@@ -28,6 +29,7 @@ import { LessonsService } from "@services/lessons.service";
     ButtonModule,
     CardModule,
     ConfirmDialogModule,
+    TooltipModule,
   ],
   providers: [ConfirmationService],
   styleUrls: ["./lessons-list.component.css"],
@@ -111,14 +113,30 @@ import { LessonsService } from "@services/lessons.service";
                     <td class="text-center">
                       <div class="flex justify-content-center gap-1">
                         <p-button
+                          icon="pi pi-chart-bar"
+                          [text]="true"
+                          pTooltip="תוצאות"
+                          tooltipPosition="top"
+                          [attr.aria-label]="
+                            'תוצאות שיעור: ' + (lesson.name || '')
+                          "
+                          (onClick)="viewResults(lesson.id)"
+                        ></p-button>
+                        <p-button
                           icon="pi pi-pencil"
                           [text]="true"
+                          [attr.aria-label]="
+                            'עריכת שיעור: ' + (lesson.name || '')
+                          "
                           (onClick)="navigateToEdit(lesson.id)"
                         ></p-button>
                         <p-button
                           icon="pi pi-trash"
                           [text]="true"
                           severity="danger"
+                          [attr.aria-label]="
+                            'מחיקת שיעור: ' + (lesson.name || '')
+                          "
                           (onClick)="confirmDelete(lesson)"
                         ></p-button>
                       </div>
@@ -181,14 +199,26 @@ import { LessonsService } from "@services/lessons.service";
                           (onClick)="viewAssignments(item.id)"
                         ></p-button>
                         <p-button
+                          label="תוצאות"
+                          icon="pi pi-chart-bar"
+                          [outlined]="true"
+                          (onClick)="viewResults(item.id)"
+                        ></p-button>
+                        <p-button
                           icon="pi pi-pencil"
                           [text]="true"
+                          [attr.aria-label]="
+                            'עריכת שיעור: ' + (item.name || '')
+                          "
                           (onClick)="navigateToEdit(item.id)"
                         ></p-button>
                         <p-button
                           icon="pi pi-trash"
                           severity="danger"
                           [text]="true"
+                          [attr.aria-label]="
+                            'מחיקת שיעור: ' + (item.name || '')
+                          "
                           (onClick)="confirmDelete(item)"
                         ></p-button>
                       </div>
@@ -311,12 +341,16 @@ export class LessonsListComponent implements OnInit {
     this.router.navigate(["/lessons", lessonId, "assignments"]);
   }
 
+  viewResults(lessonId: number): void {
+    this.router.navigate(["/lessons", lessonId, "results"]);
+  }
+
   confirmDelete(lesson: LessonResponseDto): void {
     this.confirmationService.confirm({
-      message: `בטוחה שברצונך למחוק את "${lesson.name}"?`,
+      message: `האם למחוק את "${lesson.name}"? לא ניתן לשחזר פעולה זו.`,
       header: "אישור מחיקה",
       icon: "pi pi-exclamation-triangle",
-      acceptLabel: "מחקי",
+      acceptLabel: "מחיקה",
       rejectLabel: "ביטול",
       accept: () => this.deleteLesson(lesson.id),
     });

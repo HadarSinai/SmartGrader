@@ -1,7 +1,10 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, OnDestroy, OnInit, inject } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
-import { SubmissionResponseDto } from "@models/submission.model";
+import {
+  STATUS_LABELS_HE,
+  SubmissionResponseDto,
+} from "@models/submission.model";
 import { SubmissionsService } from "@services/submissions.service";
 import { MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
@@ -78,11 +81,78 @@ import { TagModule } from "primeng/tag";
                 <div class="text-xs font-bold text-color-secondary mb-1">
                   סטטוס
                 </div>
-                <p-tag
-                  [value]="submission.status || 'Unknown'"
-                  [severity]="getStatusSeverity(submission.status)"
+                <ng-container [ngSwitch]="submission.status">
+                  <p-tag
+                    *ngSwitchCase="'Done'"
+                    severity="success"
+                    [value]="statusLabels['Done']"
+                    icon="pi pi-check-circle"
+                  />
+                  <p-tag
+                    *ngSwitchCase="'PendingAi'"
+                    severity="warning"
+                    [value]="statusLabels['PendingAi']"
+                    icon="pi pi-clock"
+                  />
+                  <p-tag
+                    *ngSwitchCase="'ProcessingAi'"
+                    severity="info"
+                    [value]="statusLabels['ProcessingAi']"
+                    icon="pi pi-spinner pi-spin"
+                  />
+                  <p-tag
+                    *ngSwitchCase="'AiFailed'"
+                    severity="danger"
+                    [value]="statusLabels['AiFailed']"
+                    icon="pi pi-exclamation-triangle"
+                  />
+                  <p-tag
+                    *ngSwitchCase="'CompilationFailed'"
+                    severity="danger"
+                    [value]="statusLabels['CompilationFailed']"
+                    icon="pi pi-times-circle"
+                  />
+                  <p-tag
+                    *ngSwitchDefault
+                    [value]="submission.status || 'לא ידוע'"
+                    severity="secondary"
+                  />
+                </ng-container>
+                <div
+                  class="text-color-secondary text-sm mt-2"
+                  *ngIf="isPolling"
+                  aria-live="polite"
                 >
-                </p-tag>
+                  מתעדכן אוטומטית...
+                </div>
+              </div>
+
+              <div
+                *ngIf="
+                  submission.status === 'CompilationFailed' &&
+                  submission.compileError
+                "
+                class="col-12"
+              >
+                <div class="compile-error-box">
+                  <strong>שגיאת קומפילציה:</strong>
+                  <pre>{{ submission.compileError }}</pre>
+                </div>
+              </div>
+
+              <div
+                class="col-12"
+                *ngIf="
+                  submission.status === 'CompilationFailed' ||
+                  submission.status === 'AiFailed'
+                "
+              >
+                <p-button
+                  label="ערכי והגישי מחדש"
+                  icon="pi pi-refresh"
+                  styleClass="sg-btn-primary"
+                  (onClick)="navigateToEdit()"
+                ></p-button>
               </div>
 
               <div class="col-12 md:col-6">
@@ -137,18 +207,41 @@ import { TagModule } from "primeng/tag";
       </div>
     </section>
   `,
-  styles: [],
+  styles: [
+    `
+      .compile-error-box {
+        border: 1px solid #f44336;
+        border-left: 4px solid #f44336;
+        background-color: #fff5f5;
+        border-radius: 4px;
+        padding: 12px 16px;
+        margin-top: 8px;
+        color: #c62828;
+      }
+      .compile-error-box pre {
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.875rem;
+        margin: 6px 0 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    `,
+  ],
 })
-export class SubmissionDetailComponent implements OnInit {
+export class SubmissionDetailComponent implements OnInit, OnDestroy {
   private readonly submissionsService = inject(SubmissionsService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
 
+  private pollHandle: ReturnType<typeof setInterval> | null = null;
+
   submission: SubmissionResponseDto | null = null;
   loading = false;
+  isPolling = false;
   studentId!: number;
   submissionId!: number;
+  readonly statusLabels = STATUS_LABELS_HE;
 
   ngOnInit(): void {
     const studentIdParam = this.route.snapshot.paramMap.get("studentId");
@@ -161,6 +254,10 @@ export class SubmissionDetailComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.stopPolling();
+  }
+
   loadSubmission(): void {
     this.loading = true;
     this.submissionsService
@@ -169,16 +266,49 @@ export class SubmissionDetailComponent implements OnInit {
         next: (data: SubmissionResponseDto) => {
           this.submission = data;
           this.loading = false;
+          this.syncPolling(data.status);
         },
         error: (_error: unknown) => {
           this.messageService.add({
             severity: "error",
-            summary: "Error",
-            detail: "Failed to load submission",
+            summary: "שגיאה",
+            detail: "טעינת ההגשה נכשלה",
           });
           this.loading = false;
         },
       });
+  }
+
+  private syncPolling(status: string | null): void {
+    const shouldPoll = status === "PendingAi" || status === "ProcessingAi";
+    if (shouldPoll && !this.pollHandle) {
+      this.isPolling = true;
+      this.pollHandle = setInterval(() => this.refreshSilently(), 7000);
+    } else if (!shouldPoll) {
+      this.stopPolling();
+    }
+  }
+
+  private refreshSilently(): void {
+    this.submissionsService
+      .getById(this.studentId, this.submissionId)
+      .subscribe({
+        next: (data: SubmissionResponseDto) => {
+          this.submission = data;
+          this.syncPolling(data.status);
+        },
+        error: () => {
+          // Keep polling silently; a transient error shouldn't stop the loop.
+        },
+      });
+  }
+
+  private stopPolling(): void {
+    if (this.pollHandle) {
+      clearInterval(this.pollHandle);
+      this.pollHandle = null;
+    }
+    this.isPolling = false;
   }
 
   getStatusSeverity(

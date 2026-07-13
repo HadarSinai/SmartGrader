@@ -6,6 +6,7 @@
         public string Description { get; set; } = string.Empty;
         public bool IsBonus { get; set; }
         public double BonusValue { get; set; }
+        public string? MethodName { get; init; }
         
 
         public List<TestCaseDto> Tests { get; set; } = new();

@@ -8,6 +8,7 @@
             public string? Description { get; set; }
             public bool IsBonus { get; set; }
             public double BonusValue { get; set; }
+            public string MethodName { get; init; } = "";
             public DateTime CreatedAt { get; set; }
             public int SubmissionsCount { get; set; }
            

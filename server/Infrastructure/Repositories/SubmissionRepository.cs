@@ -39,6 +39,16 @@ namespace SmartGrader.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IReadOnlyList<Submission>> GetByStudentAndLessonAsync(int studentId, int lessonId, CancellationToken ct = default)
+        {
+            return await _context.Submissions
+                .Where(s => s.StudentId == studentId && s.Assignment.LessonId == lessonId)
+                .Include(s => s.Student)
+                .Include(s => s.Assignment)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
         public async Task<Submission?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _context.Submissions

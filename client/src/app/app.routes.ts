@@ -3,6 +3,8 @@ import { AppLayoutComponent } from "./components/layout/app-layout.component";
 import { AssignmentFormComponent } from "./pages/assignments/assignment-form.component";
 import { AssignmentsListComponent } from "./pages/assignments/assignments-list.component";
 import { DashboardComponent } from "./pages/dashboard/dashboard.component";
+import { LessonResultDetailComponent } from "./pages/lesson-results/lesson-result-detail.component";
+import { LessonResultsListComponent } from "./pages/lesson-results/lesson-results-list.component";
 import { LessonFormComponent } from "./pages/lessons/lesson-form.component";
 import { LessonsListComponent } from "./pages/lessons/lessons-list.component";
 import { StudentFormComponent } from "./pages/students/student-form.component";
@@ -52,6 +54,14 @@ export const routes: Routes = [
       {
         path: "lessons/:lessonId/assignments/:assignmentId/edit",
         component: AssignmentFormComponent,
+      },
+      {
+        path: "lessons/:lessonId/results",
+        component: LessonResultsListComponent,
+      },
+      {
+        path: "students/:studentId/lessons/:lessonId/result",
+        component: LessonResultDetailComponent,
       },
       {
         path: "students/:studentId/submissions",

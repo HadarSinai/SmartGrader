@@ -13,9 +13,10 @@ import {
   UpdateStudentRequestDto,
 } from "@models/student.model";
 import { StudentsService } from "@services/students.service";
-import { MessageService } from "primeng/api";
+import { ConfirmationService, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
+import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { InputTextModule } from "primeng/inputtext";
 
 @Component({
@@ -27,7 +28,9 @@ import { InputTextModule } from "primeng/inputtext";
     CardModule,
     InputTextModule,
     ButtonModule,
+    ConfirmDialogModule,
   ],
+  providers: [ConfirmationService],
   template: `
     <section class="sg-page">
       <div class="pt-3 pb-5">
@@ -58,6 +61,15 @@ import { InputTextModule } from "primeng/inputtext";
                   formControlName="fullName"
                   placeholder="לדוגמה: נועה כהן"
                 />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    form.get('fullName')?.invalid &&
+                    form.get('fullName')?.touched
+                  "
+                >
+                  שם מלא הוא שדה חובה
+                </small>
               </div>
 
               <div class="field col-12 md:col-6">
@@ -71,6 +83,15 @@ import { InputTextModule } from "primeng/inputtext";
                   formControlName="className"
                   placeholder="לדוגמה: י׳1"
                 />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    form.get('className')?.invalid &&
+                    form.get('className')?.touched
+                  "
+                >
+                  כיתה היא שדה חובה
+                </small>
               </div>
             </div>
 
@@ -96,6 +117,8 @@ import { InputTextModule } from "primeng/inputtext";
         </p-card>
       </div>
     </section>
+
+    <p-confirmDialog></p-confirmDialog>
   `,
   styles: [],
 })
@@ -105,6 +128,7 @@ export class StudentFormComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   form: FormGroup;
   loading = false;
@@ -140,8 +164,8 @@ export class StudentFormComponent implements OnInit {
       error: (_error: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: "Failed to load student",
+          summary: "שגיאה",
+          detail: "טעינת הסטודנט/ית נכשלה",
         });
         this.loading = false;
       },
@@ -167,16 +191,20 @@ export class StudentFormComponent implements OnInit {
       next: () => {
         this.messageService.add({
           severity: "success",
-          summary: "Success",
-          detail: `Student ${this.isEditMode ? "updated" : "created"} successfully`,
+          summary: "בוצע",
+          detail: this.isEditMode
+            ? "הסטודנט/ית עודכן/ה בהצלחה"
+            : "הסטודנט/ית נוצר/ה בהצלחה",
         });
         this.router.navigate(["/students"]);
       },
       error: (_error: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: `Failed to ${this.isEditMode ? "update" : "create"} student`,
+          summary: "שגיאה",
+          detail: this.isEditMode
+            ? "עדכון הסטודנט/ית נכשל"
+            : "יצירת הסטודנט/ית נכשלה",
         });
         this.loading = false;
       },
@@ -184,6 +212,17 @@ export class StudentFormComponent implements OnInit {
   }
 
   onCancel(): void {
+    if (this.form.dirty) {
+      this.confirmationService.confirm({
+        message: "יש לך שינויים שלא נשמרו. לצאת בכל זאת?",
+        header: "שינויים שלא נשמרו",
+        icon: "pi pi-exclamation-triangle",
+        acceptLabel: "יציאה",
+        rejectLabel: "ביטול",
+        accept: () => this.router.navigate(["/students"]),
+      });
+      return;
+    }
     this.router.navigate(["/students"]);
   }
 }

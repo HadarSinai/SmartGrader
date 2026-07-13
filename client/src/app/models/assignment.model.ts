@@ -8,6 +8,7 @@ export interface AssignmentResponseDto {
   lessonId: number;
   title: string | null;
   description: string | null;
+  methodName: string | null;
   isBonus: boolean;
   bonusValue: number;
   createdAt: string;
@@ -18,6 +19,7 @@ export interface AssignmentResponseDto {
 export interface CreateAssignmentRequestDto {
   title: string | null;
   description: string | null;
+  methodName: string | null;
   isBonus: boolean;
   bonusValue: number;
   tests: TestCaseDto[] | null;
@@ -26,6 +28,7 @@ export interface CreateAssignmentRequestDto {
 export interface UpdateAssignmentRequestDto {
   title: string | null;
   description: string | null;
+  methodName: string | null;
   isBonus: boolean;
   bonusValue: number;
   tests: TestCaseDto[] | null;

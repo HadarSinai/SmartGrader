@@ -1,18 +1,18 @@
 ﻿
 
 
+using Hangfire;
+using Hangfire.InMemory;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SmartGrader.Application.Services.CodeRunner;
 using SmartGrader.Application.Services.Feedback;
 using SmartGrader.Domain.Abstractions;
+using SmartGrader.Infrastructure.Services.CodeRunner;
 using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
 using SmartGrader.Infrastructure.Services.Feedback;
 using Microsoft.Extensions.Configuration;
-
-
-
-//using SmartGrader.Infrastructure.Services;
 
 
 
@@ -40,7 +40,16 @@ namespace SmartGrader.Infrastructure
 
             services.Configure<OpenAiOptions>(configuration.GetSection("OpenAi"));
 
-            services.AddHttpClient<IFeedbackService, OpenAiFeedbackService>();
+            services.AddHttpClient<ICodeRunnerService, Judge0CodeRunner>();
+            services.Configure<Judge0Options>(configuration.GetSection("Judge0"));
+
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseInMemoryStorage());
+
+            services.AddHangfireServer();
 
             return services;
         }

@@ -15,10 +15,11 @@ import {
   UpdateAssignmentRequestDto,
 } from "@models/assignment.model";
 import { AssignmentsService } from "@services/assignments.service";
-import { MessageService } from "primeng/api";
+import { ConfirmationService, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { CheckboxModule } from "primeng/checkbox";
+import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { InputNumberModule } from "primeng/inputnumber";
 import { InputTextModule } from "primeng/inputtext";
 import { InputTextareaModule } from "primeng/inputtextarea";
@@ -35,7 +36,9 @@ import { InputTextareaModule } from "primeng/inputtextarea";
     InputNumberModule,
     CheckboxModule,
     ButtonModule,
+    ConfirmDialogModule,
   ],
+  providers: [ConfirmationService],
   template: `
     <section class="sg-page">
       <div class="pt-3 pb-5">
@@ -64,6 +67,14 @@ import { InputTextareaModule } from "primeng/inputtextarea";
                   formControlName="title"
                   placeholder="לדוגמה: מיון מערכים"
                 />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    form.get('title')?.invalid && form.get('title')?.touched
+                  "
+                >
+                  כותרת היא שדה חובה
+                </small>
               </div>
 
               <div class="field col-12 md:col-6">
@@ -106,6 +117,28 @@ import { InputTextareaModule } from "primeng/inputtextarea";
                   rows="4"
                   placeholder="הסבר קצר לסטודנטים"
                 ></textarea>
+              </div>
+
+              <div class="field col-12 md:col-6">
+                <label class="block font-bold mb-2" for="methodName"
+                  >שם המתודה *</label
+                >
+                <input
+                  pInputText
+                  class="w-full"
+                  id="methodName"
+                  formControlName="methodName"
+                  placeholder="לדוגמה: Sum"
+                />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    form.get('methodName')?.invalid &&
+                    form.get('methodName')?.touched
+                  "
+                >
+                  שם המתודה הוא שדה חובה
+                </small>
               </div>
 
               <div class="field col-12">
@@ -197,6 +230,8 @@ import { InputTextareaModule } from "primeng/inputtextarea";
         </p-card>
       </div>
     </section>
+
+    <p-confirmDialog></p-confirmDialog>
   `,
   styles: [],
 })
@@ -206,6 +241,7 @@ export class AssignmentFormComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   form: FormGroup;
   loading = false;
@@ -217,6 +253,7 @@ export class AssignmentFormComponent implements OnInit {
     this.form = this.fb.group({
       title: ["", Validators.required],
       description: [""],
+      methodName: ["", Validators.required],
       isBonus: [false],
       bonusValue: [0],
       tests: this.fb.array([]),
@@ -249,6 +286,7 @@ export class AssignmentFormComponent implements OnInit {
         this.form.patchValue({
           title: assignment.title,
           description: assignment.description,
+          methodName: assignment.methodName,
           isBonus: assignment.isBonus,
           bonusValue: assignment.bonusValue,
         });
@@ -264,8 +302,8 @@ export class AssignmentFormComponent implements OnInit {
       error: (_error: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: "Failed to load assignment",
+          summary: "שגיאה",
+          detail: "טעינת התרגיל נכשלה",
         });
         this.loading = false;
       },
@@ -297,6 +335,7 @@ export class AssignmentFormComponent implements OnInit {
     const request = {
       title: formValue.title,
       description: formValue.description,
+      methodName: formValue.methodName,
       isBonus: formValue.isBonus,
       bonusValue: formValue.bonusValue,
       tests: formValue.tests,
@@ -317,16 +356,18 @@ export class AssignmentFormComponent implements OnInit {
       next: () => {
         this.messageService.add({
           severity: "success",
-          summary: "Success",
-          detail: `Assignment ${this.isEditMode ? "updated" : "created"} successfully`,
+          summary: "בוצע",
+          detail: this.isEditMode
+            ? "התרגיל עודכן בהצלחה"
+            : "התרגיל נוצר בהצלחה",
         });
         this.router.navigate(["/lessons", this.lessonId, "assignments"]);
       },
       error: (_error: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: `Failed to ${this.isEditMode ? "update" : "create"} assignment`,
+          summary: "שגיאה",
+          detail: this.isEditMode ? "עדכון התרגיל נכשל" : "יצירת התרגיל נכשלה",
         });
         this.loading = false;
       },
@@ -334,6 +375,18 @@ export class AssignmentFormComponent implements OnInit {
   }
 
   onCancel(): void {
+    if (this.form.dirty) {
+      this.confirmationService.confirm({
+        message: "יש לך שינויים שלא נשמרו. לצאת בכל זאת?",
+        header: "שינויים שלא נשמרו",
+        icon: "pi pi-exclamation-triangle",
+        acceptLabel: "יציאה",
+        rejectLabel: "ביטול",
+        accept: () =>
+          this.router.navigate(["/lessons", this.lessonId, "assignments"]),
+      });
+      return;
+    }
     this.router.navigate(["/lessons", this.lessonId, "assignments"]);
   }
 }

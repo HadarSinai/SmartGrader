@@ -6,15 +6,19 @@ import { BadgeModule } from "primeng/badge";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { ChipModule } from "primeng/chip";
+import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { DataViewModule } from "primeng/dataview";
 import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
 import { TooltipModule } from "primeng/tooltip";
 
 import { SubmissionExtended } from "@models/submission-extended.model";
-import { SubmissionResponseDto } from "@models/submission.model";
+import {
+  STATUS_LABELS_HE,
+  SubmissionResponseDto,
+} from "@models/submission.model";
 import { SubmissionsService } from "@services/submissions.service";
-import { MessageService } from "primeng/api";
+import { ConfirmationService, MessageService } from "primeng/api";
 
 @Component({
   selector: "app-submissions-list",
@@ -29,7 +33,9 @@ import { MessageService } from "primeng/api";
     ChipModule,
     TooltipModule,
     BadgeModule,
+    ConfirmDialogModule,
   ],
+  providers: [ConfirmationService],
   templateUrl: "./submissions-list.component.html",
   styleUrls: ["./submissions-list.component.css"],
 })
@@ -37,6 +43,7 @@ export class SubmissionsListComponent implements OnInit {
   private readonly submissionsService = inject(SubmissionsService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
 
   submissions: SubmissionExtended[] = [];
@@ -64,8 +71,8 @@ export class SubmissionsListComponent implements OnInit {
       error: (_err: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: "Failed to load submissions",
+          summary: "שגיאה",
+          detail: "טעינת ההגשות נכשלה",
           life: 4500,
         });
         this.loading = false;
@@ -110,6 +117,42 @@ export class SubmissionsListComponent implements OnInit {
     if (s.includes("warn") || s.includes("pending")) return "warning";
     if (s.includes("fail") || s.includes("error")) return "danger";
     return "info";
+  }
+
+  getStatusLabel(status?: string | null): string {
+    if (!status) return "לא ידוע";
+    return STATUS_LABELS_HE[status] ?? status;
+  }
+
+  confirmDelete(submission: SubmissionExtended): void {
+    this.confirmationService.confirm({
+      message: `האם למחוק את ההגשה עבור "${submission.assignmentName ?? ""}"?  לא ניתן לשחזר פעולה זו.`,
+      header: "אישור מחיקה",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "מחיקה",
+      rejectLabel: "ביטול",
+      accept: () => this.deleteSubmission(submission.id),
+    });
+  }
+
+  deleteSubmission(submissionId: number): void {
+    this.submissionsService.delete(this.studentId, submissionId).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: "success",
+          summary: "בוצע",
+          detail: "ההגשה נמחקה בהצלחה",
+        });
+        this.loadSubmissions();
+      },
+      error: () => {
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "מחיקת ההגשה נכשלה",
+        });
+      },
+    });
   }
 
   private toExtended(s: SubmissionResponseDto): SubmissionExtended {

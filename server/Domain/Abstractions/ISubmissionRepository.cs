@@ -13,6 +13,7 @@ namespace SmartGrader.Domain.Abstractions
         Task<Submission?> GetByIdAsync(int id, CancellationToken ct = default);
         Task AddAsync(Submission submission, CancellationToken ct = default);
         Task<IReadOnlyList<Submission>> GetByStudentIdAsync(int studentId, CancellationToken ct = default);
+        Task<IReadOnlyList<Submission>> GetByStudentAndLessonAsync(int studentId, int lessonId, CancellationToken ct = default);
 
        // Task UpdateAsync(Submission submission, CancellationToken ct = default);
         Task DeleteAsync(Submission submission, CancellationToken ct = default);
