@@ -13,4 +13,5 @@ export interface CompleteLessonRequestDto {
   studentId: number;
   lessonId: number;
   finalScore: number;
+  hasBonus: boolean;
 }

@@ -4,14 +4,14 @@ import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { AssignmentResponseDto } from "@models/assignment.model";
 import { AssignmentsService } from "@services/assignments.service";
-import { ConfirmationService, MessageService } from "primeng/api";
+import { ConfirmationService, MenuItem, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { ChipModule } from "primeng/chip";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { DataViewModule } from "primeng/dataview";
 import { InputTextModule } from "primeng/inputtext";
-import { ProgressBarModule } from "primeng/progressbar";
+import { Menu, MenuModule } from "primeng/menu";
 import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
 import { TooltipModule } from "primeng/tooltip";
@@ -29,9 +29,9 @@ import { TooltipModule } from "primeng/tooltip";
     ConfirmDialogModule,
     TagModule,
     ChipModule,
-    ProgressBarModule,
     TooltipModule,
     DataViewModule,
+    MenuModule,
   ],
   providers: [ConfirmationService],
   template: `
@@ -43,27 +43,27 @@ import { TooltipModule } from "primeng/tooltip";
               class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
             >
               <div class="sg-title">
+                <a
+                  class="sg-breadcrumb-link"
+                  role="link"
+                  tabindex="0"
+                  (click)="navigateToLessons()"
+                  (keydown.enter)="navigateToLessons()"
+                >
+                  <i class="pi pi-arrow-right" aria-hidden="true"></i>
+                  חזרה לשיעורים
+                </a>
                 <div class="sg-h1">תרגילים</div>
                 <div class="sg-h2">ניהול תרגילים לשיעור הנבחר</div>
               </div>
 
-              <div class="flex align-items-center gap-2 flex-wrap">
-                <p-button
-                  label="חזרה לשיעורים"
-                  icon="pi pi-arrow-left"
-                  severity="secondary"
-                  [outlined]="true"
-                  (onClick)="navigateToLessons()"
-                >
-                </p-button>
-                <p-button
-                  label="תרגיל חדש"
-                  icon="pi pi-plus"
-                  styleClass="sg-btn-primary"
-                  (onClick)="navigateToCreate()"
-                >
-                </p-button>
-              </div>
+              <p-button
+                label="תרגיל חדש"
+                icon="pi pi-plus"
+                styleClass="sg-btn-primary"
+                (onClick)="navigateToCreate()"
+              >
+              </p-button>
             </div>
 
             <div
@@ -91,6 +91,27 @@ import { TooltipModule } from "primeng/tooltip";
             </div>
           </ng-template>
 
+          <!-- Selection toolbar (design only — bulk delete is a future task) -->
+          <div
+            class="sg-selection-bar"
+            *ngIf="selectedAssignments.length > 0"
+            aria-live="polite"
+          >
+            <span>נבחרו {{ selectedAssignments.length }}</span>
+            <p-button
+              label="מחיקת נבחרים"
+              icon="pi pi-trash"
+              severity="danger"
+              [text]="true"
+              (onClick)="bulkDeleteComingSoon()"
+            ></p-button>
+            <p-button
+              label="ביטול בחירה"
+              [text]="true"
+              (onClick)="clearSelection()"
+            ></p-button>
+          </div>
+
           <!-- Desktop table -->
           <div class="sg-table-wrap desktop-only">
             <p-table
@@ -100,20 +121,34 @@ import { TooltipModule } from "primeng/tooltip";
               [paginator]="true"
               [rows]="10"
               [rowsPerPageOptions]="[10, 25, 50]"
+              dataKey="id"
+              [(selection)]="selectedAssignments"
               styleClass="sg-table"
             >
               <ng-template pTemplate="header">
                 <tr>
-                  <th pSortableColumn="title" class="text-center">
+                  <th style="width: 3rem">
+                    <p-tableHeaderCheckbox
+                      aria-label="בחירת כל השורות"
+                    ></p-tableHeaderCheckbox>
+                  </th>
+                  <th pSortableColumn="title">
                     שם <p-sortIcon field="title"></p-sortIcon>
                   </th>
-                  <th class="text-center">בדיקות/הגשות</th>
-                  <th class="text-center" style="width: 10rem">פעולות</th>
+                  <th class="text-center">מקרי בדיקה</th>
+                  <th class="text-center">הגשות</th>
+                  <th class="text-center" style="width: 5rem">פעולות</th>
                 </tr>
               </ng-template>
 
               <ng-template pTemplate="body" let-assignment>
                 <tr>
+                  <td>
+                    <p-tableCheckbox
+                      [value]="assignment"
+                      [attr.aria-label]="'בחירת ' + (assignment.title || '')"
+                    ></p-tableCheckbox>
+                  </td>
                   <td>
                     <div class="flex flex-column gap-1">
                       <div class="flex align-items-center gap-2 flex-wrap">
@@ -122,16 +157,10 @@ import { TooltipModule } from "primeng/tooltip";
                         </div>
                         <p-chip
                           *ngIf="assignment.isBonus"
-                          label="בונוס"
+                          label="בונוס +{{ assignment.bonusValue }}"
                           icon="pi pi-star"
                           styleClass="sg-bonus-chip"
                         ></p-chip>
-                        <p-tag
-                          *ngIf="assignment.isBonus"
-                          [value]="'+' + assignment.bonusValue"
-                          severity="success"
-                          styleClass="sg-bonus-tag"
-                        ></p-tag>
                       </div>
                       <div
                         class="text-color-secondary text-sm overflow-hidden text-overflow-ellipsis white-space-nowrap"
@@ -142,51 +171,23 @@ import { TooltipModule } from "primeng/tooltip";
                     </div>
                   </td>
 
-                  <td class="text-center">
-                    <div class="flex flex-column gap-2">
-                      <span
-                        class="inline-flex align-items-center gap-2 text-color-secondary"
-                        pTooltip="מקרי בדיקה"
-                        tooltipPosition="top"
-                      >
-                        <i class="pi pi-file" aria-hidden="true"></i>
-                        {{ assignment.tests?.length || 0 }}
-                      </span>
-                      <span
-                        class="inline-flex align-items-center gap-2 text-color-secondary"
-                        pTooltip="הגשות"
-                        tooltipPosition="top"
-                      >
-                        <i class="pi pi-send" aria-hidden="true"></i>
-                        {{ assignment.submissionsCount }}
-                      </span>
-                    </div>
+                  <td class="text-center text-color-secondary">
+                    {{ assignment.tests?.length || 0 }}
+                  </td>
+
+                  <td class="text-center text-color-secondary">
+                    {{ assignment.submissionsCount }}
                   </td>
 
                   <td class="text-center">
-                    <div class="flex justify-content-center gap-1">
-                      <p-button
-                        icon="pi pi-pencil"
-                        [text]="true"
-                        pTooltip="עריכה"
-                        tooltipPosition="top"
-                        [attr.aria-label]="
-                          'עריכת תרגיל: ' + (assignment.title || '')
-                        "
-                        (onClick)="navigateToEdit(assignment.id)"
-                      ></p-button>
-                      <p-button
-                        icon="pi pi-trash"
-                        [text]="true"
-                        severity="danger"
-                        pTooltip="מחיקה"
-                        tooltipPosition="top"
-                        [attr.aria-label]="
-                          'מחיקת תרגיל: ' + (assignment.title || '')
-                        "
-                        (onClick)="confirmDelete(assignment)"
-                      ></p-button>
-                    </div>
+                    <p-button
+                      icon="pi pi-ellipsis-h"
+                      [text]="true"
+                      [attr.aria-label]="
+                        'פעולות נוספות: ' + (assignment.title || '')
+                      "
+                      (onClick)="openRowMenu($event, rowMenu, assignment)"
+                    ></p-button>
                   </td>
                 </tr>
               </ng-template>
@@ -194,10 +195,21 @@ import { TooltipModule } from "primeng/tooltip";
               <ng-template pTemplate="emptymessage">
                 <tr>
                   <td
-                    colspan="3"
+                    colspan="5"
                     class="text-center px-3 py-6 text-color-secondary"
                   >
-                    אין תרגילים להצגה.
+                    <div
+                      class="flex flex-column align-items-center justify-content-center gap-3"
+                    >
+                      <i class="pi pi-inbox text-4xl" aria-hidden="true"></i>
+                      <div>אין תרגילים להצגה.</div>
+                      <p-button
+                        label="תרגיל חדש"
+                        icon="pi pi-plus"
+                        styleClass="sg-btn-primary"
+                        (onClick)="navigateToCreate()"
+                      ></p-button>
+                    </div>
                   </td>
                 </tr>
               </ng-template>
@@ -234,17 +246,12 @@ import { TooltipModule } from "primeng/tooltip";
 
                     <div class="mobile-card__actions">
                       <p-button
-                        icon="pi pi-pencil"
+                        icon="pi pi-ellipsis-h"
                         [text]="true"
-                        [attr.aria-label]="'עריכת תרגיל: ' + (item.title || '')"
-                        (onClick)="navigateToEdit(item.id)"
-                      ></p-button>
-                      <p-button
-                        icon="pi pi-trash"
-                        severity="danger"
-                        [text]="true"
-                        [attr.aria-label]="'מחיקת תרגיל: ' + (item.title || '')"
-                        (onClick)="confirmDelete(item)"
+                        [attr.aria-label]="
+                          'פעולות נוספות: ' + (item.title || '')
+                        "
+                        (onClick)="openRowMenu($event, rowMenu, item)"
                       ></p-button>
                     </div>
                   </div>
@@ -273,6 +280,14 @@ import { TooltipModule } from "primeng/tooltip";
       </div>
     </section>
 
+    <p-menu
+      #rowMenu
+      [popup]="true"
+      appendTo="body"
+      [model]="rowMenuItems"
+      styleClass="sg-row-menu"
+    ></p-menu>
+
     <p-confirmDialog></p-confirmDialog>
   `,
   styles: [],
@@ -289,6 +304,11 @@ export class AssignmentsListComponent implements OnInit {
   lessonId!: number;
 
   query = "";
+
+  // Multi-select (design only — no real bulk delete)
+  selectedAssignments: AssignmentResponseDto[] = [];
+
+  rowMenuItems: MenuItem[] = [];
 
   get filteredAssignments(): AssignmentResponseDto[] {
     const q = this.query.trim().toLowerCase();
@@ -331,6 +351,39 @@ export class AssignmentsListComponent implements OnInit {
     this.router.navigate(["/lessons"]);
   }
 
+  openRowMenu(
+    event: Event,
+    menu: Menu,
+    assignment: AssignmentResponseDto,
+  ): void {
+    this.rowMenuItems = [
+      {
+        label: "עריכה",
+        icon: "pi pi-pencil",
+        command: () => this.navigateToEdit(assignment.id),
+      },
+      {
+        label: "מחיקה",
+        icon: "pi pi-trash",
+        styleClass: "sg-menu-danger",
+        command: () => this.confirmDelete(assignment),
+      },
+    ];
+    menu.toggle(event);
+  }
+
+  bulkDeleteComingSoon(): void {
+    this.messageService.add({
+      severity: "info",
+      summary: "בקרוב",
+      detail: "מחיקה מרובה תהיה זמינה בקרוב",
+    });
+  }
+
+  clearSelection(): void {
+    this.selectedAssignments = [];
+  }
+
   navigateToCreate(): void {
     this.router.navigate(["/lessons", this.lessonId, "assignments", "new"]);
   }
@@ -361,7 +414,7 @@ export class AssignmentsListComponent implements OnInit {
       next: () => {
         this.messageService.add({
           severity: "success",
-          summary: "הצלחה",
+          summary: "בוצע",
           detail: "התרגיל נמחק בהצלחה",
         });
         this.loadAssignments();

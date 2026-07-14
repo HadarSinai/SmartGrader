@@ -3,18 +3,17 @@ import { Component, OnInit, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 
-import { ConfirmationService, MessageService } from "primeng/api";
+import { ConfirmationService, MenuItem, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { ChipModule } from "primeng/chip";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
-import { DataViewModule } from "primeng/dataview";
 import { DropdownModule } from "primeng/dropdown";
 import { InputTextModule } from "primeng/inputtext";
-import { RatingModule } from "primeng/rating";
-import { SliderModule } from "primeng/slider";
+import { Menu, MenuModule } from "primeng/menu";
 import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
+import { TooltipModule } from "primeng/tooltip";
 
 import { StudentResponseDto } from "@models/student.model";
 import { StudentsService } from "@services/students.service";
@@ -26,16 +25,15 @@ import { StudentsService } from "@services/students.service";
     CommonModule,
     FormsModule,
     TableModule,
-    DataViewModule,
     ButtonModule,
     CardModule,
     ConfirmDialogModule,
     InputTextModule,
     DropdownModule,
-    RatingModule,
     TagModule,
-    SliderModule,
     ChipModule,
+    MenuModule,
+    TooltipModule,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: "./students-list.component.html",
@@ -50,18 +48,15 @@ export class StudentsListComponent implements OnInit {
   students: StudentResponseDto[] = [];
   loading = false;
 
-  // Filters (right panel)
+  // Filters
   query = "";
   classFilter: string | null = null;
-  gradeMin = 80; // slider (0-100)
-  onlyFavorites = false;
-  footerRating = 4;
+  filtersOpen = false;
 
-  pageSizeOptions = [6, 10, 20, 50].map((x) => ({
-    label: String(x),
-    value: x,
-  }));
-  rows = 6;
+  // Multi-select (design only — no real bulk delete)
+  selectedStudents: StudentResponseDto[] = [];
+
+  rowMenuItems: MenuItem[] = [];
 
   get classOptions() {
     const classes = Array.from(
@@ -71,6 +66,19 @@ export class StudentsListComponent implements OnInit {
       { label: "כל הכיתות", value: null },
       ...classes.map((c) => ({ label: c, value: c })),
     ];
+  }
+
+  get filteredStudents(): StudentResponseDto[] {
+    const q = this.query.trim().toLowerCase();
+    return this.students.filter(
+      (s) =>
+        (!q || (s.fullName ?? "").toLowerCase().includes(q)) &&
+        (!this.classFilter || s.className === this.classFilter),
+    );
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!this.query.trim() || !!this.classFilter;
   }
 
   ngOnInit(): void {
@@ -94,6 +102,39 @@ export class StudentsListComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  toggleFilters(): void {
+    this.filtersOpen = !this.filtersOpen;
+  }
+
+  openRowMenu(event: Event, menu: Menu, student: StudentResponseDto): void {
+    this.rowMenuItems = [
+      {
+        label: "עריכה",
+        icon: "pi pi-pencil",
+        command: () => this.navigateToEdit(student.id),
+      },
+      {
+        label: "מחיקה",
+        icon: "pi pi-trash",
+        styleClass: "sg-menu-danger",
+        command: () => this.confirmDelete(student),
+      },
+    ];
+    menu.toggle(event);
+  }
+
+  bulkDeleteComingSoon(): void {
+    this.messageService.add({
+      severity: "info",
+      summary: "בקרוב",
+      detail: "מחיקה מרובה תהיה זמינה בקרוב",
+    });
+  }
+
+  clearSelection(): void {
+    this.selectedStudents = [];
   }
 
   navigateToCreate(): void {
@@ -142,7 +183,5 @@ export class StudentsListComponent implements OnInit {
   resetFilters(): void {
     this.query = "";
     this.classFilter = null;
-    this.gradeMin = 80;
-    this.onlyFavorites = false;
   }
 }

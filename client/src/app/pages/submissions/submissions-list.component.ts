@@ -8,6 +8,7 @@ import { CardModule } from "primeng/card";
 import { ChipModule } from "primeng/chip";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { DataViewModule } from "primeng/dataview";
+import { Menu, MenuModule } from "primeng/menu";
 import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
 import { TooltipModule } from "primeng/tooltip";
@@ -18,7 +19,7 @@ import {
   SubmissionResponseDto,
 } from "@models/submission.model";
 import { SubmissionsService } from "@services/submissions.service";
-import { ConfirmationService, MessageService } from "primeng/api";
+import { ConfirmationService, MenuItem, MessageService } from "primeng/api";
 
 @Component({
   selector: "app-submissions-list",
@@ -34,6 +35,7 @@ import { ConfirmationService, MessageService } from "primeng/api";
     TooltipModule,
     BadgeModule,
     ConfirmDialogModule,
+    MenuModule,
   ],
   providers: [ConfirmationService],
   templateUrl: "./submissions-list.component.html",
@@ -49,6 +51,11 @@ export class SubmissionsListComponent implements OnInit {
   submissions: SubmissionExtended[] = [];
   loading = false;
   studentId!: number;
+
+  // Multi-select (design only — no real bulk delete)
+  selectedSubmissions: SubmissionExtended[] = [];
+
+  rowMenuItems: MenuItem[] = [];
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get("studentId");
@@ -119,6 +126,48 @@ export class SubmissionsListComponent implements OnInit {
     return "info";
   }
 
+  statusIcon(status?: string | null): string {
+    switch (this.statusSeverity(status)) {
+      case "success":
+        return "pi pi-check-circle";
+      case "warning":
+        return "pi pi-clock";
+      case "danger":
+        return "pi pi-times-circle";
+      default:
+        return "pi pi-info-circle";
+    }
+  }
+
+  openRowMenu(event: Event, menu: Menu, submission: SubmissionExtended): void {
+    this.rowMenuItems = [
+      {
+        label: "עריכה",
+        icon: "pi pi-pencil",
+        command: () => this.navigateToEdit(submission.id),
+      },
+      {
+        label: "מחיקה",
+        icon: "pi pi-trash",
+        styleClass: "sg-menu-danger",
+        command: () => this.confirmDelete(submission),
+      },
+    ];
+    menu.toggle(event);
+  }
+
+  bulkDeleteComingSoon(): void {
+    this.messageService.add({
+      severity: "info",
+      summary: "בקרוב",
+      detail: "מחיקה מרובה תהיה זמינה בקרוב",
+    });
+  }
+
+  clearSelection(): void {
+    this.selectedSubmissions = [];
+  }
+
   getStatusLabel(status?: string | null): string {
     if (!status) return "לא ידוע";
     return STATUS_LABELS_HE[status] ?? status;
@@ -156,17 +205,8 @@ export class SubmissionsListComponent implements OnInit {
   }
 
   private toExtended(s: SubmissionResponseDto): SubmissionExtended {
-    const code = s.sourceCode ?? "";
-    const preview = code
-      .replace(/\r\n/g, "\n")
-      .split("\n")
-      .slice(0, 3)
-      .join(" \n ")
-      .trim();
-
     return {
       ...s,
-      codePreview: preview || "(אין קוד)",
       evaluatedBy: s.comments ? "AI" : "Manual",
     };
   }

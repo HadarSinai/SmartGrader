@@ -1,21 +1,25 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit, inject } from "@angular/core";
 import {
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
+    FormBuilder,
+    FormGroup,
+    ReactiveFormsModule,
+    Validators,
 } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import {
-  CreateLessonRequestDto,
-  LessonResponseDto,
-  UpdateLessonRequestDto,
+    HebrewDatePickerComponent,
+    HebrewDateValue,
+    getHebrewToday,
+} from "@components/hebrew-date-picker/hebrew-date-picker.component";
+import {
+    CreateLessonRequestDto,
+    LessonResponseDto,
+    UpdateLessonRequestDto,
 } from "@models/lesson.model";
 import { LessonsService } from "@services/lessons.service";
 import { ConfirmationService, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
-import { CalendarModule } from "primeng/calendar";
 import { CardModule } from "primeng/card";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { InputTextModule } from "primeng/inputtext";
@@ -28,7 +32,7 @@ import { InputTextModule } from "primeng/inputtext";
     ReactiveFormsModule,
     CardModule,
     InputTextModule,
-    CalendarModule,
+    HebrewDatePickerComponent,
     ButtonModule,
     ConfirmDialogModule,
   ],
@@ -92,18 +96,11 @@ import { InputTextModule } from "primeng/inputtext";
 
               <div class="field col-12 md:col-6">
                 <label class="block font-bold mb-2" for="lessonDate"
-                  >תאריך ושעה *</label
+                  >תאריך *</label
                 >
-                <p-calendar
-                  inputId="lessonDate"
-                  styleClass="w-full"
+                <app-hebrew-date-picker
                   formControlName="lessonDate"
-                  [showTime]="true"
-                  [showSeconds]="false"
-                  dateFormat="yy-mm-dd"
-                  placeholder="בחרי תאריך ושעה"
-                >
-                </p-calendar>
+                ></app-hebrew-date-picker>
                 <small
                   class="p-error"
                   *ngIf="
@@ -111,7 +108,7 @@ import { InputTextModule } from "primeng/inputtext";
                     form.get('lessonDate')?.touched
                   "
                 >
-                  תאריך ושעה הם שדה חובה
+                  תאריך הוא שדה חובה
                 </small>
               </div>
 
@@ -180,7 +177,7 @@ export class LessonFormComponent implements OnInit {
     this.form = this.fb.group({
       name: ["", Validators.required],
       subject: ["", Validators.required],
-      lessonDate: [new Date(), Validators.required],
+      lessonDate: [getHebrewToday(), Validators.required],
       teacherName: ["", Validators.required],
     });
   }
@@ -201,7 +198,11 @@ export class LessonFormComponent implements OnInit {
         this.form.patchValue({
           name: lesson.name,
           subject: lesson.subject,
-          lessonDate: new Date(lesson.lessonDate),
+          lessonDate: {
+            hebrewYear: lesson.hebrewYear,
+            hebrewMonth: lesson.hebrewMonth,
+            hebrewDay: lesson.hebrewDay,
+          } satisfies HebrewDateValue,
           teacherName: lesson.teacherName,
         });
         this.loading = false;
@@ -224,10 +225,13 @@ export class LessonFormComponent implements OnInit {
 
     this.loading = true;
     const formValue = this.form.value;
+    const lessonDate = formValue.lessonDate as HebrewDateValue;
     const request = {
       name: formValue.name,
       subject: formValue.subject,
-      lessonDate: formValue.lessonDate.toISOString(),
+      hebrewYear: lessonDate.hebrewYear,
+      hebrewMonth: lessonDate.hebrewMonth,
+      hebrewDay: lessonDate.hebrewDay,
       teacherName: formValue.teacherName,
     };
 

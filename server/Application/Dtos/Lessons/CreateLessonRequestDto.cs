@@ -4,7 +4,9 @@
     {
         public string Name { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;
-        public DateTime LessonDate { get; set; }
+        public int HebrewYear { get; set; }
+        public int HebrewMonth { get; set; }
+        public int HebrewDay { get; set; }
         public string TeacherName { get; set; } = string.Empty;
     }
 }

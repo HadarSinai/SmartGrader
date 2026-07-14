@@ -33,15 +33,21 @@ namespace SmartGrader.Infrastructure.Repositories
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == id, ct);
         }
+        public async Task<Student?> GetByUserIdAsync(int userId, CancellationToken ct = default)
+        {
+            return await _context.Students
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.UserId == userId, ct);
+        }
         public async Task AddAsync(Student student, CancellationToken ct = default)
         {
             await _context.Students.AddAsync(student, ct);
         }
-        //public Task UpdateAsync(Student student, CancellationToken ct = default)
-        //{
-        //    _context.Students.Attach(student);
-        //    return Task.CompletedTask;
-        //}
+        public Task UpdateAsync(Student student, CancellationToken ct = default)
+        {
+            _context.Students.Update(student);
+            return Task.CompletedTask;
+        }
 
         public Task DeleteAsync(Student student, CancellationToken ct = default)
         {

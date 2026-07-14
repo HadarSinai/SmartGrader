@@ -124,7 +124,7 @@ interface AssignmentOption {
                   class="w-full sg-code-textarea"
                   formControlName="sourceCode"
                   rows="16"
-                  placeholder="הדביקי כאן קוד..."
+                  placeholder="יש להדביק כאן קוד..."
                   (blur)="form.get('sourceCode')?.markAsTouched()"
                 ></textarea>
                 <small
@@ -232,15 +232,15 @@ export class SubmissionFormComponent implements OnInit {
       next: (lessons: LessonResponseDto[]) => {
         this.lessons = lessons;
         this.lessonOptions = lessons.map((l) => ({
-          label: l.name || "Unnamed",
+          label: l.name || "ללא שם",
           value: l.id,
         }));
       },
       error: (_error: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: "Failed to load lessons",
+          summary: "שגיאה",
+          detail: "טעינת השיעורים נכשלה",
         });
       },
     });
@@ -255,7 +255,7 @@ export class SubmissionFormComponent implements OnInit {
           this.assignments = assignments;
           this.assignmentOptions = assignments.map(
             (a: AssignmentResponseDto) => ({
-              label: a.title || "Unnamed",
+              label: a.title || "ללא שם",
               value: a.id,
             }),
           );
@@ -263,8 +263,8 @@ export class SubmissionFormComponent implements OnInit {
         error: (_error: unknown) => {
           this.messageService.add({
             severity: "error",
-            summary: "Error",
-            detail: "Failed to load assignments",
+            summary: "שגיאה",
+            detail: "טעינת התרגילים נכשלה",
           });
         },
       });
@@ -286,8 +286,8 @@ export class SubmissionFormComponent implements OnInit {
       error: (_error: unknown) => {
         this.messageService.add({
           severity: "error",
-          summary: "Error",
-          detail: "Failed to load submission",
+          summary: "שגיאה",
+          detail: "טעינת ההגשה נכשלה",
         });
         this.loading = false;
       },
@@ -313,16 +313,16 @@ export class SubmissionFormComponent implements OnInit {
           next: () => {
             this.messageService.add({
               severity: "success",
-              summary: "Success",
-              detail: "Submission updated successfully",
+              summary: "בוצע",
+              detail: "ההגשה עודכנה בהצלחה",
             });
             this.router.navigate(["/students", this.studentId, "submissions"]);
           },
           error: (_error: unknown) => {
             this.messageService.add({
               severity: "error",
-              summary: "Error",
-              detail: "Failed to update submission",
+              summary: "שגיאה",
+              detail: "עדכון ההגשה נכשל",
             });
             this.loading = false;
           },
@@ -337,16 +337,16 @@ export class SubmissionFormComponent implements OnInit {
         next: () => {
           this.messageService.add({
             severity: "success",
-            summary: "Success",
-            detail: "Submission created successfully",
+            summary: "בוצע",
+            detail: "ההגשה נשלחה בהצלחה",
           });
           this.router.navigate(["/students", this.studentId, "submissions"]);
         },
         error: (_error: unknown) => {
           this.messageService.add({
             severity: "error",
-            summary: "Error",
-            detail: "Failed to create submission",
+            summary: "שגיאה",
+            detail: "יצירת ההגשה נכשלה",
           });
           this.loading = false;
         },

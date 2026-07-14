@@ -12,6 +12,7 @@ namespace SmartGrader.Infrastructure.Data
         public DbSet<Submission> Submissions { get; set; }
         public DbSet<LessonResult> LessonResults { get; set; }
         public DbSet<Log> Logs { get; set; }
+        public DbSet<User> Users { get; set; }
 
         public GradeSheetContext(DbContextOptions<GradeSheetContext> options)
             : base(options)
@@ -41,6 +42,25 @@ namespace SmartGrader.Infrastructure.Data
                 .HasMany(s => s.LessonResults)
                 .WithOne(r => r.Student)
                 .HasForeignKey(r => r.StudentId);
+
+            modelBuilder.Entity<User>(user =>
+            {
+                user.Property(u => u.Email).IsRequired();
+                user.HasIndex(u => u.Email).IsUnique();
+                user.Property(u => u.PasswordHash).IsRequired();
+                user.Property(u => u.FullName).IsRequired();
+                user.Property(u => u.Role).HasConversion<string>();
+            });
+
+            modelBuilder.Entity<Student>()
+                .HasOne(s => s.User)
+                .WithOne()
+                .HasForeignKey<Student>(s => s.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Student>()
+                .HasIndex(s => s.UserId)
+                .IsUnique();
 
         }
 

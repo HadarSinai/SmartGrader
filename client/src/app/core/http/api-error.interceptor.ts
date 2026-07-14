@@ -8,6 +8,24 @@ export const apiErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
+      // Auth pages show inline errors (per master-spec); 401 is handled by authInterceptor
+      const isAuthRequest =
+        req.url.includes("/api/auth/login") ||
+        req.url.includes("/api/auth/register-teacher");
+
+      // 404 on a lesson-result lookup is an expected "no result yet" state
+      // (student area shows "בתהליך") — not an error worth a toast.
+      const isExpectedMissingLessonResult =
+        err.status === 404 && /\/api\/lesson-results\/\d+\/\d+/.test(req.url);
+
+      if (
+        isAuthRequest ||
+        err.status === 401 ||
+        isExpectedMissingLessonResult
+      ) {
+        return throwError(() => err);
+      }
+
       const detail =
         err.error?.detail ||
         err.error?.message ||

@@ -54,7 +54,44 @@
   --text-color-secondary: var(--app-muted);
   --highlight-bg: rgba(176, 138, 111, 0.18);
   --highlight-text-color: var(--app-text-strong);
-  --focus-ring: 0 0 0 3px rgba(176, 138, 111, 0.28);
+  --focus-ring: 0 0 0 3px rgba(176, 138, 111, 0.22);
+
+  /* -----------------------------
+     Design tokens (client/spec.md) — derived from --app-* values
+     ----------------------------- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  --shadow-sm: 0 4px 14px rgba(58, 48, 40, 0.08);
+  --shadow-md: 0 14px 32px rgba(58, 48, 40, 0.16);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+
+  --text-sm: 0.86rem;
+  --text-base: 1rem;
+  --text-lg: 1.15rem;
+  --text-xl: 1.55rem;
+
+  /* Semantic status colors — green / amber / red / petrol.
+     Warm-compatible but clearly distinct from each other and from the accent.
+     Always paired with an icon. */
+  --status-success: #3f7d46;
+  --status-success-bg: rgba(63, 125, 70, 0.14);
+  --status-success-ink: #2e6136;
+  --status-warn: #b3801d;
+  --status-warn-bg: rgba(179, 128, 29, 0.16);
+  --status-warn-ink: #7d5a12;
+  --status-error: #c14f38;
+  --status-error-bg: rgba(193, 79, 56, 0.13);
+  --status-error-ink: #9a3a26;
+  --status-info: #46707e;
+  --status-info-bg: rgba(70, 112, 126, 0.13);
+  --status-info-ink: #355864;
 }
 
 body.dark {
@@ -123,22 +160,10 @@ a:hover {
 }
 
 .p-card {
-  border-radius: 12px;
-  box-shadow: var(--app-shadow);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--app-border);
   background: var(--app-surface);
-  transition:
-    transform 0.14s ease,
-    box-shadow 0.14s ease;
-}
-
-.p-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.1);
-}
-
-body.dark .p-card:hover {
-  box-shadow: var(--app-shadow);
 }
 
 .p-card .p-card-header {
@@ -179,25 +204,15 @@ body.dark .p-datatable .p-datatable-tbody > tr > td {
 
 .p-button {
   font-weight: 600;
-  border-radius: 12px;
-  height: 44px;
-  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  height: 40px;
+  gap: var(--space-2);
   text-decoration: none !important;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease;
+  transition: filter 0.12s ease;
 }
 
 .p-button:enabled:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
-  filter: brightness(1.02);
-}
-
-.p-button:enabled:active {
-  transform: translateY(0);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+  filter: brightness(1.04);
 }
 
 .p-button:focus {
@@ -221,18 +236,45 @@ body.dark .p-datatable .p-datatable-tbody > tr > td {
   padding: 1.5rem;
 }
 
+/* Compact form controls (~38px), thin warm border, soft focus ring */
 .p-inputtext,
 .p-dropdown,
+.p-multiselect,
 .p-calendar input {
-  border-radius: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.55);
-  transition: all 0.2s;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--app-border);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.p-inputtext:focus,
-.p-dropdown:focus,
-.p-calendar input:focus {
-  border-color: var(--accent);
+input.p-inputtext {
+  padding: 0.5rem 0.75rem;
+}
+
+.p-dropdown .p-dropdown-label {
+  padding-block: 0.5rem;
+}
+
+/* Dropdown/multiselect labels live inside an already-bordered control —
+   remove the inner frame (was showing as an extra square, e.g. rows-per-page) */
+.p-dropdown .p-dropdown-label,
+.p-multiselect .p-multiselect-label {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+textarea.p-inputtextarea {
+  padding: 0.6rem 0.75rem;
+  line-height: 1.5;
+  min-height: 6rem;
+}
+
+.p-inputtext:enabled:focus,
+.p-dropdown:not(.p-disabled).p-focus,
+.p-calendar input:enabled:focus {
+  border-color: var(--accent-2);
   box-shadow: var(--focus-ring);
 }
 
@@ -240,6 +282,17 @@ body.dark .p-datatable .p-datatable-tbody > tr > td {
 :focus-visible {
   outline: 2px solid rgba(176, 138, 111, 0.7);
   outline-offset: 3px;
+}
+
+/* Form controls already show their own soft focus ring —
+   remove the extra outline that made the border look thick and doubled */
+input:focus-visible,
+textarea:focus-visible,
+.p-inputtext:focus-visible,
+.p-dropdown:focus-visible,
+.p-multiselect:focus-visible,
+.p-calendar input:focus-visible {
+  outline: none;
 }
 
 /* PrimeNG overrides (layered, no !important) */
@@ -279,6 +332,88 @@ body.dark .p-datatable .p-datatable-tbody > tr > td {
     border-color: var(--accent);
     background: var(--accent);
   }
+  .p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box:hover,
+  .p-radiobutton:not(.p-radiobutton-disabled) .p-radiobutton-box:hover {
+    border-color: var(--accent);
+  }
+  .p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box.p-focus,
+  .p-radiobutton:not(.p-radiobutton-disabled) .p-radiobutton-box.p-focus {
+    box-shadow: var(--focus-ring);
+    border-color: var(--accent);
+  }
+  .p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box.p-highlight:hover,
+  .p-radiobutton:not(.p-radiobutton-disabled)
+    .p-radiobutton-box.p-highlight:hover {
+    border-color: var(--primary-600);
+    background: var(--primary-600);
+    color: var(--accent-ink);
+  }
+
+  /* Default button (no severity class) — kill the theme blue */
+  .p-button {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: var(--accent-ink);
+  }
+  .p-button:enabled:hover {
+    background: var(--primary-600);
+    border-color: var(--primary-600);
+    color: var(--accent-ink);
+  }
+  .p-button:enabled:active {
+    background: var(--primary-700);
+    border-color: var(--primary-700);
+    color: var(--accent-ink);
+  }
+  .p-button.p-button-text {
+    background: transparent;
+    border-color: transparent;
+    color: var(--accent);
+  }
+  .p-button.p-button-text:enabled:hover {
+    background: rgba(176, 138, 111, 0.12);
+    border-color: transparent;
+    color: var(--primary-600);
+  }
+  .p-button.p-button-danger.p-button-text {
+    color: var(--status-error);
+  }
+  .p-button.p-button-danger.p-button-text:enabled:hover {
+    background: var(--status-error-bg);
+    color: var(--status-error-ink);
+  }
+
+  /* Row selection — warm highlight instead of theme blue */
+  .p-datatable .p-datatable-tbody > tr.p-highlight {
+    background: var(--highlight-bg);
+    color: var(--app-text-strong);
+  }
+  .p-datatable .p-datatable-tbody > tr:focus-visible {
+    outline: 0.15rem solid rgba(176, 138, 111, 0.45);
+    outline-offset: -0.15rem;
+  }
+
+  /* Dropdown/multiselect selected option */
+  .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight,
+  .p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
+    background: var(--highlight-bg);
+    color: var(--app-text-strong);
+  }
+
+  /* Calendar selected day / today */
+  .p-datepicker table td > span.p-highlight {
+    background: var(--highlight-bg);
+    color: var(--app-text-strong);
+  }
+  .p-datepicker table td.p-datepicker-today > span {
+    background: var(--app-surface-2);
+    color: var(--app-text-strong);
+  }
+
+  /* Input switch checked */
+  .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
+    background: var(--accent);
+  }
 }
 
 /* Premium search field (used in tables captions) */
@@ -309,18 +444,40 @@ body.dark .p-datatable .p-datatable-tbody > tr > td {
 
 .p-paginator {
   border: none;
-  padding: 12px 8px;
-  border-radius: 14px;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-md);
   background: transparent;
+  gap: var(--space-1);
+}
+
+/* RTL: flip the directional chevrons so "next" points left and
+   "first/last" point toward the correct edge in reading order */
+.p-paginator .p-paginator-first svg,
+.p-paginator .p-paginator-prev svg,
+.p-paginator .p-paginator-next svg,
+.p-paginator .p-paginator-last svg {
+  transform: scaleX(-1);
+}
+
+.p-paginator .p-paginator-first,
+.p-paginator .p-paginator-prev,
+.p-paginator .p-paginator-next,
+.p-paginator .p-paginator-last,
+.p-paginator .p-paginator-pages .p-paginator-page {
+  min-width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  color: var(--app-text);
 }
 
 .p-paginator .p-dropdown {
-  height: 40px;
-  border-radius: 12px;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
 }
 
 .p-paginator .p-dropdown .p-dropdown-label {
-  line-height: 40px;
+  line-height: 1.4;
+  padding-block: 0.35rem;
 }
 
 .p-toast {
@@ -328,8 +485,27 @@ body.dark .p-datatable .p-datatable-tbody > tr > td {
 }
 
 .p-toast .p-toast-message {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+
+/* Semantic status tags — palette-derived, replace PrimeNG's raw colors */
+.p-tag.p-tag-success {
+  background: var(--status-success-bg);
+  color: var(--status-success-ink);
+}
+.p-tag.p-tag-warning {
+  background: var(--status-warn-bg);
+  color: var(--status-warn-ink);
+}
+.p-tag.p-tag-danger {
+  background: var(--status-error-bg);
+  color: var(--status-error-ink);
+}
+.p-tag.p-tag-info,
+.p-tag.p-tag-secondary {
+  background: var(--status-info-bg);
+  color: var(--status-info-ink);
 }
 
 /* Dark mode: help PrimeNG surfaces blend nicely */
@@ -487,17 +663,17 @@ body.a11y-reduce-motion * {
 }
 
 .sg-card {
-  border-radius: 22px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
 .sg-title .sg-h1 {
-  font-size: 1.55rem;
-  font-weight: 900;
+  font-size: var(--text-xl);
+  font-weight: 800;
   color: var(--app-text-strong);
 }
 .sg-title .sg-h2 {
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
   color: var(--app-muted);
   margin-top: 0.15rem;
 }
@@ -593,12 +769,37 @@ body.a11y-reduce-motion * {
 }
 
 .sg-warn-box {
-  padding: 1rem;
-  border-radius: 12px;
-  border: 1px solid rgba(234, 179, 8, 0.55);
-  background: rgba(234, 179, 8, 0.12);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--status-warn);
+  background: var(--status-warn-bg);
   color: var(--app-text-strong);
   white-space: pre-wrap;
+}
+
+/* Unified status area (detail template) */
+.sg-status-box {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.sg-status-box--error {
+  border-color: var(--status-error);
+  background: var(--status-error-bg);
+}
+.sg-status-box--error pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: var(--text-sm);
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--status-error-ink);
+  direction: ltr;
+  text-align: left;
 }
 
 /* Search input used in page headers */
@@ -607,9 +808,64 @@ body.a11y-reduce-motion * {
 }
 .sg-search .p-inputtext {
   width: 100%;
-  height: 44px;
-  border-radius: 16px;
-  background: #fff;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--app-surface);
+}
+
+/* Selection toolbar (multi-select, design-only) */
+.sg-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: 0 var(--space-4) var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--app-border);
+  background: var(--highlight-bg);
+  color: var(--app-text-strong);
+  font-weight: 600;
+}
+
+/* Row actions overflow menu (⋯) */
+.sg-row-menu.p-menu {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--app-border);
+}
+.sg-row-menu .p-menuitem-link .p-menuitem-text,
+.sg-row-menu .p-menuitem-link .p-menuitem-icon {
+  color: var(--app-text-strong);
+}
+.sg-row-menu .sg-menu-danger .p-menuitem-text,
+.sg-row-menu .sg-menu-danger .p-menuitem-icon {
+  color: var(--status-error-ink) !important;
+}
+
+/* Collapsible filter panel above tables */
+.sg-filter-panel {
+  border-block: 1px solid var(--app-border);
+  background: var(--app-surface-2);
+  padding-block: var(--space-3);
+}
+.sg-filter-panel .field {
+  margin-bottom: 0;
+}
+
+/* Breadcrumb-style back link in page headers */
+.sg-breadcrumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--app-muted);
+  cursor: pointer;
+  margin-bottom: var(--space-2);
+}
+.sg-breadcrumb-link:hover {
+  color: var(--accent);
 }
 
 /* Footer action bar under tables */
@@ -628,29 +884,34 @@ body.a11y-reduce-motion * {
 
 /* Right-side filters card (students-style) */
 .sg-filters-card {
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
 }
 .sg-filters-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1rem 0.25rem;
-  font-weight: 800;
+  padding: var(--space-4) var(--space-4) var(--space-1);
+  font-weight: 700;
   color: var(--app-text-strong);
 }
 .sg-filter-block {
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
+}
+.sg-filter-block .p-dropdown,
+.sg-filter-block .p-inputtext {
+  width: 100%;
 }
 .sg-label {
   display: block;
-  font-weight: 800;
+  font-weight: 700;
+  font-size: var(--text-sm);
   color: var(--app-text-strong);
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--space-2);
 }
 .sg-hint {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--app-muted);
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
 }
 
 /* PrimeNG component tweaks used across sg screens */
@@ -677,7 +938,7 @@ body.a11y-reduce-motion * {
   color: var(--accent);
 }
 .sg-icon-success {
-  color: #2a8a61;
+  color: var(--status-success);
 }
 
 .sg-frac {
@@ -778,26 +1039,26 @@ body.a11y-reduce-motion * {
   outline-offset: 3px;
 }
 
-/* Assignments: difficulty + bonus visual tags */
+/* Assignments: difficulty + bonus visual tags (semantic status colors) */
 .difficulty-easy {
-  background-color: #d1fae5 !important;
-  color: #065f46 !important;
+  background-color: var(--status-success-bg) !important;
+  color: var(--status-success-ink) !important;
 }
 .difficulty-medium {
-  background-color: #fef3c7 !important;
-  color: #92400e !important;
+  background-color: var(--status-warn-bg) !important;
+  color: var(--status-warn-ink) !important;
 }
 .difficulty-hard {
-  background-color: #fee2e2 !important;
-  color: #991b1b !important;
+  background-color: var(--status-error-bg) !important;
+  color: var(--status-error-ink) !important;
 }
 
 .sg-bonus-chip {
-  background-color: #d1fae5 !important;
-  color: #065f46 !important;
+  background-color: var(--status-success-bg) !important;
+  color: var(--status-success-ink) !important;
 }
 .sg-bonus-chip .p-chip-icon {
-  color: #10b981;
+  color: var(--status-success);
 }
 .sg-bonus-tag {
   font-size: 0.7rem !important;
@@ -819,7 +1080,12 @@ body.a11y-reduce-motion * {
 .ng-invalid.ng-touched .p-dropdown,
 .ng-invalid.ng-touched .p-inputnumber,
 .ng-invalid.ng-touched .p-calendar input {
-  border-color: #f44336;
+  border-color: var(--status-error);
+}
+
+.p-error {
+  color: var(--status-error);
+  font-weight: 600;
 }
 
 /* Topbar (moved from component styles, so it’s consistent) */
@@ -827,8 +1093,8 @@ body.a11y-reduce-motion * {
   .sg-topbar.p-toolbar {
     position: relative;
     z-index: 200;
-    background: rgba(0, 0, 0, 0);
-    border: 1px solid #977868;
+    background: transparent;
+    border: none;
     border-radius: 0;
     box-shadow: none;
     backdrop-filter: none;
@@ -862,51 +1128,43 @@ body.a11y-reduce-motion * {
   color: var(--app-text-strong);
 }
 
-/* App footer (currently used by students page, reusable) */
+/* App footer — minimal: brand + links only */
 .sg-footer {
   background: #e9dfd1;
   border-top: 1px solid rgba(58, 48, 40, 0.12);
 }
 
 .sg-footer-inner {
-  display: grid;
-  grid-template-columns: 140px 1fr 160px;
-  gap: 1.25rem;
-  padding: 2rem 1.25rem;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding: var(--space-6) 1.25rem;
 }
 
 .sg-footer-brand {
-  font-size: 5.2rem;
+  font-size: 1.6rem;
   font-weight: 900;
-  color: rgba(58, 48, 40, 0.35);
+  color: rgba(58, 48, 40, 0.45);
   line-height: 1;
 }
-.sg-footer-quote {
-  font-size: 1.35rem;
-  font-weight: 900;
-  color: rgba(251, 250, 248, 0.8);
-  text-shadow: 0 10px 30px rgba(58, 48, 40, 0.25);
-}
-.sg-footer-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
+
 .sg-footer-links {
   display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
+  gap: var(--space-4);
+  flex-wrap: wrap;
   color: var(--app-text-strong);
   font-weight: 700;
 }
 
 @media (max-width: 1100px) {
   .sg-footer-inner {
-    grid-template-columns: 1fr;
-  }
-  .sg-footer-brand {
-    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
   }
 }
 

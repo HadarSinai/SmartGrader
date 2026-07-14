@@ -5,6 +5,7 @@ export interface StudentResponseDto {
   createdAt: string;
   submissionsCount: number;
   lessonResultsCount: number;
+  hasAccount: boolean;
 }
 
 export interface CreateStudentRequestDto {

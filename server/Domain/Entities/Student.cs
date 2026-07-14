@@ -6,6 +6,11 @@
         public string FullName { get; set; }
         public string ClassName { get; set; }
        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+
+        // קישור למשתמש התחברות (null = עדיין אין חשבון)
+        public int? UserId { get; set; }
+        public User? User { get; set; }
+
         protected Student() { }
 
         // קשרים

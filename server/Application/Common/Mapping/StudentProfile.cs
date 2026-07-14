@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using SmartGrader.Application.Dtos.Auth;
 using SmartGrader.Application.Dtos.Student;
 using SmartGrader.Domain.Entities;
 
@@ -10,6 +11,11 @@ namespace SmartGrader.Application.Common.Mapping
         {
             // Create DTO → Entity
             CreateMap<CreateStudentRequestDto, Student>();
+
+            // Create-with-account DTO → Entity (auth flow — only academic fields)
+            CreateMap<CreateStudentAccountRequestDto, Student>()
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore());
 
             // Update DTO → Entity
             CreateMap<UpdateStudentRequestDto, Student>()
@@ -23,7 +29,9 @@ namespace SmartGrader.Application.Common.Mapping
                 .ForMember(dest => dest.SubmissionsCount,
                            opt => opt.MapFrom(src => src.Submissions != null ? src.Submissions.Count : 0))
                 .ForMember(dest => dest.LessonResultsCount,
-                           opt => opt.MapFrom(src => src.LessonResults != null ? src.LessonResults.Count : 0));
+                           opt => opt.MapFrom(src => src.LessonResults != null ? src.LessonResults.Count : 0))
+                .ForMember(dest => dest.HasAccount,
+                           opt => opt.MapFrom(src => src.UserId != null));
         }
     }
 }

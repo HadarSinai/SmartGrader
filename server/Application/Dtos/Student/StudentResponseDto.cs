@@ -9,5 +9,6 @@
 
         public int SubmissionsCount { get; set; }
         public int LessonResultsCount { get; set; }
+        public bool HasAccount { get; set; }
     }
 }

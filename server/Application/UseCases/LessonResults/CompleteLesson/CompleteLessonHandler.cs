@@ -20,7 +20,7 @@ public class CompleteLessonHandler
         var result = await _repository.GetAsync(command.StudentId, command.LessonId, ct)
                      ?? LessonResult.Create(command.StudentId, command.LessonId);
 
-        result.CompleteWith(command.FinalScore);
+        result.CompleteWith(command.FinalScore, command.HasBonus);
 
         if (result.Id == 0)
             await _repository.AddAsync(result, ct);

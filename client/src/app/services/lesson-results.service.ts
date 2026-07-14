@@ -1,5 +1,8 @@
 import { Injectable } from "@angular/core";
-import { LessonResultResponseDto } from "@models/lesson-result.model";
+import {
+  CompleteLessonRequestDto,
+  LessonResultResponseDto,
+} from "@models/lesson-result.model";
 import { Observable } from "rxjs";
 import { ApiClient } from "../core/http/api-client";
 
@@ -13,6 +16,15 @@ export class LessonResultsService {
   ): Observable<LessonResultResponseDto> {
     return this.api.http.get<LessonResultResponseDto>(
       this.api.url(`/api/lesson-results/${studentId}/${lessonId}`),
+    );
+  }
+
+  complete(
+    request: CompleteLessonRequestDto,
+  ): Observable<LessonResultResponseDto> {
+    return this.api.http.post<LessonResultResponseDto>(
+      this.api.url("/api/lesson-results/complete"),
+      request,
     );
   }
 }

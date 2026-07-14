@@ -6,30 +6,50 @@
           class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
         >
           <div class="sg-title">
+            <a
+              class="sg-breadcrumb-link"
+              role="link"
+              tabindex="0"
+              (click)="navigateToStudents()"
+              (keydown.enter)="navigateToStudents()"
+            >
+              <i class="pi pi-arrow-right" aria-hidden="true"></i>
+              חזרה לסטודנטים
+            </a>
             <div class="sg-h1">הגשות</div>
             <div class="sg-h2">מעקב, צפייה ועריכה של הגשות סטודנטים</div>
           </div>
 
-          <div class="flex align-items-center gap-2 flex-wrap">
-            <p-button
-              label="חזרה לסטודנטים"
-              icon="pi pi-arrow-left"
-              severity="secondary"
-              [outlined]="true"
-              (onClick)="navigateToStudents()"
-            >
-            </p-button>
-
-            <p-button
-              label="הגשה חדשה"
-              icon="pi pi-plus"
-              styleClass="sg-btn-primary"
-              (onClick)="navigateToCreate()"
-            >
-            </p-button>
-          </div>
+          <p-button
+            label="הגשה חדשה"
+            icon="pi pi-plus"
+            styleClass="sg-btn-primary"
+            (onClick)="navigateToCreate()"
+          >
+          </p-button>
         </div>
       </ng-template>
+
+      <!-- Selection toolbar (design only — bulk delete is a future task) -->
+      <div
+        class="sg-selection-bar"
+        *ngIf="selectedSubmissions.length > 0"
+        aria-live="polite"
+      >
+        <span>נבחרו {{ selectedSubmissions.length }}</span>
+        <p-button
+          label="מחיקת נבחרים"
+          icon="pi pi-trash"
+          severity="danger"
+          [text]="true"
+          (onClick)="bulkDeleteComingSoon()"
+        ></p-button>
+        <p-button
+          label="ביטול בחירה"
+          [text]="true"
+          (onClick)="clearSelection()"
+        ></p-button>
+      </div>
 
       <!-- Desktop table -->
       <div class="sg-table-wrap desktop-only">
@@ -40,6 +60,8 @@
           [paginator]="true"
           [rows]="10"
           [rowsPerPageOptions]="[10, 25, 50]"
+          dataKey="id"
+          [(selection)]="selectedSubmissions"
           styleClass="sg-table"
         >
           <ng-template pTemplate="emptymessage">
@@ -65,48 +87,51 @@
 
           <ng-template pTemplate="header">
             <tr>
+              <th style="width: 3rem">
+                <p-tableHeaderCheckbox
+                  aria-label="בחירת כל השורות"
+                ></p-tableHeaderCheckbox>
+              </th>
               <th>תרגיל</th>
-              <th>נשלח</th>
-              <th>סטטוס</th>
-              <th>ציון</th>
-              <th style="width: 9rem">פעולות</th>
+              <th class="text-center">נשלח</th>
+              <th class="text-center">סטטוס</th>
+              <th class="text-center">ציון</th>
+              <th class="text-center" style="width: 5rem">צפייה</th>
+              <th class="text-center" style="width: 5rem">פעולות</th>
             </tr>
           </ng-template>
 
           <ng-template pTemplate="body" let-submission>
             <tr>
               <td>
-                <div class="flex flex-column gap-1">
-                  <strong>{{
-                    submission.assignmentName ||
-                      "תרגיל #" + submission.assignmentId
-                  }}</strong>
-                  <div
-                    class="sg-code-preview mt-2"
-                    *ngIf="submission.codePreview"
-                  >
-                    <code>{{ submission.codePreview }}</code>
-                  </div>
-                </div>
+                <p-tableCheckbox
+                  [value]="submission"
+                  [attr.aria-label]="
+                    'בחירת הגשה: ' + (submission.assignmentName || '')
+                  "
+                ></p-tableCheckbox>
               </td>
 
               <td>
-                <div
-                  class="inline-flex align-items-center gap-2 text-color-secondary"
-                >
-                  <i class="pi pi-calendar"></i>
-                  <span>{{ submission.submittedAt | date: "short" }}</span>
-                </div>
+                <strong>{{
+                  submission.assignmentName ||
+                    "תרגיל #" + submission.assignmentId
+                }}</strong>
               </td>
 
-              <td>
+              <td class="text-center text-color-secondary">
+                {{ submission.submittedAt | date: "dd.MM.yy HH:mm" }}
+              </td>
+
+              <td class="text-center">
                 <p-tag
                   [severity]="statusSeverity(submission.status)"
                   [value]="getStatusLabel(submission.status)"
+                  [icon]="statusIcon(submission.status)"
                 ></p-tag>
               </td>
 
-              <td>
+              <td class="text-center">
                 <span
                   class="font-semibold"
                   [ngClass]="
@@ -119,34 +144,27 @@
                 </span>
               </td>
 
-              <td class="flex justify-content-end gap-1">
+              <td class="text-center">
                 <p-button
                   icon="pi pi-eye"
                   [text]="true"
-                  pTooltip="צפייה"
+                  pTooltip="צפייה בהגשה"
+                  tooltipPosition="top"
                   [attr.aria-label]="
                     'צפייה בהגשה: ' + (submission.assignmentName || '')
                   "
                   (onClick)="navigateToView(submission.id)"
                 ></p-button>
+              </td>
+
+              <td class="text-center">
                 <p-button
-                  icon="pi pi-pencil"
+                  icon="pi pi-ellipsis-h"
                   [text]="true"
-                  pTooltip="עריכה"
                   [attr.aria-label]="
-                    'עריכת הגשה: ' + (submission.assignmentName || '')
+                    'פעולות נוספות: ' + (submission.assignmentName || '')
                   "
-                  (onClick)="navigateToEdit(submission.id)"
-                ></p-button>
-                <p-button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  [text]="true"
-                  pTooltip="מחיקה"
-                  [attr.aria-label]="
-                    'מחיקת הגשה: ' + (submission.assignmentName || '')
-                  "
-                  (onClick)="confirmDelete(submission)"
+                  (onClick)="openRowMenu($event, rowMenu, submission)"
                 ></p-button>
               </td>
             </tr>
@@ -188,7 +206,7 @@
                 <div class="mobile-card__meta">
                   <div>
                     <span class="label">נשלח</span>
-                    {{ item.submittedAt | date: "short" }}
+                    {{ item.submittedAt | date: "dd.MM.yy HH:mm" }}
                   </div>
                   <div>
                     <span class="label">ציון</span> {{ item.score ?? "—" }}
@@ -203,21 +221,12 @@
                     (onClick)="navigateToView(item.id)"
                   ></p-button>
                   <p-button
-                    icon="pi pi-pencil"
+                    icon="pi pi-ellipsis-h"
                     [text]="true"
                     [attr.aria-label]="
-                      'עריכת הגשה: ' + (item.assignmentName || '')
+                      'פעולות נוספות: ' + (item.assignmentName || '')
                     "
-                    (onClick)="navigateToEdit(item.id)"
-                  ></p-button>
-                  <p-button
-                    icon="pi pi-trash"
-                    severity="danger"
-                    [text]="true"
-                    [attr.aria-label]="
-                      'מחיקת הגשה: ' + (item.assignmentName || '')
-                    "
-                    (onClick)="confirmDelete(item)"
+                    (onClick)="openRowMenu($event, rowMenu, item)"
                   ></p-button>
                 </div>
               </div>
@@ -228,5 +237,13 @@
     </p-card>
   </div>
 </section>
+
+<p-menu
+  #rowMenu
+  [popup]="true"
+  appendTo="body"
+  [model]="rowMenuItems"
+  styleClass="sg-row-menu"
+></p-menu>
 
 <p-confirmDialog></p-confirmDialog>

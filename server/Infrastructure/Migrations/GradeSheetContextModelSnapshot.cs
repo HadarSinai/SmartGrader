@@ -171,7 +171,13 @@ namespace SmartGrader.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("Students");
                 });
@@ -219,6 +225,39 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.ToTable("Submissions");
                 });
 
+            modelBuilder.Entity("SmartGrader.Domain.Entities.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("SmartGrader.Domain.Entities.Assignment", b =>
                 {
                     b.HasOne("SmartGrader.Domain.Entities.Lesson", "Lesson")
@@ -247,6 +286,16 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.Navigation("Lesson");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("SmartGrader.Domain.Entities.Student", b =>
+                {
+                    b.HasOne("SmartGrader.Domain.Entities.User", "User")
+                        .WithOne()
+                        .HasForeignKey("SmartGrader.Domain.Entities.Student", "UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SmartGrader.Domain.Entities.Submission", b =>

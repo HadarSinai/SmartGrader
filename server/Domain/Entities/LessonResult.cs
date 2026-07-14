@@ -16,10 +16,15 @@
             if (lessonId <= 0) throw new ArgumentException("Invalid lesson id.", nameof(lessonId));
             return new LessonResult { StudentId = studentId, LessonId = lessonId };
         }
-        public void CompleteWith(double score)
+        public void CompleteWith(double score, bool hasBonus = false)
         {
             if (IsComplete) throw new InvalidOperationException("Already completed.");
-            if (score is < 0 or > 100) throw new ArgumentOutOfRangeException(nameof(score));
+            // עם בונוס הציון יכול להגיע עד 150, בלי בונוס עד 100
+            double maxScore = hasBonus ? 150 : 100;
+            if (score < 0 || score > maxScore)
+                throw new ArgumentOutOfRangeException(
+                    nameof(score),
+                    $"Score must be between 0 and {maxScore} (hasBonus: {hasBonus}).");
 
             FinalScore = score;
             IsComplete = true;

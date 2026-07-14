@@ -1,5 +1,7 @@
 ﻿
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartGrader.Application.Dtos.Student;
 using SmartGrader.Application.Dtos.Submissions;
@@ -18,6 +20,7 @@ namespace SmartGrader.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class StudentsController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -27,9 +30,23 @@ namespace SmartGrader.Api.Controllers
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// A student may access only her own data: the studentId claim from the
+        /// token must match the studentId in the route. Teachers can access all.
+        /// </summary>
+        private bool IsAllowedForStudent(int studentId)
+        {
+            if (User.IsInRole("Teacher"))
+                return true;
+
+            var claim = User.FindFirstValue("studentId");
+            return claim is not null && int.TryParse(claim, out var ownId) && ownId == studentId;
+        }
+
     
 
         [HttpGet]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             IReadOnlyList<StudentResponseDto> result =
@@ -41,6 +58,9 @@ namespace SmartGrader.Api.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
+            if (!IsAllowedForStudent(id))
+                return Forbid();
+
             StudentResponseDto student =
                 await _mediator.Send(new GetStudentByIdQuery(id), cancellationToken);
 
@@ -48,6 +68,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> Create(
             [FromBody] CreateStudentRequestDto dto,
             CancellationToken cancellationToken)
@@ -62,6 +83,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> Update(
             int id,
             [FromBody] UpdateStudentRequestDto dto,
@@ -74,6 +96,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
             await _mediator.Send(new DeleteStudentCommand(id), cancellationToken);
@@ -88,6 +111,9 @@ namespace SmartGrader.Api.Controllers
             int studentId,
             CancellationToken cancellationToken)
         {
+            if (!IsAllowedForStudent(studentId))
+                return Forbid();
+
             IReadOnlyList<SubmissionResponseDto> result =
                 await _mediator.Send(new GetSubmissionsQuery(studentId), cancellationToken);
 
@@ -101,6 +127,9 @@ namespace SmartGrader.Api.Controllers
             int submissionId,
             CancellationToken cancellationToken)
         {
+            if (!IsAllowedForStudent(studentId))
+                return Forbid();
+
             SubmissionResponseDto result =
                 await _mediator.Send(
                     new GetSubmissionByIdQuery(studentId, submissionId),
@@ -110,12 +139,16 @@ namespace SmartGrader.Api.Controllers
         }
 
         // POST: api/students/{studentId}/submissions
+        // Exception to the Teacher-only write rule: a student may submit code — for herself only
         [HttpPost("{studentId:int}/submissions")]
         public async Task<IActionResult> CreateSubmission(
             int studentId,
             [FromBody] CreateSubmissionRequestDto dto,
             CancellationToken cancellationToken)
         {
+            if (!IsAllowedForStudent(studentId))
+                return Forbid();
+
             SubmissionResponseDto created =
                 await _mediator.Send(
                     new CreateSubmissionCommand(studentId,  dto),
@@ -129,6 +162,7 @@ namespace SmartGrader.Api.Controllers
 
         // PUT: api/students/{studentId}/submissions/{submissionId}
         [HttpPut("{studentId:int}/submissions/{submissionId:int}")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> UpdateSubmission(
             int studentId,
             int submissionId,
@@ -145,6 +179,7 @@ namespace SmartGrader.Api.Controllers
 
         // DELETE: api/students/{studentId}/submissions/{submissionId}
         [HttpDelete("{studentId:int}/submissions/{submissionId:int}")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> DeleteSubmission(
             int studentId,
             int submissionId,

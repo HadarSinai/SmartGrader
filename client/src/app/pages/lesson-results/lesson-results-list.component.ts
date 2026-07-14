@@ -7,12 +7,19 @@ import { catchError, map } from "rxjs/operators";
 import { MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
+import { CheckboxModule } from "primeng/checkbox";
 import { DataViewModule } from "primeng/dataview";
+import { DialogModule } from "primeng/dialog";
+import { InputNumberModule } from "primeng/inputnumber";
 import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
 import { TooltipModule } from "primeng/tooltip";
 
-import { LessonResultResponseDto } from "@models/lesson-result.model";
+import { FormsModule } from "@angular/forms";
+import {
+  CompleteLessonRequestDto,
+  LessonResultResponseDto,
+} from "@models/lesson-result.model";
 import { StudentResponseDto } from "@models/student.model";
 import { LessonResultsService } from "@services/lesson-results.service";
 import { StudentsService } from "@services/students.service";
@@ -31,12 +38,16 @@ interface LessonResultRowVm {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ButtonModule,
     CardModule,
     TableModule,
     DataViewModule,
     TagModule,
     TooltipModule,
+    DialogModule,
+    InputNumberModule,
+    CheckboxModule,
   ],
   template: `
     <section class="sg-page">
@@ -47,17 +58,19 @@ interface LessonResultRowVm {
               class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
             >
               <div class="sg-title">
+                <a
+                  class="sg-breadcrumb-link"
+                  role="link"
+                  tabindex="0"
+                  (click)="navigateToLessons()"
+                  (keydown.enter)="navigateToLessons()"
+                >
+                  <i class="pi pi-arrow-right" aria-hidden="true"></i>
+                  חזרה לשיעורים
+                </a>
                 <div class="sg-h1">תוצאות שיעור</div>
                 <div class="sg-h2">מעקב אחר התקדמות התלמידים בשיעור</div>
               </div>
-
-              <p-button
-                label="חזרה לשיעורים"
-                icon="pi pi-arrow-left"
-                severity="secondary"
-                [outlined]="true"
-                (onClick)="navigateToLessons()"
-              ></p-button>
             </div>
           </ng-template>
 
@@ -81,17 +94,20 @@ interface LessonResultRowVm {
 
               <ng-template pTemplate="body" let-row>
                 <tr>
-                  <td class="text-center">{{ row.studentName }}</td>
+                  <td class="font-bold text-color">{{ row.studentName }}</td>
                   <td class="text-center">
-                    <div class="sg-frac" aria-label="התקדמות בתרגילים">
-                      <div class="sg-frac-top">
-                        {{ row.completedAssignments }}
-                      </div>
-                      <div class="sg-frac-line"></div>
-                      <div class="sg-frac-bot">
-                        {{ row.totalAssignments }}
-                      </div>
-                    </div>
+                    <span
+                      class="font-semibold text-color"
+                      [attr.aria-label]="
+                        'הושלמו ' +
+                        row.completedAssignments +
+                        ' מתוך ' +
+                        row.totalAssignments +
+                        ' תרגילים'
+                      "
+                    >
+                      {{ row.completedAssignments }}/{{ row.totalAssignments }}
+                    </span>
                   </td>
                   <td class="text-center">
                     {{ row.finalScore ?? "טרם נקבע" }}
@@ -101,11 +117,13 @@ interface LessonResultRowVm {
                       *ngIf="row.isComplete"
                       severity="success"
                       value="הושלם"
+                      icon="pi pi-check-circle"
                     ></p-tag>
                     <p-tag
                       *ngIf="!row.isComplete"
                       severity="info"
                       value="בתהליך"
+                      icon="pi pi-info-circle"
                     ></p-tag>
                   </td>
                   <td class="text-center">
@@ -117,10 +135,8 @@ interface LessonResultRowVm {
                       label="סיום שיעור"
                       icon="pi pi-flag"
                       [text]="true"
-                      [disabled]="true"
-                      pTooltip="פונקציונליות זו תופעל בקרוב"
-                      tooltipPosition="top"
-                      aria-describedby="finalizeHint"
+                      [attr.aria-label]="'סיום שיעור עבור ' + row.studentName"
+                      (onClick)="openFinalize(row)"
                     ></p-button>
                   </td>
                 </tr>
@@ -153,11 +169,13 @@ interface LessonResultRowVm {
                         *ngIf="item.isComplete"
                         severity="success"
                         value="הושלם"
+                        icon="pi pi-check-circle"
                       ></p-tag>
                       <p-tag
                         *ngIf="!item.isComplete"
                         severity="info"
                         value="בתהליך"
+                        icon="pi pi-info-circle"
                       ></p-tag>
                     </div>
 
@@ -183,10 +201,10 @@ interface LessonResultRowVm {
                         label="סיום שיעור"
                         icon="pi pi-flag"
                         [outlined]="true"
-                        [disabled]="true"
-                        pTooltip="פונקציונליות זו תופעל בקרוב"
-                        tooltipPosition="top"
-                        aria-describedby="finalizeHint"
+                        [attr.aria-label]="
+                          'סיום שיעור עבור ' + item.studentName
+                        "
+                        (onClick)="openFinalize(item)"
                       ></p-button>
                     </div>
                   </div>
@@ -196,7 +214,60 @@ interface LessonResultRowVm {
           </div>
         </p-card>
       </div>
-      <span id="finalizeHint" class="sr-only">פונקציונליות זו תופעל בקרוב</span>
+
+      <!-- Finalize dialog -->
+      <p-dialog
+        header="סיום שיעור"
+        [(visible)]="finalizeDialogOpen"
+        [modal]="true"
+        [style]="{ width: '24rem' }"
+        [draggable]="false"
+        [resizable]="false"
+      >
+        <div class="flex flex-column gap-3" *ngIf="finalizeRow">
+          <div>
+            קביעת ציון סופי עבור
+            <strong>{{ finalizeRow.studentName }}</strong>
+          </div>
+          <div class="flex align-items-center gap-2">
+            <p-checkbox
+              inputId="hasBonus"
+              [(ngModel)]="hasBonus"
+              [binary]="true"
+              (onChange)="onBonusChange()"
+            ></p-checkbox>
+            <label class="sg-label mb-0" for="hasBonus">כולל בונוס</label>
+          </div>
+          <div>
+            <label class="sg-label" for="finalScore"
+              >ציון סופי (0–{{ maxScore }}) *</label
+            >
+            <p-inputNumber
+              inputId="finalScore"
+              [(ngModel)]="finalScore"
+              [min]="0"
+              [max]="maxScore"
+              [showButtons]="true"
+              styleClass="w-full"
+            ></p-inputNumber>
+          </div>
+        </div>
+        <ng-template pTemplate="footer">
+          <p-button
+            label="ביטול"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="finalizeDialogOpen = false"
+          ></p-button>
+          <p-button
+            label="שמירה"
+            styleClass="sg-btn-primary"
+            [loading]="finalizeSaving"
+            [disabled]="finalScore === null"
+            (onClick)="saveFinalize()"
+          ></p-button>
+        </ng-template>
+      </p-dialog>
     </section>
   `,
   styles: [],
@@ -211,6 +282,69 @@ export class LessonResultsListComponent implements OnInit {
   lessonId!: number;
   rows: LessonResultRowVm[] = [];
   loading = false;
+
+  // Finalize dialog
+  finalizeDialogOpen = false;
+  finalizeRow: LessonResultRowVm | null = null;
+  finalScore: number | null = null;
+  hasBonus = false;
+  finalizeSaving = false;
+
+  get maxScore(): number {
+    return this.hasBonus ? 150 : 100;
+  }
+
+  onBonusChange(): void {
+    if (
+      !this.hasBonus &&
+      this.finalScore !== null &&
+      this.finalScore > this.maxScore
+    ) {
+      this.finalScore = this.maxScore;
+    }
+  }
+
+  openFinalize(row: LessonResultRowVm): void {
+    this.finalizeRow = row;
+    this.finalScore = null;
+    this.hasBonus = false;
+    this.finalizeDialogOpen = true;
+  }
+
+  saveFinalize(): void {
+    if (!this.finalizeRow || this.finalScore === null) {
+      return;
+    }
+
+    const request: CompleteLessonRequestDto = {
+      studentId: this.finalizeRow.studentId,
+      lessonId: this.lessonId,
+      finalScore: this.finalScore,
+      hasBonus: this.hasBonus,
+    };
+
+    this.finalizeSaving = true;
+    this.lessonResultsService.complete(request).subscribe({
+      next: () => {
+        this.finalizeSaving = false;
+        this.finalizeDialogOpen = false;
+        this.messageService.add({
+          severity: "success",
+          summary: "בוצע",
+          detail: "התוצאה נשמרה בהצלחה",
+        });
+        this.loadResults();
+      },
+      error: () => {
+        this.finalizeSaving = false;
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "שמירת התוצאה נכשלה",
+        });
+      },
+    });
+  }
 
   ngOnInit(): void {
     const lessonIdParam = this.route.snapshot.paramMap.get("lessonId");

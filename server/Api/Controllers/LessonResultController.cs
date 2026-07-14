@@ -3,6 +3,7 @@ using SmartGrader.Application.Dtos;
 using SmartGrader.Application.Dtos.LessonResults;
 using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 using SmartGrader.Application.UseCases.LessonResults.GetLessonResult;
@@ -11,6 +12,7 @@ namespace SmartGrader.Api.Controllers;
 
 [ApiController]
 [Route("api/lesson-results")]
+[Authorize]
 public class LessonResultController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -33,6 +35,7 @@ public class LessonResultController : ControllerBase
     }
 
     [HttpPost("complete")]
+    [Authorize(Roles = "Teacher")]
     public async Task<IActionResult> Complete([FromBody] CompleteLessonRequestDto dto)
     {
         var command = _mapper.Map<CompleteLessonCommand>(dto);

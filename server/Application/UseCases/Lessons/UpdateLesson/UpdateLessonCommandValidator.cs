@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using SmartGrader.Application.Common.HebrewDate;
 using System;
 
 namespace SmartGrader.Application.UseCases.Lessons.UpdateLesson
@@ -23,10 +24,18 @@ namespace SmartGrader.Application.UseCases.Lessons.UpdateLesson
                 .NotEmpty().WithMessage("Teacher name is required")
                 .MaximumLength(100);
 
-            RuleFor(x => x.Dto.LessonDate)
-                .NotEmpty().WithMessage("Lesson date is required")
-                .GreaterThan(DateTime.MinValue)
-                .WithMessage("Lesson date is invalid");
+            RuleFor(x => x.Dto.HebrewYear)
+                .InclusiveBetween(5000, 6000).WithMessage("שנה עברית לא תקינה");
+
+            RuleFor(x => x.Dto.HebrewMonth)
+                .InclusiveBetween(1, 13);
+
+            RuleFor(x => x.Dto.HebrewDay)
+                .InclusiveBetween(1, 30);
+
+            RuleFor(x => x.Dto)
+                .Must(d => HebrewDateConverter.IsValidHebrewDate(d.HebrewYear, d.HebrewMonth, d.HebrewDay))
+                .WithMessage("התאריך העברי אינו קיים");
         }
     }
 }

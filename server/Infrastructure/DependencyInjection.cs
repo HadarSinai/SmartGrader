@@ -7,11 +7,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SmartGrader.Application.Services.CodeRunner;
 using SmartGrader.Application.Services.Feedback;
+using SmartGrader.Application.Common.Interfaces;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Infrastructure.Services.CodeRunner;
 using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
 using SmartGrader.Infrastructure.Services.Feedback;
+using SmartGrader.Infrastructure.Services.Auth;
 using Microsoft.Extensions.Configuration;
 
 
@@ -30,6 +32,7 @@ namespace SmartGrader.Infrastructure
             services.AddScoped<IStudentRepository, StudentRepository>();
             services.AddScoped<ISubmissionRepository, SubmissionRepository>();
             services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             //  services.AddSingleton<ICompilerService, RoslynCompilerService>();
 
@@ -39,6 +42,10 @@ namespace SmartGrader.Infrastructure
             });
 
             services.Configure<OpenAiOptions>(configuration.GetSection("OpenAi"));
+
+            services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+            services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+            services.AddSingleton<IPasswordHasherService, PasswordHasherService>();
 
             services.AddHttpClient<ICodeRunnerService, Judge0CodeRunner>();
             services.Configure<Judge0Options>(configuration.GetSection("Judge0"));

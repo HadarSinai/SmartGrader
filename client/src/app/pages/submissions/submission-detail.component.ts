@@ -24,19 +24,21 @@ import { TagModule } from "primeng/tag";
               class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
             >
               <div class="sg-title">
+                <a
+                  class="sg-breadcrumb-link"
+                  role="link"
+                  tabindex="0"
+                  (click)="navigateToList()"
+                  (keydown.enter)="navigateToList()"
+                >
+                  <i class="pi pi-arrow-right" aria-hidden="true"></i>
+                  חזרה להגשות
+                </a>
                 <div class="sg-h1">פרטי הגשה</div>
                 <div class="sg-h2">צפייה בפרטים, סטטוס וקוד</div>
               </div>
 
               <div class="flex align-items-center gap-2 flex-wrap">
-                <p-button
-                  label="חזרה"
-                  icon="pi pi-arrow-left"
-                  severity="secondary"
-                  [outlined]="true"
-                  (onClick)="navigateToList()"
-                >
-                </p-button>
                 <p-button
                   label="עריכה"
                   icon="pi pi-pencil"
@@ -73,86 +75,8 @@ import { TagModule } from "primeng/tag";
                   נשלח
                 </div>
                 <div class="text-color">
-                  {{ submission.submittedAt | date: "medium" }}
+                  {{ submission.submittedAt | date: "dd.MM.yy HH:mm" }}
                 </div>
-              </div>
-
-              <div class="col-12 md:col-6">
-                <div class="text-xs font-bold text-color-secondary mb-1">
-                  סטטוס
-                </div>
-                <ng-container [ngSwitch]="submission.status">
-                  <p-tag
-                    *ngSwitchCase="'Done'"
-                    severity="success"
-                    [value]="statusLabels['Done']"
-                    icon="pi pi-check-circle"
-                  />
-                  <p-tag
-                    *ngSwitchCase="'PendingAi'"
-                    severity="warning"
-                    [value]="statusLabels['PendingAi']"
-                    icon="pi pi-clock"
-                  />
-                  <p-tag
-                    *ngSwitchCase="'ProcessingAi'"
-                    severity="info"
-                    [value]="statusLabels['ProcessingAi']"
-                    icon="pi pi-spinner pi-spin"
-                  />
-                  <p-tag
-                    *ngSwitchCase="'AiFailed'"
-                    severity="danger"
-                    [value]="statusLabels['AiFailed']"
-                    icon="pi pi-exclamation-triangle"
-                  />
-                  <p-tag
-                    *ngSwitchCase="'CompilationFailed'"
-                    severity="danger"
-                    [value]="statusLabels['CompilationFailed']"
-                    icon="pi pi-times-circle"
-                  />
-                  <p-tag
-                    *ngSwitchDefault
-                    [value]="submission.status || 'לא ידוע'"
-                    severity="secondary"
-                  />
-                </ng-container>
-                <div
-                  class="text-color-secondary text-sm mt-2"
-                  *ngIf="isPolling"
-                  aria-live="polite"
-                >
-                  מתעדכן אוטומטית...
-                </div>
-              </div>
-
-              <div
-                *ngIf="
-                  submission.status === 'CompilationFailed' &&
-                  submission.compileError
-                "
-                class="col-12"
-              >
-                <div class="compile-error-box">
-                  <strong>שגיאת קומפילציה:</strong>
-                  <pre>{{ submission.compileError }}</pre>
-                </div>
-              </div>
-
-              <div
-                class="col-12"
-                *ngIf="
-                  submission.status === 'CompilationFailed' ||
-                  submission.status === 'AiFailed'
-                "
-              >
-                <p-button
-                  label="ערכי והגישי מחדש"
-                  icon="pi pi-refresh"
-                  styleClass="sg-btn-primary"
-                  (onClick)="navigateToEdit()"
-                ></p-button>
               </div>
 
               <div class="col-12 md:col-6">
@@ -174,18 +98,96 @@ import { TagModule } from "primeng/tag";
                 </div>
               </div>
 
-              <div class="col-12" *ngIf="submission.comments">
-                <div class="text-xs font-bold text-color-secondary mb-2">
-                  הערות
-                </div>
-                <div class="sg-note-box">{{ submission.comments }}</div>
-              </div>
+              <!-- Unified status area -->
+              <div class="col-12">
+                <div
+                  class="sg-status-box"
+                  [class.sg-status-box--error]="
+                    submission.status === 'CompilationFailed' ||
+                    submission.status === 'AiFailed'
+                  "
+                >
+                  <div class="flex align-items-center gap-2 flex-wrap">
+                    <ng-container [ngSwitch]="submission.status">
+                      <p-tag
+                        *ngSwitchCase="'Done'"
+                        severity="success"
+                        [value]="statusLabels['Done']"
+                        icon="pi pi-check-circle"
+                      />
+                      <p-tag
+                        *ngSwitchCase="'PendingAi'"
+                        severity="warning"
+                        [value]="statusLabels['PendingAi']"
+                        icon="pi pi-clock"
+                      />
+                      <p-tag
+                        *ngSwitchCase="'ProcessingAi'"
+                        severity="info"
+                        [value]="statusLabels['ProcessingAi']"
+                        icon="pi pi-spinner pi-spin"
+                      />
+                      <p-tag
+                        *ngSwitchCase="'AiFailed'"
+                        severity="danger"
+                        [value]="statusLabels['AiFailed']"
+                        icon="pi pi-exclamation-triangle"
+                      />
+                      <p-tag
+                        *ngSwitchCase="'CompilationFailed'"
+                        severity="danger"
+                        [value]="statusLabels['CompilationFailed']"
+                        icon="pi pi-times-circle"
+                      />
+                      <p-tag
+                        *ngSwitchDefault
+                        [value]="submission.status || 'לא ידוע'"
+                        severity="secondary"
+                      />
+                    </ng-container>
 
-              <div class="col-12" *ngIf="submission.aiError">
-                <div class="text-xs font-bold text-color-secondary mb-2">
-                  שגיאת AI
+                    <span
+                      class="text-color-secondary text-sm"
+                      *ngIf="isPolling"
+                      aria-live="polite"
+                    >
+                      מתעדכן אוטומטית...
+                    </span>
+                  </div>
+
+                  <div
+                    *ngIf="
+                      submission.status === 'CompilationFailed' &&
+                      submission.compileError
+                    "
+                  >
+                    <strong>שגיאת קומפילציה:</strong>
+                    <pre>{{ submission.compileError }}</pre>
+                  </div>
+
+                  <div *ngIf="submission.aiError">
+                    <strong>שגיאת AI:</strong>
+                    <pre>{{ submission.aiError }}</pre>
+                  </div>
+
+                  <div *ngIf="submission.comments" class="sg-note-box">
+                    {{ submission.comments }}
+                  </div>
+
+                  <div
+                    *ngIf="
+                      submission.status === 'CompilationFailed' ||
+                      submission.status === 'AiFailed'
+                    "
+                  >
+                    <p-button
+                      label="עריכה והגשה מחדש"
+                      icon="pi pi-refresh"
+                      styleClass="sg-btn-primary"
+                      (onClick)="navigateToEdit()"
+                    ></p-button>
+                  </div>
                 </div>
-                <div class="sg-warn-box">{{ submission.aiError }}</div>
               </div>
 
               <div class="col-12">
@@ -209,21 +211,14 @@ import { TagModule } from "primeng/tag";
   `,
   styles: [
     `
-      .compile-error-box {
-        border: 1px solid #f44336;
-        border-left: 4px solid #f44336;
-        background-color: #fff5f5;
-        border-radius: 4px;
-        padding: 12px 16px;
-        margin-top: 8px;
-        color: #c62828;
-      }
-      .compile-error-box pre {
+      .sg-status-box pre {
         font-family: "Courier New", Courier, monospace;
         font-size: 0.875rem;
         margin: 6px 0 0;
         white-space: pre-wrap;
         word-break: break-word;
+        direction: ltr;
+        text-align: left;
       }
     `,
   ],

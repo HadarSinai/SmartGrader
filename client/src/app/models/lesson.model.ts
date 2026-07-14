@@ -3,6 +3,10 @@ export interface LessonResponseDto {
   name: string | null;
   subject: string | null;
   lessonDate: string;
+  lessonDateHebrew: string;
+  hebrewYear: number;
+  hebrewMonth: number;
+  hebrewDay: number;
   teacherName: string | null;
   createdAt: string;
   assignmentsCount: number;
@@ -11,13 +15,17 @@ export interface LessonResponseDto {
 export interface CreateLessonRequestDto {
   name: string | null;
   subject: string | null;
-  lessonDate: string;
+  hebrewYear: number;
+  hebrewMonth: number;
+  hebrewDay: number;
   teacherName: string | null;
 }
 
 export interface UpdateLessonRequestDto {
   name: string | null;
   subject: string | null;
-  lessonDate: string;
+  hebrewYear: number;
+  hebrewMonth: number;
+  hebrewDay: number;
   teacherName: string | null;
 }

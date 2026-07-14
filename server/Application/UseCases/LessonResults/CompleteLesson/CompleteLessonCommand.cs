@@ -11,5 +11,6 @@ namespace SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 public record CompleteLessonCommand(
     int StudentId,
     int LessonId,
-    double FinalScore
+    double FinalScore,
+    bool HasBonus = false
 ) : IRequest<LessonResult>;

@@ -1,27 +1,40 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit, inject } from "@angular/core";
-import { Router } from "@angular/router";
-import { SubmissionResponseDto } from "@models/submission.model";
-import { AssignmentsService } from "@services/assignments.service";
+import { Router, RouterModule } from "@angular/router";
+import {
+  STATUS_LABELS_HE,
+  SubmissionResponseDto,
+} from "@models/submission.model";
 import { LessonsService } from "@services/lessons.service";
 import { StudentsService } from "@services/students.service";
 import { SubmissionsService } from "@services/submissions.service";
+import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { SkeletonModule } from "primeng/skeleton";
 import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
+import { TooltipModule } from "primeng/tooltip";
+import { forkJoin } from "rxjs";
 
 interface KPI {
   label: string;
-  value: number;
+  value: string;
   icon: string;
-  trend?: string;
 }
 
 @Component({
   selector: "app-dashboard",
   standalone: true,
-  imports: [CommonModule, CardModule, TableModule, TagModule, SkeletonModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    CardModule,
+    TableModule,
+    TagModule,
+    SkeletonModule,
+    ButtonModule,
+    TooltipModule,
+  ],
   template: `
     <section class="sg-page">
       <div class="pt-3 pb-5">
@@ -50,13 +63,6 @@ interface KPI {
                   <div class="text-color-secondary font-medium">
                     {{ kpi.label }}
                   </div>
-                  <div
-                    class="text-sm mt-1"
-                    class="sg-kpi-trend"
-                    *ngIf="kpi.trend"
-                  >
-                    {{ kpi.trend }}
-                  </div>
                 </div>
               </div>
             </div>
@@ -76,8 +82,16 @@ interface KPI {
             >
               <div class="sg-title">
                 <div class="sg-h1">הגשות אחרונות</div>
-                <div class="sg-h2">צפייה מהירה והמשך עבודה</div>
+                <div class="sg-h2">חמש ההגשות האחרונות במערכת</div>
               </div>
+
+              <p-button
+                label="לכל ההגשות"
+                icon="pi pi-arrow-left"
+                [text]="true"
+                routerLink="/students"
+                pTooltip="ההגשות מרוכזות לפי סטודנט/ית"
+              ></p-button>
             </div>
           </ng-template>
 
@@ -87,17 +101,15 @@ interface KPI {
               [loading]="loading"
               styleClass="sg-table"
               responsiveLayout="scroll"
-              [paginator]="true"
-              [rows]="10"
             >
               <ng-template pTemplate="header">
                 <tr>
-                  <th class="text-center">סטודנט</th>
-                  <th class="text-center">תרגיל</th>
+                  <th>סטודנט</th>
+                  <th>תרגיל</th>
                   <th class="text-center">נשלח</th>
                   <th class="text-center">סטטוס</th>
                   <th class="text-center">ציון</th>
-                  <th class="text-center">פעולות</th>
+                  <th class="text-center" style="width: 5rem">צפייה</th>
                 </tr>
               </ng-template>
 
@@ -105,12 +117,12 @@ interface KPI {
                 <tr>
                   <td>{{ submission.studentName || "—" }}</td>
                   <td>{{ submission.assignmentName || "—" }}</td>
-                  <td class="text-center">
-                    {{ submission.submittedAt | date: "short" }}
+                  <td class="text-center text-color-secondary">
+                    {{ submission.submittedAt | date: "dd.MM.yy HH:mm" }}
                   </td>
                   <td class="text-center">
                     <p-tag
-                      [value]="submission.status || 'Unknown'"
+                      [value]="getStatusLabel(submission.status)"
                       [severity]="getStatusSeverity(submission.status)"
                     >
                     </p-tag>
@@ -157,13 +169,13 @@ interface KPI {
       .sg-kpi-card {
         background: var(--app-surface);
         border: 1px solid var(--app-border);
-        box-shadow: 0 18px 42px rgba(58, 48, 40, 0.1);
+        box-shadow: var(--shadow-sm);
       }
 
       .sg-kpi-iconWrap {
         width: 60px;
         height: 60px;
-        border-radius: 18px;
+        border-radius: var(--radius-lg);
         background: var(--app-surface);
         border: 1px solid rgba(58, 48, 40, 0.12);
       }
@@ -171,18 +183,12 @@ interface KPI {
       .sg-kpi-icon {
         color: var(--accent);
       }
-
-      .sg-kpi-trend {
-        color: var(--app-muted);
-        font-weight: 700;
-      }
     `,
   ],
 })
 export class DashboardComponent implements OnInit {
   private readonly lessonsService = inject(LessonsService);
   private readonly studentsService = inject(StudentsService);
-  private readonly assignmentsService = inject(AssignmentsService);
   private readonly submissionsService = inject(SubmissionsService);
   private readonly router = inject(Router);
 
@@ -197,58 +203,56 @@ export class DashboardComponent implements OnInit {
   loadDashboardData(): void {
     this.loading = true;
 
-    Promise.all([
-      this.lessonsService.getAll().toPromise(),
-      this.studentsService.getAll().toPromise(),
-      this.assignmentsService.getAll(1).toPromise(),
-      this.submissionsService.getAll(1).toPromise(),
-    ]).then(([lessons, students, assignments, submissions]) => {
-      const totalLessons = lessons?.length || 0;
-      const totalStudents = students?.length || 0;
-      const totalAssignments = assignments?.length || 0;
-      const totalSubmissions = submissions?.length || 0;
+    forkJoin({
+      lessons: this.lessonsService.getAll(),
+      students: this.studentsService.getAll(),
+      recent: this.submissionsService.getRecent(50),
+    }).subscribe({
+      next: ({ lessons, students, recent }) => {
+        const scored = recent.filter((s) => s.score !== null);
+        const average =
+          scored.length > 0
+            ? Math.round(
+                scored.reduce((sum, s) => sum + (s.score ?? 0), 0) /
+                  scored.length,
+              )
+            : null;
 
-      this.kpis = [
-        {
-          label: "סה״כ שיעורים",
-          value: totalLessons,
-          icon: "pi-book",
-          trend: "+2 השבוע",
-        },
-        {
-          label: "סה״כ סטודנטים",
-          value: totalStudents,
-          icon: "pi-users",
-          trend: "+5 החודש",
-        },
-        {
-          label: "תרגילים",
-          value: totalAssignments,
-          icon: "pi-file-edit",
-          trend: "+3 פעילים",
-        },
-        {
-          label: "הגשות",
-          value: totalSubmissions,
-          icon: "pi-send",
-          trend: "+12 היום",
-        },
-      ];
+        this.kpis = [
+          {
+            label: "סה״כ שיעורים",
+            value: String(lessons.length),
+            icon: "pi-book",
+          },
+          {
+            label: "סה״כ סטודנטים",
+            value: String(students.length),
+            icon: "pi-users",
+          },
+          {
+            label: "הגשות אחרונות",
+            value: String(recent.length),
+            icon: "pi-send",
+          },
+          {
+            label: "ממוצע ציונים (הגשות אחרונות)",
+            value: average !== null ? String(average) : "—",
+            icon: "pi-chart-line",
+          },
+        ];
 
-      this.loadRecentSubmissions();
+        this.recentSubmissions = recent.slice(0, 5);
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      },
     });
   }
 
-  loadRecentSubmissions(): void {
-    this.submissionsService.getRecent(10).subscribe({
-      next: (data: SubmissionResponseDto[]) => {
-        this.recentSubmissions = data;
-        this.loading = false;
-      },
-      error: (_error: unknown) => {
-        this.loading = false;
-      },
-    });
+  getStatusLabel(status: string | null): string {
+    if (!status) return "לא ידוע";
+    return STATUS_LABELS_HE[status] ?? status;
   }
 
   getStatusSeverity(

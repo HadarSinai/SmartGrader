@@ -5,5 +5,6 @@
         public int StudentId { get; set; }
         public int LessonId { get; set; }
         public double FinalScore { get; set; }
+        public bool HasBonus { get; set; }
     }
 }
