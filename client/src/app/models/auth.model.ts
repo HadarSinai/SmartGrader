@@ -11,7 +11,7 @@ export interface RegisterTeacherRequestDto {
 
 export interface CreateStudentAccountRequestDto {
   fullName: string | null;
-  className: string | null;
+  classId: number | null;
   username: string | null;
   password: string | null;
 }

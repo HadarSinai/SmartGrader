@@ -17,6 +17,21 @@ namespace SmartGrader.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
 
+            modelBuilder.Entity("LessonSchoolClass", b =>
+                {
+                    b.Property<int>("ClassesId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LessonsId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ClassesId", "LessonsId");
+
+                    b.HasIndex("LessonsId");
+
+                    b.ToTable("LessonSchoolClasses", (string)null);
+                });
+
             modelBuilder.Entity("SmartGrader.Domain.Entities.Assignment", b =>
                 {
                     b.Property<int>("Id")
@@ -154,15 +169,42 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.ToTable("Logs");
                 });
 
+            modelBuilder.Entity("SmartGrader.Domain.Entities.SchoolClass", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AcademicYear")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name", "AcademicYear")
+                        .IsUnique();
+
+                    b.ToTable("SchoolClasses");
+                });
+
             modelBuilder.Entity("SmartGrader.Domain.Entities.Student", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ClassName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("ClassId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
@@ -175,6 +217,8 @@ namespace SmartGrader.Infrastructure.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClassId");
 
                     b.HasIndex("UserId")
                         .IsUnique();
@@ -261,6 +305,21 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("LessonSchoolClass", b =>
+                {
+                    b.HasOne("SmartGrader.Domain.Entities.SchoolClass", null)
+                        .WithMany()
+                        .HasForeignKey("ClassesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartGrader.Domain.Entities.Lesson", null)
+                        .WithMany()
+                        .HasForeignKey("LessonsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SmartGrader.Domain.Entities.Assignment", b =>
                 {
                     b.HasOne("SmartGrader.Domain.Entities.Lesson", "Lesson")
@@ -293,10 +352,18 @@ namespace SmartGrader.Infrastructure.Migrations
 
             modelBuilder.Entity("SmartGrader.Domain.Entities.Student", b =>
                 {
+                    b.HasOne("SmartGrader.Domain.Entities.SchoolClass", "Class")
+                        .WithMany("Students")
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("SmartGrader.Domain.Entities.User", "User")
                         .WithOne()
                         .HasForeignKey("SmartGrader.Domain.Entities.Student", "UserId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Class");
 
                     b.Navigation("User");
                 });
@@ -328,6 +395,11 @@ namespace SmartGrader.Infrastructure.Migrations
             modelBuilder.Entity("SmartGrader.Domain.Entities.Lesson", b =>
                 {
                     b.Navigation("Assignments");
+                });
+
+            modelBuilder.Entity("SmartGrader.Domain.Entities.SchoolClass", b =>
+                {
+                    b.Navigation("Students");
                 });
 
             modelBuilder.Entity("SmartGrader.Domain.Entities.Student", b =>

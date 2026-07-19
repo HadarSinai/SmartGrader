@@ -10,8 +10,8 @@ namespace SmartGrader.Application.UseCases.Auth.CreateStudentAccount
             RuleFor(x => x.Dto.FullName)
                 .NotEmpty().WithMessage("Full name is required.");
 
-            RuleFor(x => x.Dto.ClassName)
-                .NotEmpty().WithMessage("Class name is required.");
+            RuleFor(x => x.Dto.ClassId)
+                .GreaterThan(0).WithMessage("Class is required.");
 
             RuleFor(x => x.Dto.Username)
                 .Username();

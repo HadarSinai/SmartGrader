@@ -1,3 +1,8 @@
+export interface LessonClassDto {
+  id: number;
+  name: string;
+}
+
 export interface LessonResponseDto {
   id: number;
   name: string | null;
@@ -10,6 +15,8 @@ export interface LessonResponseDto {
   teacherName: string | null;
   createdAt: string;
   assignmentsCount: number;
+  classes: LessonClassDto[];
+  classNames: string;
 }
 
 export interface CreateLessonRequestDto {
@@ -19,6 +26,7 @@ export interface CreateLessonRequestDto {
   hebrewMonth: number;
   hebrewDay: number;
   teacherName: string | null;
+  classIds: number[];
 }
 
 export interface UpdateLessonRequestDto {
@@ -28,4 +36,5 @@ export interface UpdateLessonRequestDto {
   hebrewMonth: number;
   hebrewDay: number;
   teacherName: string | null;
+  classIds: number[];
 }

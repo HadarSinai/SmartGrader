@@ -25,7 +25,7 @@ namespace SmartGrader.Application.UseCases.Students.GetStudents
             GetStudentsQuery request,
             CancellationToken cancellationToken)
         {
-            var students = await _repository.GetAllAsync(cancellationToken);
+            var students = await _repository.GetAllAsync(request.IncludeArchived, cancellationToken);
 
             return _mapper.Map<IReadOnlyList<StudentResponseDto>>(students);
         }

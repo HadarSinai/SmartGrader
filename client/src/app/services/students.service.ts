@@ -12,9 +12,10 @@ import { ApiClient } from "../core/http/api-client";
 export class StudentsService {
   constructor(private api: ApiClient) {}
 
-  getAll(): Observable<StudentResponseDto[]> {
+  getAll(includeArchived = false): Observable<StudentResponseDto[]> {
     return this.api.http.get<StudentResponseDto[]>(
       this.api.url("/api/students"),
+      { params: { includeArchived } },
     );
   }
 

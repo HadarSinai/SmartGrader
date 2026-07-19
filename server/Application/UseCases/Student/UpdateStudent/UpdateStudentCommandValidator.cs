@@ -16,10 +16,9 @@ namespace SmartGrader.Application.UseCases.Students.UpdateStudent
                 .NotEmpty().WithMessage("FullName is required")
                 .MaximumLength(100).WithMessage("FullName cannot exceed 100 characters");
 
-            // שם כיתה
-            RuleFor(x => x.Dto.ClassName)
-                .NotEmpty().WithMessage("ClassName is required")
-                .MaximumLength(50).WithMessage("ClassName cannot exceed 50 characters");
+            // כיתה
+            RuleFor(x => x.Dto.ClassId)
+                .GreaterThan(0).WithMessage("ClassId is required");
         }
     }
 }

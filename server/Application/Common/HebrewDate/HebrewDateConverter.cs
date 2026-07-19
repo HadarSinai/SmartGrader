@@ -24,6 +24,18 @@ namespace SmartGrader.Application.Common.HebrewDate
             return date.ToString("dd MMMM yyyy", ci); // → י"ד תמוז תשפ"ו
         }
 
+        // שנה עברית נוכחית (למשל 5786) — לפי התאריך של היום
+        public static int GetCurrentHebrewYear()
+            => Calendar.GetYear(DateTime.Today);
+
+        // פורמט גימטריה של שנה בלבד: 5786 → "תשפ"ו"
+        public static string ToHebrewYearString(int hebrewYear)
+        {
+            var ci = new CultureInfo("he-IL");
+            ci.DateTimeFormat.Calendar = new HebrewCalendar();
+            return Calendar.ToDateTime(hebrewYear, 1, 1, 0, 0, 0, 0).ToString("yyyy", ci);
+        }
+
         public static bool IsValidHebrewDate(int year, int month, int day)
         {
             if (year < 5343 || year > 5999) return false; // HebrewCalendar supported range

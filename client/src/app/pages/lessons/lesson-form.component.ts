@@ -12,17 +12,20 @@ import {
     HebrewDateValue,
     getHebrewToday,
 } from "@components/hebrew-date-picker/hebrew-date-picker.component";
+import { SchoolClassResponseDto } from "@models/class.model";
 import {
     CreateLessonRequestDto,
     LessonResponseDto,
     UpdateLessonRequestDto,
 } from "@models/lesson.model";
+import { ClassesService } from "@services/classes.service";
 import { LessonsService } from "@services/lessons.service";
 import { ConfirmationService, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { InputTextModule } from "primeng/inputtext";
+import { MultiSelectModule } from "primeng/multiselect";
 
 @Component({
   selector: "app-lesson-form",
@@ -32,6 +35,7 @@ import { InputTextModule } from "primeng/inputtext";
     ReactiveFormsModule,
     CardModule,
     InputTextModule,
+    MultiSelectModule,
     HebrewDatePickerComponent,
     ButtonModule,
     ConfirmDialogModule,
@@ -133,6 +137,33 @@ import { InputTextModule } from "primeng/inputtext";
                   שם המורה הוא שדה חובה
                 </small>
               </div>
+
+              <div class="field col-12 md:col-6">
+                <label class="block font-bold mb-2" for="classIds"
+                  >כיתות *</label
+                >
+                <p-multiSelect
+                  inputId="classIds"
+                  styleClass="w-full"
+                  [options]="classOptions"
+                  formControlName="classIds"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="בחירת כיתות לשיעור"
+                  display="chip"
+                  [filter]="classOptions.length > 7"
+                  filterPlaceHolder="חיפוש כיתה"
+                ></p-multiSelect>
+                <small
+                  class="p-error"
+                  *ngIf="
+                    form.get('classIds')?.invalid &&
+                    form.get('classIds')?.touched
+                  "
+                >
+                  יש לבחור לפחות כיתה אחת
+                </small>
+              </div>
             </div>
 
             <div class="sg-form-actions">
@@ -163,6 +194,7 @@ import { InputTextModule } from "primeng/inputtext";
 export class LessonFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly lessonsService = inject(LessonsService);
+  private readonly classesService = inject(ClassesService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
@@ -173,22 +205,45 @@ export class LessonFormComponent implements OnInit {
   isEditMode = false;
   lessonId: number | null = null;
 
+  classOptions: { label: string; value: number }[] = [];
+
   constructor() {
     this.form = this.fb.group({
       name: ["", Validators.required],
       subject: ["", Validators.required],
       lessonDate: [getHebrewToday(), Validators.required],
       teacherName: ["", Validators.required],
+      classIds: [[] as number[], Validators.required],
     });
   }
 
   ngOnInit(): void {
+    this.loadClasses();
+
     const id = this.route.snapshot.paramMap.get("id");
     if (id) {
       this.isEditMode = true;
       this.lessonId = parseInt(id, 10);
       this.loadLesson(this.lessonId);
     }
+  }
+
+  loadClasses(): void {
+    this.classesService.getAll().subscribe({
+      next: (classes: SchoolClassResponseDto[]) => {
+        this.classOptions = classes.map((c) => ({
+          label: `${c.name} — ${c.academicYearHebrew}`,
+          value: c.id,
+        }));
+      },
+      error: () => {
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "טעינת הכיתות נכשלה",
+        });
+      },
+    });
   }
 
   loadLesson(id: number): void {
@@ -204,6 +259,7 @@ export class LessonFormComponent implements OnInit {
             hebrewDay: lesson.hebrewDay,
           } satisfies HebrewDateValue,
           teacherName: lesson.teacherName,
+          classIds: lesson.classes.map((c) => c.id),
         });
         this.loading = false;
       },
@@ -233,6 +289,7 @@ export class LessonFormComponent implements OnInit {
       hebrewMonth: lessonDate.hebrewMonth,
       hebrewDay: lessonDate.hebrewDay,
       teacherName: formValue.teacherName,
+      classIds: formValue.classIds,
     };
 
     const operation = this.isEditMode

@@ -13,6 +13,7 @@ namespace SmartGrader.Infrastructure.Data
         public DbSet<LessonResult> LessonResults { get; set; }
         public DbSet<Log> Logs { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<SchoolClass> SchoolClasses { get; set; }
 
         public GradeSheetContext(DbContextOptions<GradeSheetContext> options)
             : base(options)
@@ -61,6 +62,24 @@ namespace SmartGrader.Infrastructure.Data
             modelBuilder.Entity<Student>()
                 .HasIndex(s => s.UserId)
                 .IsUnique();
+
+            modelBuilder.Entity<SchoolClass>(cls =>
+            {
+                cls.Property(c => c.Name).IsRequired().HasMaxLength(50);
+                cls.HasIndex(c => new { c.Name, c.AcademicYear }).IsUnique();
+            });
+
+            modelBuilder.Entity<Student>()
+                .HasOne(s => s.Class)
+                .WithMany(c => c.Students)
+                .HasForeignKey(s => s.ClassId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // many-to-many עם skip navigations — EF יוצר טבלת קישור LessonSchoolClass
+            modelBuilder.Entity<Lesson>()
+                .HasMany(l => l.Classes)
+                .WithMany(c => c.Lessons)
+                .UsingEntity(j => j.ToTable("LessonSchoolClasses"));
 
         }
 

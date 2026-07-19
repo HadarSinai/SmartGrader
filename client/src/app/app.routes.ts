@@ -9,6 +9,8 @@ import {
 } from "./core/guards/auth.guards";
 import { AssignmentFormComponent } from "./pages/assignments/assignment-form.component";
 import { AssignmentsListComponent } from "./pages/assignments/assignments-list.component";
+import { ClassFormComponent } from "./pages/classes/class-form.component";
+import { ClassesListComponent } from "./pages/classes/classes-list.component";
 import { LoginComponent } from "./pages/auth/login.component";
 import { RegisterComponent } from "./pages/auth/register.component";
 import { DashboardComponent } from "./pages/dashboard/dashboard.component";
@@ -45,6 +47,21 @@ export const routes: Routes = [
       {
         path: "students",
         component: StudentsListComponent,
+        canActivate: [teacherGuard],
+      },
+      {
+        path: "classes",
+        component: ClassesListComponent,
+        canActivate: [teacherGuard],
+      },
+      {
+        path: "classes/new",
+        component: ClassFormComponent,
+        canActivate: [teacherGuard],
+      },
+      {
+        path: "classes/:id/edit",
+        component: ClassFormComponent,
         canActivate: [teacherGuard],
       },
       // Forms

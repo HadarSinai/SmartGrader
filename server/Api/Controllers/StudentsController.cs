@@ -49,10 +49,12 @@ namespace SmartGrader.Api.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Teacher,Admin")]
-        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] bool includeArchived,
+            CancellationToken cancellationToken)
         {
             IReadOnlyList<StudentResponseDto> result =
-                await _mediator.Send(new GetStudentsQuery(), cancellationToken);
+                await _mediator.Send(new GetStudentsQuery(includeArchived), cancellationToken);
 
             return Ok(result);
         }

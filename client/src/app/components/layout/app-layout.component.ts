@@ -49,6 +49,7 @@ import { TopbarComponent } from "./topbar.component";
             <a routerLink="/">לוח בקרה</a>
             <a routerLink="/lessons">שיעורים</a>
             <a routerLink="/students">סטודנטים</a>
+            <a routerLink="/classes">כיתות</a>
           </nav>
           <div class="sg-footer-copyright">
           

@@ -12,11 +12,14 @@ import {
   StudentResponseDto,
   UpdateStudentRequestDto,
 } from "@models/student.model";
+import { SchoolClassResponseDto } from "@models/class.model";
+import { ClassesService } from "@services/classes.service";
 import { StudentsService } from "@services/students.service";
 import { ConfirmationService, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
+import { DropdownModule } from "primeng/dropdown";
 import { InputTextModule } from "primeng/inputtext";
 import { PasswordModule } from "primeng/password";
 import { PasswordChecklistComponent } from "../../components/password-checklist/password-checklist.component";
@@ -32,6 +35,7 @@ import { AuthService } from "../../services/auth.service";
     ReactiveFormsModule,
     CardModule,
     InputTextModule,
+    DropdownModule,
     ButtonModule,
     ConfirmDialogModule,
     PasswordModule,
@@ -81,24 +85,31 @@ import { AuthService } from "../../services/auth.service";
               </div>
 
               <div class="field col-12 md:col-6">
-                <label class="block font-bold mb-2" for="className"
-                  >כיתה *</label
-                >
-                <input
-                  pInputText
-                  class="w-full"
-                  id="className"
-                  formControlName="className"
-                  placeholder="לדוגמה: י׳1"
-                />
+                <label class="block font-bold mb-2" for="classId">כיתה *</label>
+                <p-dropdown
+                  inputId="classId"
+                  styleClass="w-full"
+                  [options]="classOptions"
+                  formControlName="classId"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="בחירת כיתה"
+                  [filter]="classOptions.length > 7"
+                  filterPlaceholder="חיפוש כיתה"
+                ></p-dropdown>
                 <small
                   class="p-error"
                   *ngIf="
-                    form.get('className')?.invalid &&
-                    form.get('className')?.touched
+                    form.get('classId')?.invalid && form.get('classId')?.touched
                   "
                 >
                   כיתה היא שדה חובה
+                </small>
+                <small
+                  class="block mt-1 text-color-secondary"
+                  *ngIf="classOptions.length === 0 && !classesLoading"
+                >
+                  אין כיתות פעילות — יש ליצור כיתה תחילה במסך הכיתות
                 </small>
               </div>
             </div>
@@ -274,6 +285,7 @@ import { AuthService } from "../../services/auth.service";
 export class StudentFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly studentsService = inject(StudentsService);
+  private readonly classesService = inject(ClassesService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -288,10 +300,13 @@ export class StudentFormComponent implements OnInit {
   accountLoading = false;
   accountError: string | null = null;
 
+  classOptions: { label: string; value: number }[] = [];
+  classesLoading = false;
+
   constructor() {
     this.form = this.fb.group({
       fullName: ["", Validators.required],
-      className: ["", Validators.required],
+      classId: [null, Validators.required],
       username: [""],
       password: [""],
     });
@@ -323,6 +338,8 @@ export class StudentFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadClasses();
+
     const id = this.route.snapshot.paramMap.get("id");
     if (id) {
       this.isEditMode = true;
@@ -331,14 +348,49 @@ export class StudentFormComponent implements OnInit {
     }
   }
 
+  loadClasses(): void {
+    this.classesLoading = true;
+    this.classesService.getAll().subscribe({
+      next: (classes: SchoolClassResponseDto[]) => {
+        this.classOptions = classes.map((c) => ({
+          label: `${c.name} — ${c.academicYearHebrew}`,
+          value: c.id,
+        }));
+        this.classesLoading = false;
+      },
+      error: () => {
+        this.classesLoading = false;
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "טעינת הכיתות נכשלה",
+        });
+      },
+    });
+  }
+
   loadStudent(id: number): void {
     this.loading = true;
     this.studentsService.getById(id).subscribe({
       next: (student: StudentResponseDto) => {
         this.form.patchValue({
           fullName: student.fullName,
-          className: student.className,
+          classId: student.classId,
         });
+
+        // תלמיד/ה בכיתה בארכיון — מציגים אותה ברשימה כדי שהטופס לא יישבר
+        if (
+          student.classIsArchived &&
+          !this.classOptions.some((o) => o.value === student.classId)
+        ) {
+          this.classOptions = [
+            {
+              label: `${student.className ?? ""} (ארכיון)`,
+              value: student.classId,
+            },
+            ...this.classOptions,
+          ];
+        }
         this.hasAccount = student.hasAccount;
         this.loading = false;
       },
@@ -360,12 +412,12 @@ export class StudentFormComponent implements OnInit {
     }
 
     this.loading = true;
-    const { fullName, className, username, password } = this.form.value;
+    const { fullName, classId, username, password } = this.form.value;
 
     // New student with account fields filled → create student + login account together
     if (!this.isEditMode && username && password) {
       this.authService
-        .createStudentAccount({ fullName, className, username, password })
+        .createStudentAccount({ fullName, classId, username, password })
         .subscribe({
           next: () => {
             this.messageService.add({
@@ -386,7 +438,7 @@ export class StudentFormComponent implements OnInit {
       return;
     }
 
-    const request = { fullName, className };
+    const request = { fullName, classId };
 
     const operation = this.isEditMode
       ? this.studentsService.update(

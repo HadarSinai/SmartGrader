@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using MediatR;
+using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.Dtos.Lessons;
 using SmartGrader.Domain.Abstractions;
+using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.UseCases.Lessons.GetLessons
 {
@@ -9,11 +11,16 @@ namespace SmartGrader.Application.UseCases.Lessons.GetLessons
         : IRequestHandler<GetLessonsQuery, IReadOnlyList<LessonResponseDto>>
     {
         private readonly ILessonRepository _repository;
+        private readonly IStudentRepository _studentRepository;
         private readonly IMapper _mapper;
 
-        public GetLessonsHandler(ILessonRepository repository,IMapper mapper)
+        public GetLessonsHandler(
+            ILessonRepository repository,
+            IStudentRepository studentRepository,
+            IMapper mapper)
         {
             _repository = repository;
+            _studentRepository = studentRepository;
             _mapper = mapper;
         }
 
@@ -21,7 +28,19 @@ namespace SmartGrader.Application.UseCases.Lessons.GetLessons
             GetLessonsQuery request,
             CancellationToken cancellationToken)
         {
-            var lessons = await _repository.GetAllAsync(cancellationToken);
+            var classId = request.ClassId;
+
+            // תלמידה רואה רק שיעורים המשויכים לכיתה שלה
+            if (request.StudentId.HasValue)
+            {
+                var student = await _studentRepository.GetByIdAsync(request.StudentId.Value, cancellationToken);
+                if (student is null)
+                    throw new NotFoundException(nameof(Student), request.StudentId.Value);
+
+                classId = student.ClassId;
+            }
+
+            var lessons = await _repository.GetAllAsync(classId, cancellationToken);
 
             // ✅ אם אין שיעורים – מחזירים אוסף ריק, לא null
             if (lessons == null || lessons.Count == 0)

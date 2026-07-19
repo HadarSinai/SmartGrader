@@ -35,6 +35,7 @@ namespace SmartGrader.Infrastructure
             services.AddScoped<IAssignmentRepository, AssignmentRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ILogRepository, LogRepository>();
+            services.AddScoped<ISchoolClassRepository, SchoolClassRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             //  services.AddSingleton<ICompilerService, RoslynCompilerService>();
 

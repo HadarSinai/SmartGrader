@@ -10,6 +10,7 @@ namespace SmartGrader.Domain.Abstractions
     public interface ILessonRepository
     {
         Task<IReadOnlyList<Lesson>> GetAllAsync(CancellationToken ct = default);
+        Task<IReadOnlyList<Lesson>> GetAllAsync(int? classId, CancellationToken ct = default);
         Task<Lesson?> GetByIdAsync(int id, CancellationToken ct = default);
         Task<IReadOnlyList<Lesson>> GetByDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default);
         Task AddAsync(Lesson lesson, CancellationToken ct = default);

@@ -83,6 +83,17 @@
               ></p-dropdown>
             </div>
             <div class="field col-12 md:col-4 flex align-items-end">
+              <p-toggleButton
+                [(ngModel)]="includeArchived"
+                onLabel="מוצג כולל ארכיון"
+                offLabel="הצגת ארכיון"
+                onIcon="pi pi-box"
+                offIcon="pi pi-box"
+                (onChange)="loadStudents()"
+                aria-label="הצגת תלמידים מכיתות בארכיון"
+              ></p-toggleButton>
+            </div>
+            <div class="field col-12 md:col-4 flex align-items-end">
               <p-button
                 label="איפוס"
                 [text]="true"
@@ -107,7 +118,7 @@
           ></p-chip>
           <p-chip
             *ngIf="classFilter"
-            label="כיתה: {{ classFilter }}"
+            label="כיתה: {{ classFilterLabel }}"
             [removable]="true"
             (onRemove)="classFilter = null"
           ></p-chip>
@@ -167,8 +178,14 @@
           </ng-template>
 
           <ng-template pTemplate="body" let-student>
-            <tr>
-              <td>
+            <tr
+              class="sg-row-clickable"
+              [class.sg-row-archived]="student.classIsArchived"
+              pTooltip="לחיצה להצגת ממוצע ציונים"
+              tooltipPosition="top"
+              (click)="openStudentSummary(student)"
+            >
+              <td (click)="$event.stopPropagation()">
                 <p-tableCheckbox
                   [value]="student"
                   [attr.aria-label]="'בחירת ' + (student.fullName || '')"
@@ -183,7 +200,10 @@
 
               <td class="text-center">
                 <p-tag
-                  [value]="student.className || '—'"
+                  [value]="
+                    (student.className || '—') +
+                    (student.classIsArchived ? ' (ארכיון)' : '')
+                  "
                   styleClass="sg-class-tag"
                 ></p-tag>
               </td>
@@ -195,7 +215,7 @@
                 </span>
               </td>
 
-              <td class="text-center">
+              <td class="text-center" (click)="$event.stopPropagation()">
                 <p-button
                   icon="pi pi-eye"
                   [text]="true"
@@ -208,8 +228,9 @@
                 ></p-button>
               </td>
 
-              <td class="text-center">
+              <td class="text-center" (click)="$event.stopPropagation()">
                 <p-button
+                  *ngIf="!student.classIsArchived"
                   icon="pi pi-ellipsis-h"
                   [text]="true"
                   [attr.aria-label]="
@@ -217,6 +238,13 @@
                   "
                   (onClick)="openRowMenu($event, rowMenu, student)"
                 ></p-button>
+                <span
+                  *ngIf="student.classIsArchived"
+                  class="text-color-secondary"
+                  pTooltip="תלמיד/ה בכיתה בארכיון — לצפייה בלבד"
+                  tooltipPosition="top"
+                  >—</span
+                >
               </td>
             </tr>
           </ng-template>
@@ -339,6 +367,63 @@
       [loading]="importing"
       [disabled]="!importFile"
       (onClick)="uploadImport()"
+    ></p-button>
+  </ng-template>
+</p-dialog>
+
+<!-- Student grades summary dialog (row click) -->
+<p-dialog
+  [header]="'ציונים סופיים — ' + (studentSummary?.studentName || '')"
+  [(visible)]="summaryDialogOpen"
+  [modal]="true"
+  [style]="{ width: '32rem' }"
+  [dismissableMask]="true"
+>
+  <div *ngIf="summaryLoading" class="flex justify-content-center py-5">
+    <i class="pi pi-spin pi-spinner text-3xl" aria-hidden="true"></i>
+  </div>
+
+  <div *ngIf="!summaryLoading && studentSummary" class="flex flex-column gap-3">
+    <div class="sg-summary-average" aria-live="polite">
+      <ng-container *ngIf="studentSummary.average !== null; else noAverage">
+        ממוצע ציונים סופיים: <strong>{{ studentSummary.average }}</strong>
+      </ng-container>
+      <ng-template #noAverage>אין עדיין ציונים סופיים</ng-template>
+    </div>
+
+    <p-table [value]="studentSummary.grades" styleClass="sg-table">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>שיעור</th>
+          <th class="text-center">תאריך</th>
+          <th class="text-center">ציון סופי</th>
+          <th class="text-center">סטטוס</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-grade>
+        <tr>
+          <td>{{ grade.lessonName || "—" }}</td>
+          <td class="text-center">{{ grade.lessonDateHebrew }}</td>
+          <td class="text-center">{{ grade.finalScore ?? "—" }}</td>
+          <td class="text-center">{{ grade.isComplete ? "הושלם" : "בתהליך" }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4" class="text-center py-4 text-color-secondary">
+            אין עדיין תוצאות שיעור לתלמיד/ה זו.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="סגירה"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="summaryDialogOpen = false"
     ></p-button>
   </ng-template>
 </p-dialog>

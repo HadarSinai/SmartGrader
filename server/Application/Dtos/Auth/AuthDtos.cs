@@ -4,7 +4,7 @@ namespace SmartGrader.Application.Dtos.Auth
 
     public record RegisterTeacherRequestDto(string FullName, string Username, string Password);
 
-    public record CreateStudentAccountRequestDto(string FullName, string ClassName, string Username, string Password);
+    public record CreateStudentAccountRequestDto(string FullName, int ClassId, string Username, string Password);
 
     public record CreateAccountForStudentRequestDto(string Username, string Password);
 

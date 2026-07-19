@@ -32,12 +32,26 @@ namespace SmartGrader.Api.Controllers
             _mapper = mapper;
         }
 
-        // 1️⃣ GET api/lessons
+        // 1️⃣ GET api/lessons — תלמידה מקבלת רק את שיעורי הכיתה שלה; מורה הכל + סינון אופציונלי
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int? classId,
+            CancellationToken cancellationToken)
         {
+            int? studentId = null;
+
+            if (!User.IsInRole("Teacher") && !User.IsInRole("Admin"))
+            {
+                var claim = User.FindFirst("studentId")?.Value;
+                if (claim is null || !int.TryParse(claim, out var ownId))
+                    return Forbid();
+
+                studentId = ownId;
+                classId = null; // תלמידה לא בוחרת כיתה — נגזר מה-claim בלבד
+            }
+
             IReadOnlyList<LessonResponseDto> result =
-                await _mediator.Send(new GetLessonsQuery(), cancellationToken);
+                await _mediator.Send(new GetLessonsQuery(classId, studentId), cancellationToken);
 
             return Ok(result);
         }

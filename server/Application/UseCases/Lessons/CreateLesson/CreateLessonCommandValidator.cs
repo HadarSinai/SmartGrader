@@ -32,6 +32,9 @@ namespace SmartGrader.Application.UseCases.Lessons.CreateLesson
             RuleFor(x => x.Dto)
                 .Must(d => HebrewDateConverter.IsValidHebrewDate(d.HebrewYear, d.HebrewMonth, d.HebrewDay))
                 .WithMessage("התאריך העברי אינו קיים");
+
+            RuleFor(x => x.Dto.ClassIds)
+                .NotEmpty().WithMessage("יש לבחור לפחות כיתה אחת");
         }
     }
 }

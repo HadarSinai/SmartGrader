@@ -16,18 +16,28 @@ namespace SmartGrader.Infrastructure.Repositories
         }
 
 
-        public async Task<IReadOnlyList<Lesson>> GetAllAsync(CancellationToken ct = default)
+        public Task<IReadOnlyList<Lesson>> GetAllAsync(CancellationToken ct = default)
+            => GetAllAsync(classId: null, ct);
+
+        public async Task<IReadOnlyList<Lesson>> GetAllAsync(int? classId, CancellationToken ct = default)
         {
-            return await _context.Lessons
+            var query = _context.Lessons
                 .Include(l => l.Assignments)
+                .Include(l => l.Classes)
                 .AsNoTracking()
-                .ToListAsync(ct);
+                .AsQueryable();
+
+            if (classId.HasValue)
+                query = query.Where(l => l.Classes.Any(c => c.Id == classId.Value));
+
+            return await query.ToListAsync(ct);
         }
 
         public async Task<Lesson?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _context.Lessons
                 .Include(l => l.Assignments)
+                .Include(l => l.Classes)
                 .FirstOrDefaultAsync(l => l.Id == id, ct);
         }
 

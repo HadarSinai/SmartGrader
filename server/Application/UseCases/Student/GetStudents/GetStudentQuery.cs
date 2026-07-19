@@ -9,5 +9,5 @@ using System.Threading.Tasks;
 
 namespace SmartGrader.Application.UseCases.Students.GetStudents
 {
-    public record GetStudentsQuery() : IRequest<IReadOnlyList<StudentResponseDto>>;
+    public record GetStudentsQuery(bool IncludeArchived = false) : IRequest<IReadOnlyList<StudentResponseDto>>;
 }

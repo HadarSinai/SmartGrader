@@ -2,6 +2,7 @@ using AutoMapper;
 using ClosedXML.Excel;
 using MediatR;
 using SmartGrader.Application.Common.Exceptions;
+using SmartGrader.Application.Common.HebrewDate;
 using SmartGrader.Application.Common.Interfaces;
 using SmartGrader.Application.Dtos.Student;
 using SmartGrader.Domain.Abstractions;
@@ -17,6 +18,7 @@ namespace SmartGrader.Application.UseCases.Students.ImportStudents
 
         private readonly IStudentRepository _repository;
         private readonly IUserRepository _userRepository;
+        private readonly ISchoolClassRepository _classRepository;
         private readonly IPasswordHasherService _passwordHasher;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -24,12 +26,14 @@ namespace SmartGrader.Application.UseCases.Students.ImportStudents
         public ImportStudentsHandler(
             IStudentRepository repository,
             IUserRepository userRepository,
+            ISchoolClassRepository classRepository,
             IPasswordHasherService passwordHasher,
             IUnitOfWork unitOfWork,
             IMapper mapper)
         {
             _repository = repository;
             _userRepository = userRepository;
+            _classRepository = classRepository;
             _passwordHasher = passwordHasher;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -59,6 +63,12 @@ namespace SmartGrader.Application.UseCases.Students.ImportStudents
                 var errors = new List<ImportRowErrorDto>();
                 var usernamesInFile = new HashSet<string>();
 
+                // פענוח כיתות מול השנה העברית הנוכחית: קיימת → שיוך, חסרה → יצירה אוטומטית
+                var currentYear = HebrewDateConverter.GetCurrentHebrewYear();
+                var existingClassIds = new Dictionary<string, int>();
+                var newClasses = new Dictionary<string, SchoolClass>();
+                var archivedClassNames = new HashSet<string>();
+
                 foreach (var row in ws.RowsUsed().Skip(1))
                 {
                     var fullName = row.Cell(1).GetString().Trim();
@@ -83,6 +93,30 @@ namespace SmartGrader.Application.UseCases.Students.ImportStudents
                         messages.Add("כיתה היא שדה חובה");
                     else if (className.Length > 50)
                         messages.Add("כיתה ארוכה מדי (מקסימום 50 תווים)");
+                    else if (!existingClassIds.ContainsKey(className) && !newClasses.ContainsKey(className))
+                    {
+                        if (archivedClassNames.Contains(className))
+                            messages.Add("הכיתה נמצאת בארכיון — לא ניתן לשייך אליה תלמידים");
+                        else
+                        {
+                            var found = await _classRepository.GetByNameAndYearAsync(className, currentYear, cancellationToken);
+                            if (found is null)
+                            {
+                                var created = SchoolClass.Create(className, currentYear);
+                                await _classRepository.AddAsync(created, cancellationToken);
+                                newClasses[className] = created;
+                            }
+                            else if (found.IsArchived)
+                            {
+                                archivedClassNames.Add(className);
+                                messages.Add("הכיתה נמצאת בארכיון — לא ניתן לשייך אליה תלמידים");
+                            }
+                            else
+                            {
+                                existingClassIds[className] = found.Id;
+                            }
+                        }
+                    }
 
                     var hasAccount = !string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password);
                     string normalizedUsername = "";
@@ -125,9 +159,13 @@ namespace SmartGrader.Application.UseCases.Students.ImportStudents
 
                     var student = _mapper.Map<Student>(new CreateStudentRequestDto
                     {
-                        FullName = fullName,
-                        ClassName = className
+                        FullName = fullName
                     });
+
+                    if (existingClassIds.TryGetValue(className, out var classId))
+                        student.ClassId = classId;
+                    else
+                        student.Class = newClasses[className];
 
                     if (hasAccount)
                     {

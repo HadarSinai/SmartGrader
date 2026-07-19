@@ -12,15 +12,18 @@ namespace SmartGrader.Application.UseCases.Students.UpdateStudent
         : IRequestHandler<UpdateStudentCommand, StudentResponseDto>
     {
         private readonly IStudentRepository _repository;
+        private readonly ISchoolClassRepository _classRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
         public UpdateStudentHandler(
             IStudentRepository repository,
+            ISchoolClassRepository classRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper)
         {
             _repository = repository;
+            _classRepository = classRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
@@ -33,6 +36,15 @@ namespace SmartGrader.Application.UseCases.Students.UpdateStudent
 
             if (student is null)
                 throw new NotFoundException(nameof(Student), request.Id);
+
+            if (request.Dto.ClassId != student.ClassId)
+            {
+                var schoolClass = await _classRepository.GetByIdAsync(request.Dto.ClassId, cancellationToken);
+                if (schoolClass is null)
+                    throw new NotFoundException(nameof(SchoolClass), request.Dto.ClassId);
+                if (schoolClass.IsArchived)
+                    throw new BusinessRuleException("לא ניתן לשייך תלמיד לכיתה בארכיון");
+            }
 
             _mapper.Map(request.Dto, student);
 

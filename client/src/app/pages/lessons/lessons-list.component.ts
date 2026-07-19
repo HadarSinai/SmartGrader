@@ -10,6 +10,7 @@ import { ChipModule } from "primeng/chip";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { DataViewModule } from "primeng/dataview";
 import { DialogModule } from "primeng/dialog";
+import { DropdownModule } from "primeng/dropdown";
 import { InputTextModule } from "primeng/inputtext";
 import { Menu, MenuModule } from "primeng/menu";
 import { TableModule } from "primeng/table";
@@ -20,7 +21,9 @@ import {
   HebrewDateValue,
   getHebrewToday,
 } from "@components/hebrew-date-picker/hebrew-date-picker.component";
+import { SchoolClassResponseDto } from "@models/class.model";
 import { LessonResponseDto } from "@models/lesson.model";
+import { ClassesService } from "@services/classes.service";
 import { LessonsService } from "@services/lessons.service";
 import { LessonResultsService } from "@services/lesson-results.service";
 import { downloadBlob } from "../../core/utils/download";
@@ -32,6 +35,7 @@ import { downloadBlob } from "../../core/utils/download";
     CommonModule,
     FormsModule,
     InputTextModule,
+    DropdownModule,
     ChipModule,
     TableModule,
     DataViewModule,
@@ -89,6 +93,16 @@ import { downloadBlob } from "../../core/utils/download";
                 />
               </span>
 
+              <p-dropdown
+                [options]="classOptions"
+                [(ngModel)]="classFilter"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="כל הכיתות"
+                [showClear]="true"
+                aria-label="סינון לפי כיתה"
+              ></p-dropdown>
+
               <div class="sg-active-filters" aria-label="מסננים פעילים">
                 <p-chip
                   *ngIf="query.trim()"
@@ -97,6 +111,12 @@ import { downloadBlob } from "../../core/utils/download";
                   (onRemove)="query = ''"
                 >
                 </p-chip>
+                <p-chip
+                  *ngIf="classFilter"
+                  label="כיתה: {{ classFilterLabel }}"
+                  [removable]="true"
+                  (onRemove)="classFilter = null"
+                ></p-chip>
               </div>
             </div>
           </ng-template>
@@ -148,6 +168,7 @@ import { downloadBlob } from "../../core/utils/download";
                   <th pSortableColumn="subject">
                     נושא <p-sortIcon field="subject"></p-sortIcon>
                   </th>
+                  <th class="text-center">כיתות</th>
                   <th class="text-center" pSortableColumn="lessonDate">
                     תאריך <p-sortIcon field="lessonDate"></p-sortIcon>
                   </th>
@@ -167,6 +188,7 @@ import { downloadBlob } from "../../core/utils/download";
                   </td>
                   <td class="font-bold text-color">{{ lesson.name || "—" }}</td>
                   <td>{{ lesson.subject || "—" }}</td>
+                  <td class="text-center">{{ lesson.classNames || "—" }}</td>
                   <td class="text-center">
                     {{ lesson.lessonDateHebrew }} ({{
                       lesson.lessonDate | date: "dd.MM.yy"
@@ -213,7 +235,7 @@ import { downloadBlob } from "../../core/utils/download";
               <ng-template pTemplate="emptymessage">
                 <tr>
                   <td
-                    colspan="7"
+                    colspan="8"
                     class="text-center px-3 py-6 text-color-secondary"
                   >
                     <div
@@ -263,6 +285,10 @@ import { downloadBlob } from "../../core/utils/download";
                       <div>
                         <span class="label">תרגילים</span>
                         {{ item.assignmentsCount ?? 0 }}
+                      </div>
+                      <div>
+                        <span class="label">כיתות</span>
+                        {{ item.classNames || "—" }}
                       </div>
                     </div>
 
@@ -351,15 +377,18 @@ import { downloadBlob } from "../../core/utils/download";
 })
 export class LessonsListComponent implements OnInit {
   private readonly lessonsService = inject(LessonsService);
+  private readonly classesService = inject(ClassesService);
   private readonly lessonResultsService = inject(LessonResultsService);
   private readonly router = inject(Router);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
 
   lessons: LessonResponseDto[] = [];
+  classes: SchoolClassResponseDto[] = [];
   loading = false;
 
   query = "";
+  classFilter: number | null = null;
 
   reportDialogVisible = false;
   reportFrom: HebrewDateValue | null = null;
@@ -371,19 +400,43 @@ export class LessonsListComponent implements OnInit {
 
   rowMenuItems: MenuItem[] = [];
 
+  get classOptions() {
+    return this.classes.map((c) => ({
+      label: c.isArchived
+        ? `${c.name} — ${c.academicYearHebrew} (ארכיון)`
+        : `${c.name} — ${c.academicYearHebrew}`,
+      value: c.id,
+    }));
+  }
+
+  get classFilterLabel(): string {
+    return this.classes.find((c) => c.id === this.classFilter)?.name ?? "";
+  }
+
   get filteredLessons(): LessonResponseDto[] {
     const q = this.query.trim().toLowerCase();
-    if (!q) return this.lessons;
-
     return this.lessons.filter(
       (l) =>
-        (l.name ?? "").toLowerCase().includes(q) ||
-        (l.subject ?? "").toLowerCase().includes(q),
+        (!q ||
+          (l.name ?? "").toLowerCase().includes(q) ||
+          (l.subject ?? "").toLowerCase().includes(q)) &&
+        (!this.classFilter ||
+          (l.classes ?? []).some((c) => c.id === this.classFilter)),
     );
   }
 
   ngOnInit(): void {
     this.loadLessons();
+    this.loadClasses();
+  }
+
+  loadClasses(): void {
+    this.classesService.getAll(true).subscribe({
+      next: (data) => (this.classes = data),
+      error: () => {
+        // סינון לפי כיתה פשוט לא יוצג — הרשימה עצמה עדיין עובדת
+      },
+    });
   }
 
   loadLessons(): void {

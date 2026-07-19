@@ -21,18 +21,28 @@ namespace SmartGrader.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<IReadOnlyList<Student>> GetAllAsync(CancellationToken ct = default)
+        public Task<IReadOnlyList<Student>> GetAllAsync(CancellationToken ct = default)
+            => GetAllAsync(includeArchived: true, ct);
+
+        public async Task<IReadOnlyList<Student>> GetAllAsync(bool includeArchived, CancellationToken ct = default)
         {
-            return await _context.Students
+            var query = _context.Students
                 .AsNoTracking()
+                .Include(s => s.Class)
                 .Include(s => s.Submissions)
                 .Include(s => s.LessonResults)
-                .ToListAsync(ct);
+                .AsQueryable();
+
+            if (!includeArchived)
+                query = query.Where(s => !s.Class.IsArchived);
+
+            return await query.ToListAsync(ct);
         }
         public async Task<Student?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _context.Students
                 .AsNoTracking()
+                .Include(s => s.Class)
                 .FirstOrDefaultAsync(s => s.Id == id, ct);
         }
         public async Task<Student?> GetByUserIdAsync(int userId, CancellationToken ct = default)

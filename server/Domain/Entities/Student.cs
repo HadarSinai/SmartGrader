@@ -4,7 +4,8 @@
     {
         public int Id { get; private set; }
         public string FullName { get; set; }
-        public string ClassName { get; set; }
+        public int ClassId { get; set; }
+        public SchoolClass Class { get; set; }
        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
         // קישור למשתמש התחברות (null = עדיין אין חשבון)

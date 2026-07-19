@@ -52,6 +52,10 @@ import { NotificationsService } from "../../services/notifications.service";
               <i class="pi pi-users" aria-hidden="true"></i>
               סטודנטים
             </a>
+            <a routerLink="/classes" routerLinkActive="active">
+              <i class="pi pi-building" aria-hidden="true"></i>
+              כיתות
+            </a>
             <a routerLink="/assignments" routerLinkActive="active">
               <i class="pi pi-file-edit" aria-hidden="true"></i>
               תרגילים

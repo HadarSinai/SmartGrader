@@ -14,12 +14,17 @@ import { InputTextModule } from "primeng/inputtext";
 import { Menu, MenuModule } from "primeng/menu";
 import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
+import { ToggleButtonModule } from "primeng/togglebutton";
 import { TooltipModule } from "primeng/tooltip";
 
+import { SchoolClassResponseDto } from "@models/class.model";
 import {
   ImportStudentsResultDto,
   StudentResponseDto,
 } from "@models/student.model";
+import { StudentGradesSummaryDto } from "@models/lesson-result.model";
+import { ClassesService } from "@services/classes.service";
+import { LessonResultsService } from "@services/lesson-results.service";
 import { StudentsService } from "@services/students.service";
 import { downloadBlob } from "../../core/utils/download";
 
@@ -39,6 +44,7 @@ import { downloadBlob } from "../../core/utils/download";
     TagModule,
     ChipModule,
     MenuModule,
+    ToggleButtonModule,
     TooltipModule,
   ],
   providers: [ConfirmationService, MessageService],
@@ -47,17 +53,21 @@ import { downloadBlob } from "../../core/utils/download";
 })
 export class StudentsListComponent implements OnInit {
   private readonly studentsService = inject(StudentsService);
+  private readonly classesService = inject(ClassesService);
+  private readonly lessonResultsService = inject(LessonResultsService);
   private readonly router = inject(Router);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
 
   students: StudentResponseDto[] = [];
+  classes: SchoolClassResponseDto[] = [];
   loading = false;
 
   // Filters
   query = "";
-  classFilter: string | null = null;
+  classFilter: number | null = null;
   filtersOpen = false;
+  includeArchived = false;
 
   // Multi-select (design only — no real bulk delete)
   selectedStudents: StudentResponseDto[] = [];
@@ -71,14 +81,26 @@ export class StudentsListComponent implements OnInit {
   importFile: File | null = null;
   importResult: ImportStudentsResultDto | null = null;
 
+  // Student grades summary (row click)
+  summaryDialogOpen = false;
+  summaryLoading = false;
+  studentSummary: StudentGradesSummaryDto | null = null;
+
   get classOptions() {
-    const classes = Array.from(
-      new Set(this.students.map((s) => s.className).filter(Boolean)),
-    ) as string[];
     return [
-      { label: "כל הכיתות", value: null },
-      ...classes.map((c) => ({ label: c, value: c })),
+      { label: "כל הכיתות", value: null as number | null },
+      ...this.classes.map((c) => ({
+        label: c.isArchived
+          ? `${c.name} — ${c.academicYearHebrew} (ארכיון)`
+          : `${c.name} — ${c.academicYearHebrew}`,
+        value: c.id as number | null,
+      })),
     ];
+  }
+
+  get classFilterLabel(): string {
+    const cls = this.classes.find((c) => c.id === this.classFilter);
+    return cls?.name ?? "";
   }
 
   get filteredStudents(): StudentResponseDto[] {
@@ -86,7 +108,7 @@ export class StudentsListComponent implements OnInit {
     return this.students.filter(
       (s) =>
         (!q || (s.fullName ?? "").toLowerCase().includes(q)) &&
-        (!this.classFilter || s.className === this.classFilter),
+        (!this.classFilter || s.classId === this.classFilter),
     );
   }
 
@@ -96,12 +118,22 @@ export class StudentsListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadStudents();
+    this.loadClasses();
+  }
+
+  loadClasses(): void {
+    this.classesService.getAll(true).subscribe({
+      next: (data) => (this.classes = data),
+      error: () => {
+        // סינון לפי כיתה פשוט לא יוצג — הרשימה עצמה עדיין עובדת
+      },
+    });
   }
 
   loadStudents(): void {
     this.loading = true;
 
-    this.studentsService.getAll().subscribe({
+    this.studentsService.getAll(this.includeArchived).subscribe({
       next: (data) => {
         this.students = data;
         this.loading = false;
@@ -257,6 +289,28 @@ export class StudentsListComponent implements OnInit {
       },
       error: () => {
         this.importing = false;
+      },
+    });
+  }
+
+  openStudentSummary(student: StudentResponseDto): void {
+    this.studentSummary = null;
+    this.summaryDialogOpen = true;
+    this.summaryLoading = true;
+
+    this.lessonResultsService.getStudentSummary(student.id).subscribe({
+      next: (summary) => {
+        this.studentSummary = summary;
+        this.summaryLoading = false;
+      },
+      error: () => {
+        this.summaryLoading = false;
+        this.summaryDialogOpen = false;
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "טעינת ציוני התלמיד/ה נכשלה",
+        });
       },
     });
   }

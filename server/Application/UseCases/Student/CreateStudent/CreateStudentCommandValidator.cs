@@ -10,9 +10,8 @@ namespace SmartGrader.Application.UseCases.Students.CreateStudent
                 .NotEmpty().WithMessage("FullName is required")
                 .MaximumLength(100);
 
-            RuleFor(x => x.Dto.ClassName)
-                .NotEmpty().WithMessage("ClassName is required")
-                .MaximumLength(50);
+            RuleFor(x => x.Dto.ClassId)
+                .GreaterThan(0).WithMessage("ClassId is required");
         }
     }
 }

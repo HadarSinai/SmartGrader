@@ -15,5 +15,15 @@
 
         // אופציונלי – אם תרצי להציג כמה משימות יש לשיעור
         public int AssignmentsCount { get; set; }
+
+        // הכיתות שהשיעור משויך אליהן
+        public List<LessonClassDto> Classes { get; set; } = new();
+        public string ClassNames { get; set; } = string.Empty;
+    }
+
+    public class LessonClassDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 }

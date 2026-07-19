@@ -11,5 +11,6 @@
         protected   Lesson() { }
 
         public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
+        public ICollection<SchoolClass> Classes { get; set; } = new List<SchoolClass>();
     }
 }

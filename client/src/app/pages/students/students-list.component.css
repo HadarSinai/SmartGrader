@@ -1,2 +1,19 @@
 /* Intentionally minimal.
    Layout + shared styling is handled by PrimeFlex utilities and global sg-* styles in src/styles.css. */
+
+.sg-row-clickable {
+  cursor: pointer;
+}
+
+.sg-summary-average {
+  font-size: 1.05rem;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 232, 221, 0.55);
+  border-radius: var(--radius-md);
+}
+
+/* Archived-class rows are read-only and visually muted */
+.sg-row-archived {
+  opacity: 0.6;
+}
+

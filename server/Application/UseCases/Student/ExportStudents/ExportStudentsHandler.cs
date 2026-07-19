@@ -36,7 +36,7 @@ public class ExportStudentsHandler : IRequestHandler<ExportStudentsQuery, byte[]
         foreach (var student in students)
         {
             ws.Cell(row, 1).Value = student.FullName;
-            ws.Cell(row, 2).Value = student.ClassName;
+            ws.Cell(row, 2).Value = student.Class?.Name ?? "";
             ws.Cell(row, 3).Value = student.Submissions?.Count ?? 0;
             ws.Cell(row, 4).Value = student.LessonResults?.Count ?? 0;
             ws.Cell(row, 5).Value = student.UserId != null ? "כן" : "לא";

@@ -21,15 +21,24 @@ namespace SmartGrader.Application.Common.Mapping
                  .ForMember(d => d.HebrewMonth,
                      opt => opt.MapFrom(s => HebrewDateConverter.GetHebrewParts(s.LessonDate).Month))
                  .ForMember(d => d.HebrewDay,
-                     opt => opt.MapFrom(s => HebrewDateConverter.GetHebrewParts(s.LessonDate).Day));
+                     opt => opt.MapFrom(s => HebrewDateConverter.GetHebrewParts(s.LessonDate).Day))
+                 .ForMember(d => d.Classes,
+                     opt => opt.MapFrom(s => s.Classes))
+                 .ForMember(d => d.ClassNames,
+                     opt => opt.MapFrom(s => string.Join(", ", s.Classes.Select(c => c.Name))));
 
+            CreateMap<SchoolClass, LessonClassDto>();
+
+            // ClassIds נפתרים ב-handler (טעינת ישויות SchoolClass) — לא במיפוי
             CreateMap<CreateLessonRequestDto, Lesson>()
+                .ForMember(d => d.Classes, opt => opt.Ignore())
                 .ForMember(d => d.LessonDate,
                     opt => opt.MapFrom(s => HebrewDateConverter.ToGregorian(s.HebrewYear, s.HebrewMonth, s.HebrewDay)));
 
             CreateMap<UpdateLessonRequestDto, Lesson>()
                 .ForMember(d => d.Id, opt => opt.Ignore())
                 .ForMember(d => d.CreatedAt, opt => opt.Ignore())
+                .ForMember(d => d.Classes, opt => opt.Ignore())
                 .ForMember(d => d.LessonDate,
                     opt => opt.MapFrom(s => HebrewDateConverter.ToGregorian(s.HebrewYear, s.HebrewMonth, s.HebrewDay)));
 

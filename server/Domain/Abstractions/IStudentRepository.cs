@@ -10,6 +10,7 @@ namespace SmartGrader.Domain.Abstractions
     public interface IStudentRepository
     {
         Task<IReadOnlyList<Student>> GetAllAsync(CancellationToken ct = default);
+        Task<IReadOnlyList<Student>> GetAllAsync(bool includeArchived, CancellationToken ct = default);
         Task<Student?> GetByIdAsync(int id, CancellationToken ct = default);
         Task<Student?> GetByUserIdAsync(int userId, CancellationToken ct = default);
         Task AddAsync(Student student, CancellationToken ct = default);

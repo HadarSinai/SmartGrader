@@ -13,6 +13,7 @@ namespace SmartGrader.Application.UseCases.Auth.CreateStudentAccount
     {
         private readonly IUserRepository _userRepository;
         private readonly IStudentRepository _studentRepository;
+        private readonly ISchoolClassRepository _classRepository;
         private readonly IPasswordHasherService _passwordHasher;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -20,12 +21,14 @@ namespace SmartGrader.Application.UseCases.Auth.CreateStudentAccount
         public CreateStudentAccountHandler(
             IUserRepository userRepository,
             IStudentRepository studentRepository,
+            ISchoolClassRepository classRepository,
             IPasswordHasherService passwordHasher,
             IUnitOfWork unitOfWork,
             IMapper mapper)
         {
             _userRepository = userRepository;
             _studentRepository = studentRepository;
+            _classRepository = classRepository;
             _passwordHasher = passwordHasher;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -37,6 +40,12 @@ namespace SmartGrader.Application.UseCases.Auth.CreateStudentAccount
         {
             if (await _userRepository.ExistsByUsernameAsync(request.Dto.Username, cancellationToken))
                 throw new UniqueConstraintException("A user with this username already exists.");
+
+            var schoolClass = await _classRepository.GetByIdAsync(request.Dto.ClassId, cancellationToken);
+            if (schoolClass is null)
+                throw new NotFoundException(nameof(SchoolClass), request.Dto.ClassId);
+            if (schoolClass.IsArchived)
+                throw new BusinessRuleException("לא ניתן לשייך תלמיד לכיתה בארכיון");
 
             var user = User.Create(
                 request.Dto.Username,
