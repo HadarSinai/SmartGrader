@@ -49,6 +49,18 @@ namespace SmartGrader.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IReadOnlyList<Submission>> GetRecentGradedAsync(int limit, CancellationToken ct = default)
+        {
+            return await _context.Submissions
+                .Where(s => s.Status == SubmissionStatus.Done)
+                .Include(s => s.Student)
+                .Include(s => s.Assignment)
+                .OrderByDescending(s => s.GradedAt ?? s.SubmittedAt)
+                .Take(limit)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
         public async Task<Submission?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _context.Submissions

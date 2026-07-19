@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node \"C:/Users/user1/AppData/Local/Temp/claude/d------------------/a92a1ea4-1845-422d-8888-5b00564e4d30/scratchpad/convert-copilot.js\")",
+      "Bash(git commit -m ' *)",
+      "Bash(dotnet ef *)"
+    ]
+  }
+}

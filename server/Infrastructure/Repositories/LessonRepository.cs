@@ -31,6 +31,15 @@ namespace SmartGrader.Infrastructure.Repositories
                 .FirstOrDefaultAsync(l => l.Id == id, ct);
         }
 
+        public async Task<IReadOnlyList<Lesson>> GetByDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default)
+        {
+            return await _context.Lessons
+                .Where(l => l.LessonDate >= from && l.LessonDate <= to)
+                .OrderBy(l => l.LessonDate)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
 
         public async Task AddAsync(Lesson lesson, CancellationToken ct = default)
         {

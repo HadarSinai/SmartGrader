@@ -98,6 +98,7 @@ namespace SmartGrader.Domain.Entities
         public string? CompileError { get; private set; }
 
         public DateTime SubmittedAt { get; private set; } = DateTime.UtcNow;
+        public DateTime? GradedAt { get; private set; }
 
         public Student Student { get; private set; } = null!;
         public Assignment Assignment { get; private set; } = null!;
@@ -146,6 +147,7 @@ namespace SmartGrader.Domain.Entities
             Comments = comments ?? "";
             Status = SubmissionStatus.Done;
             AiError = null;
+            GradedAt = DateTime.UtcNow;
         }
         public void MarkAiFailed(string error)
         {

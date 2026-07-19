@@ -11,6 +11,7 @@ namespace SmartGrader.Domain.Abstractions
     {
         Task<IReadOnlyList<Lesson>> GetAllAsync(CancellationToken ct = default);
         Task<Lesson?> GetByIdAsync(int id, CancellationToken ct = default);
+        Task<IReadOnlyList<Lesson>> GetByDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default);
         Task AddAsync(Lesson lesson, CancellationToken ct = default);
         //Task UpdateAsync(Lesson lesson, CancellationToken ct = default);
         Task DeleteAsync(Lesson lesson, CancellationToken ct = default);

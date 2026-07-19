@@ -6,8 +6,10 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
+using SmartGrader.Application.UseCases.LessonResults.ExportGradesPeriodReport;
 using SmartGrader.Application.UseCases.LessonResults.ExportLessonResults;
 using SmartGrader.Application.UseCases.LessonResults.GetLessonResult;
+using SmartGrader.Application.UseCases.LessonResults.GetStudentGradesSummary;
 
 namespace SmartGrader.Api.Controllers;
 
@@ -56,6 +58,27 @@ public class LessonResultController : ControllerBase
 
         return Ok(response);
     }
-   
-  
+
+    [HttpGet("export-report")]
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> ExportPeriodReport(
+        [FromQuery] int fromYear, [FromQuery] int fromMonth, [FromQuery] int fromDay,
+        [FromQuery] int toYear, [FromQuery] int toMonth, [FromQuery] int toDay,
+        CancellationToken ct)
+    {
+        byte[] bytes = await _mediator.Send(
+            new ExportGradesPeriodReportQuery(fromYear, fromMonth, fromDay, toYear, toMonth, toDay), ct);
+        return File(
+            bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "grades-report.xlsx");
+    }
+
+    [HttpGet("student/{studentId:int}/summary")]
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> GetStudentSummary(int studentId, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetStudentGradesSummaryQuery(studentId), ct);
+        return Ok(result);
+    }
 }

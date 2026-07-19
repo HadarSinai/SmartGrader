@@ -9,13 +9,21 @@ import { CardModule } from "primeng/card";
 import { ChipModule } from "primeng/chip";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { DataViewModule } from "primeng/dataview";
+import { DialogModule } from "primeng/dialog";
 import { InputTextModule } from "primeng/inputtext";
 import { Menu, MenuModule } from "primeng/menu";
 import { TableModule } from "primeng/table";
 import { TooltipModule } from "primeng/tooltip";
 
+import {
+  HebrewDatePickerComponent,
+  HebrewDateValue,
+  getHebrewToday,
+} from "@components/hebrew-date-picker/hebrew-date-picker.component";
 import { LessonResponseDto } from "@models/lesson.model";
 import { LessonsService } from "@services/lessons.service";
+import { LessonResultsService } from "@services/lesson-results.service";
+import { downloadBlob } from "../../core/utils/download";
 
 @Component({
   selector: "app-lessons-list",
@@ -30,8 +38,10 @@ import { LessonsService } from "@services/lessons.service";
     ButtonModule,
     CardModule,
     ConfirmDialogModule,
+    DialogModule,
     TooltipModule,
     MenuModule,
+    HebrewDatePickerComponent,
   ],
   providers: [ConfirmationService],
   styleUrls: ["./lessons-list.component.css"],
@@ -48,12 +58,21 @@ import { LessonsService } from "@services/lessons.service";
                 <div class="sg-h2">ניהול שיעורים ותוכן לימודי</div>
               </div>
 
-              <p-button
-                label="שיעור חדש"
-                icon="pi pi-plus"
-                styleClass="sg-btn-primary"
-                (onClick)="navigateToCreate()"
-              ></p-button>
+              <div class="flex gap-2">
+                <p-button
+                  label="דוח ציונים"
+                  icon="pi pi-file-excel"
+                  [outlined]="true"
+                  styleClass="sg-btn-secondary"
+                  (onClick)="openReportDialog()"
+                ></p-button>
+                <p-button
+                  label="שיעור חדש"
+                  icon="pi pi-plus"
+                  styleClass="sg-btn-primary"
+                  (onClick)="navigateToCreate()"
+                ></p-button>
+              </div>
             </div>
 
             <div
@@ -287,10 +306,52 @@ import { LessonsService } from "@services/lessons.service";
     ></p-menu>
 
     <p-confirmDialog></p-confirmDialog>
+
+    <p-dialog
+      header="דוח ציונים תקופתי"
+      [(visible)]="reportDialogVisible"
+      [modal]="true"
+      [style]="{ width: '28rem' }"
+      [dismissableMask]="true"
+    >
+      <div class="flex flex-column gap-4" dir="rtl">
+        <div class="flex flex-column gap-2">
+          <label>מתאריך</label>
+          <app-hebrew-date-picker
+            [(ngModel)]="reportFrom"
+            [ngModelOptions]="{ standalone: true }"
+          ></app-hebrew-date-picker>
+        </div>
+        <div class="flex flex-column gap-2">
+          <label>עד תאריך</label>
+          <app-hebrew-date-picker
+            [(ngModel)]="reportTo"
+            [ngModelOptions]="{ standalone: true }"
+          ></app-hebrew-date-picker>
+        </div>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <p-button
+          label="ביטול"
+          [text]="true"
+          (onClick)="closeReportDialog()"
+        ></p-button>
+        <p-button
+          label="ייצוא"
+          icon="pi pi-download"
+          styleClass="sg-btn-primary"
+          [disabled]="!reportFrom || !reportTo"
+          [loading]="exportingReport"
+          (onClick)="exportReport()"
+        ></p-button>
+      </ng-template>
+    </p-dialog>
   `,
 })
 export class LessonsListComponent implements OnInit {
   private readonly lessonsService = inject(LessonsService);
+  private readonly lessonResultsService = inject(LessonResultsService);
   private readonly router = inject(Router);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
@@ -299,6 +360,11 @@ export class LessonsListComponent implements OnInit {
   loading = false;
 
   query = "";
+
+  reportDialogVisible = false;
+  reportFrom: HebrewDateValue | null = null;
+  reportTo: HebrewDateValue | null = null;
+  exportingReport = false;
 
   // Multi-select (design only — no real bulk delete)
   selectedLessons: LessonResponseDto[] = [];
@@ -412,5 +478,46 @@ export class LessonsListComponent implements OnInit {
         });
       },
     });
+  }
+
+  openReportDialog(): void {
+    const today = getHebrewToday();
+    this.reportFrom = today
+      ? { hebrewYear: today.hebrewYear, hebrewMonth: 1, hebrewDay: 1 }
+      : null;
+    this.reportTo = today;
+    this.reportDialogVisible = true;
+  }
+
+  closeReportDialog(): void {
+    this.reportDialogVisible = false;
+  }
+
+  exportReport(): void {
+    if (!this.reportFrom || !this.reportTo) return;
+
+    this.exportingReport = true;
+    this.lessonResultsService
+      .exportPeriodReport(this.reportFrom, this.reportTo)
+      .subscribe({
+        next: (blob) => {
+          downloadBlob(blob, "grades-report.xlsx");
+          this.exportingReport = false;
+          this.reportDialogVisible = false;
+          this.messageService.add({
+            severity: "success",
+            summary: "בוצע",
+            detail: "הדוח ירד בהצלחה",
+          });
+        },
+        error: () => {
+          this.exportingReport = false;
+          this.messageService.add({
+            severity: "error",
+            summary: "שגיאה",
+            detail: "ייצוא הדוח נכשל",
+          });
+        },
+      });
   }
 }
