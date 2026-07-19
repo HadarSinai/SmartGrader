@@ -46,6 +46,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddScoped<IGradeSubmissionJob, AiWorker>();
+builder.Services.AddScoped<ILogCleanupJob, LogCleanupJob>();
 
 // --- Authentication: JWT Bearer ---
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "";
@@ -85,6 +86,33 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
+// --- Seed the admin user (from the AdminUser configuration section) ---
+using (var scope = app.Services.CreateScope())
+{
+    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var adminUsername = config["AdminUser:Username"];
+    var adminPassword = config["AdminUser:Password"];
+
+    if (!string.IsNullOrWhiteSpace(adminUsername) && !string.IsNullOrWhiteSpace(adminPassword))
+    {
+        var users = scope.ServiceProvider.GetRequiredService<SmartGrader.Domain.Abstractions.IUserRepository>();
+        var hasher = scope.ServiceProvider.GetRequiredService<SmartGrader.Application.Common.Interfaces.IPasswordHasherService>();
+        var uow = scope.ServiceProvider.GetRequiredService<SmartGrader.Domain.Abstractions.IUnitOfWork>();
+
+        if (!await users.ExistsByUsernameAsync(adminUsername))
+        {
+            var admin = SmartGrader.Domain.Entities.User.Create(
+                adminUsername,
+                hasher.Hash(adminPassword),
+                config["AdminUser:FullName"] ?? "Admin",
+                SmartGrader.Domain.Entities.UserRole.Admin);
+
+            await users.AddAsync(admin);
+            await uow.SaveChangesAsync();
+        }
+    }
+}
+
 // Swagger — development only (do not expose the API surface in production)
 if (app.Environment.IsDevelopment())
 {
@@ -109,6 +137,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseHangfireDashboard("/hangfire");
 }
+
+// Daily log-retention cleanup (Logs:RetentionDays, default 30)
+RecurringJob.AddOrUpdate<ILogCleanupJob>(
+    "logs-cleanup",
+    job => job.ExecuteAsync(),
+    Cron.Daily);
 
 app.MapControllers();
 

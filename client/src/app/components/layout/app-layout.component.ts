@@ -19,10 +19,12 @@ import { TopbarComponent } from "./topbar.component";
       <!-- Compact welcome strip — Dashboard only -->
       <section *ngIf="isDashboard" class="sg-welcome" aria-label="קבלת פנים">
         <div class="sg-page">
-          <div class="sg-welcome-card">
-            <div class="sg-welcome-title">שלום, טוב לראות אותך שוב</div>
-            <div class="sg-welcome-sub">
-              הנה תמונת המצב העדכנית של הכיתה שלך
+          <div class="sg-welcome-card sg-welcome-card--hero">
+            <div class="sg-welcome-content">
+              <div class="sg-welcome-title">שלום, טוב לראות אותך שוב</div>
+              <div class="sg-welcome-sub">
+                הנה תמונת המצב העדכנית של הכיתה שלך
+              </div>
             </div>
           </div>
         </div>
@@ -34,12 +36,25 @@ import { TopbarComponent } from "./topbar.component";
 
       <footer class="sg-footer" aria-label="פוטר">
         <div class="sg-footer-inner">
-          <div class="sg-footer-brand">SmartGrader</div>
+          <div class="sg-footer-brand flex align-items-center gap-2">
+            <img
+              src="assets/favicon.png"
+              alt=""
+              class="sg-brand-logo"
+              aria-hidden="true"
+            />
+            SmartGrader
+          </div>
           <nav class="sg-footer-links" aria-label="קישורי פוטר">
             <a routerLink="/">לוח בקרה</a>
             <a routerLink="/lessons">שיעורים</a>
             <a routerLink="/students">סטודנטים</a>
           </nav>
+          <div class="sg-footer-copyright">
+          
+            <a href="mailto:hsh3273454@gmail.com">hsh3273454&#64;gmail.com</a>
+             © 2026 SmartGrader. כל הזכויות שמורות.
+          </div>
         </div>
       </footer>
     </div>
@@ -65,6 +80,21 @@ import { TopbarComponent } from "./topbar.component";
         border: 1px solid var(--app-border);
         border-radius: var(--radius-lg);
         padding: var(--space-4) var(--space-6);
+      }
+
+      .sg-welcome-card--hero {
+        position: relative;
+        overflow: hidden;
+        background:
+          linear-gradient(
+            to left,
+            rgba(250, 246, 240, 0.95) 35%,
+            rgba(250, 246, 240, 0.55)
+          ),
+          url("/assets/hero-classroom.jpg") center / cover no-repeat;
+        min-height: 120px;
+        display: flex;
+        align-items: center;
       }
 
       .sg-welcome-title {

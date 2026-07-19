@@ -10,12 +10,31 @@
             <div class="sg-h2">ניהול פרופילי תלמידים ומעקב אחר ביצועים</div>
           </div>
 
-          <p-button
-            label="סטודנט חדש"
-            icon="pi pi-plus"
-            styleClass="sg-btn-primary"
-            (onClick)="navigateToCreate()"
-          ></p-button>
+          <div class="flex flex-wrap align-items-center gap-2">
+            <p-button
+              label="ייבוא"
+              icon="pi pi-upload"
+              [outlined]="true"
+              styleClass="sg-btn-secondary"
+              (onClick)="openImportDialog()"
+            ></p-button>
+
+            <p-button
+              label="ייצוא"
+              icon="pi pi-download"
+              [outlined]="true"
+              styleClass="sg-btn-secondary"
+              [loading]="exporting"
+              (onClick)="exportExcel()"
+            ></p-button>
+
+            <p-button
+              label="סטודנט חדש"
+              icon="pi pi-plus"
+              styleClass="sg-btn-primary"
+              (onClick)="navigateToCreate()"
+            ></p-button>
+          </div>
         </div>
 
         <!-- Search + filters row -->
@@ -41,14 +60,6 @@
             (onClick)="toggleFilters()"
             [attr.aria-expanded]="filtersOpen"
             aria-controls="studentsFilters"
-          ></p-button>
-
-          <p-button
-            label="ייצוא"
-            icon="pi pi-download"
-            [outlined]="true"
-            styleClass="sg-btn-secondary md:mr-auto"
-            aria-label="ייצוא"
           ></p-button>
         </div>
 
@@ -143,8 +154,12 @@
                   aria-label="בחירת כל השורות"
                 ></p-tableHeaderCheckbox>
               </th>
-              <th>שם התלמיד/ה</th>
-              <th class="text-center">כיתה</th>
+              <th pSortableColumn="fullName">
+                שם התלמיד/ה <p-sortIcon field="fullName"></p-sortIcon>
+              </th>
+              <th class="text-center" pSortableColumn="className">
+                כיתה <p-sortIcon field="className"></p-sortIcon>
+              </th>
               <th class="text-center">פעילות</th>
               <th class="text-center" style="width: 5rem">צפייה</th>
               <th class="text-center" style="width: 5rem">פעולות</th>
@@ -240,5 +255,92 @@
   [model]="rowMenuItems"
   styleClass="sg-row-menu"
 ></p-menu>
+
+<!-- Import from Excel dialog -->
+<p-dialog
+  header="ייבוא סטודנטים מאקסל"
+  [(visible)]="importDialogOpen"
+  [modal]="true"
+  [style]="{ width: '30rem' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="flex flex-column gap-3">
+    <div class="text-color-secondary">
+      יש להעלות קובץ Excel (xlsx) עם העמודות הבאות, לפי הסדר:
+      <strong>שם מלא</strong>, <strong>כיתה</strong>,
+      <strong>שם משתמש</strong> ו<strong>סיסמה</strong>. השורה הראשונה היא שורת
+      כותרות. שם משתמש וסיסמה הם אופציונליים — אם ממלאים אותם, ייוצר לתלמיד/ה
+      חשבון התחברות (סיסמה: לפחות 8 תווים, אות גדולה, אות קטנה וספרה).
+    </div>
+
+    <div class="flex align-items-center gap-2">
+      <input
+        #importFileInput
+        type="file"
+        accept=".xlsx"
+        class="hidden"
+        (change)="onImportFileSelected($event)"
+      />
+      <p-button
+        label="בחירת קובץ"
+        icon="pi pi-file-excel"
+        [outlined]="true"
+        styleClass="sg-btn-secondary"
+        (onClick)="importFileInput.click()"
+      ></p-button>
+      <span class="text-color-secondary" *ngIf="importFile">
+        {{ importFile.name }}
+      </span>
+      <span class="text-color-secondary" *ngIf="!importFile">
+        לא נבחר קובץ
+      </span>
+    </div>
+
+    <!-- Import result summary -->
+    <div *ngIf="importResult" class="flex flex-column gap-2" aria-live="polite">
+      <div *ngIf="importResult.createdCount > 0">
+        <i class="pi pi-check-circle sg-icon-accent" aria-hidden="true"></i>
+        נוספו {{ importResult.createdCount }} רשומות בהצלחה.
+      </div>
+      <div *ngIf="importResult.errors.length > 0">
+        <div class="font-semibold mb-2">
+          שורות שלא נקלטו ({{ importResult.errors.length }}):
+        </div>
+        <p-table [value]="importResult.errors" styleClass="sg-table">
+          <ng-template pTemplate="header">
+            <tr>
+              <th class="text-center" style="width: 6rem">שורה</th>
+              <th>שגיאה</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-err>
+            <tr>
+              <td class="text-center">{{ err.rowNumber }}</td>
+              <td>{{ err.message }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="סגירה"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="importDialogOpen = false"
+    ></p-button>
+    <p-button
+      label="ייבוא"
+      icon="pi pi-upload"
+      styleClass="sg-btn-primary"
+      [loading]="importing"
+      [disabled]="!importFile"
+      (onClick)="uploadImport()"
+    ></p-button>
+  </ng-template>
+</p-dialog>
 
 <p-confirmDialog></p-confirmDialog>

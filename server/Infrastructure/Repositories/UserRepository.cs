@@ -14,12 +14,12 @@ namespace SmartGrader.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
+        public async Task<User?> GetByUsernameAsync(string username, CancellationToken ct = default)
         {
-            var normalized = email.Trim().ToLowerInvariant();
+            var normalized = username.Trim().ToLowerInvariant();
             return await _context.Users
                 .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Email == normalized, ct);
+                .FirstOrDefaultAsync(u => u.Username == normalized, ct);
         }
 
         public async Task<User?> GetByIdAsync(int id, CancellationToken ct = default)
@@ -29,12 +29,12 @@ namespace SmartGrader.Infrastructure.Repositories
                 .FirstOrDefaultAsync(u => u.Id == id, ct);
         }
 
-        public async Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default)
+        public async Task<bool> ExistsByUsernameAsync(string username, CancellationToken ct = default)
         {
-            var normalized = email.Trim().ToLowerInvariant();
+            var normalized = username.Trim().ToLowerInvariant();
             return await _context.Users
                 .AsNoTracking()
-                .AnyAsync(u => u.Email == normalized, ct);
+                .AnyAsync(u => u.Username == normalized, ct);
         }
 
         public async Task AddAsync(User user, CancellationToken ct = default)

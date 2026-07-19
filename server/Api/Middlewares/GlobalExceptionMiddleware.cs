@@ -1,9 +1,12 @@
 ﻿
 using System.Diagnostics;
 using System.Net;
+using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using SmartGrader.Application.Common.Exceptions;
+using SmartGrader.Application.Common.Interfaces;
+using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Api.Middlewares
 {
@@ -11,13 +14,16 @@ namespace SmartGrader.Api.Middlewares
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<GlobalExceptionMiddleware> _logger;
+        private readonly ILogWriter _logWriter;
 
         public GlobalExceptionMiddleware(
             RequestDelegate next,
-            ILogger<GlobalExceptionMiddleware> logger)
+            ILogger<GlobalExceptionMiddleware> logger,
+            ILogWriter logWriter)
         {
             _next = next;
             _logger = logger;
+            _logWriter = logWriter;
         }
 
         public async Task Invoke(HttpContext context)
@@ -102,6 +108,19 @@ namespace SmartGrader.Api.Middlewares
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled exception");
+
+                int? userId = null;
+                var sub = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? context.User.FindFirstValue("sub");
+                if (int.TryParse(sub, out var parsedUserId))
+                    userId = parsedUserId;
+
+                await _logWriter.WriteAsync(
+                    LogActionTypes.UnhandledError,
+                    $"{ex.Message} ({context.Request.Method} {context.Request.Path})",
+                    LogStatuses.Error,
+                    LogSystemSources.Api,
+                    userId: userId);
 
                 var problem = new ProblemDetails
                 {

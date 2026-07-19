@@ -7,8 +7,10 @@ using SmartGrader.Application.Dtos.Student;
 using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Application.UseCases.Students.CreateStudent;
 using SmartGrader.Application.UseCases.Students.DeleteStudent;
+using SmartGrader.Application.UseCases.Students.ExportStudents;
 using SmartGrader.Application.UseCases.Students.GetStudentById;
 using SmartGrader.Application.UseCases.Students.GetStudents;
+using SmartGrader.Application.UseCases.Students.ImportStudents;
 using SmartGrader.Application.UseCases.Students.UpdateStudent;
 using SmartGrader.Application.UseCases.Submissions.CreateSubmission;
 using SmartGrader.Application.UseCases.Submissions.DeleteSubmission;
@@ -36,7 +38,7 @@ namespace SmartGrader.Api.Controllers
         /// </summary>
         private bool IsAllowedForStudent(int studentId)
         {
-            if (User.IsInRole("Teacher"))
+            if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
                 return true;
 
             var claim = User.FindFirstValue("studentId");
@@ -46,12 +48,44 @@ namespace SmartGrader.Api.Controllers
     
 
         [HttpGet]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             IReadOnlyList<StudentResponseDto> result =
                 await _mediator.Send(new GetStudentsQuery(), cancellationToken);
 
+            return Ok(result);
+        }
+
+        [HttpGet("export")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> Export(CancellationToken cancellationToken)
+        {
+            byte[] bytes = await _mediator.Send(new ExportStudentsQuery(), cancellationToken);
+            return File(
+                bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "students.xlsx");
+        }
+
+        [HttpPost("import")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> Import(IFormFile file, CancellationToken cancellationToken)
+        {
+            const long maxFileSize = 5 * 1024 * 1024; // ~5MB
+
+            if (file is null || file.Length == 0)
+                return BadRequest(new { message = "לא נבחר קובץ להעלאה" });
+
+            if (!Path.GetExtension(file.FileName).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = "יש להעלות קובץ Excel בפורמט xlsx בלבד" });
+
+            if (file.Length > maxFileSize)
+                return BadRequest(new { message = "הקובץ גדול מדי (מקסימום 5MB)" });
+
+            await using var stream = file.OpenReadStream();
+            ImportStudentsResultDto result =
+                await _mediator.Send(new ImportStudentsCommand(stream), cancellationToken);
             return Ok(result);
         }
 
@@ -68,7 +102,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> Create(
             [FromBody] CreateStudentRequestDto dto,
             CancellationToken cancellationToken)
@@ -83,7 +117,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpPut("{id:int}")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> Update(
             int id,
             [FromBody] UpdateStudentRequestDto dto,
@@ -96,7 +130,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
             await _mediator.Send(new DeleteStudentCommand(id), cancellationToken);
@@ -162,7 +196,7 @@ namespace SmartGrader.Api.Controllers
 
         // PUT: api/students/{studentId}/submissions/{submissionId}
         [HttpPut("{studentId:int}/submissions/{submissionId:int}")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> UpdateSubmission(
             int studentId,
             int submissionId,
@@ -179,7 +213,7 @@ namespace SmartGrader.Api.Controllers
 
         // DELETE: api/students/{studentId}/submissions/{submissionId}
         [HttpDelete("{studentId:int}/submissions/{submissionId:int}")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> DeleteSubmission(
             int studentId,
             int submissionId,

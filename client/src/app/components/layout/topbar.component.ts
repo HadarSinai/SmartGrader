@@ -18,21 +18,51 @@ import { AuthService } from "../../services/auth.service";
   ],
   template: `
     <p-toolbar class="sg-topbar" aria-label="סרגל עליון">
-      <div class="p-toolbar-group-left"></div>
+      <div class="p-toolbar-group-left">
+        <a class="sg-brand" routerLink="/" aria-label="SmartGrader – דף הבית">
+          <img
+            src="assets/favicon.png"
+            alt=""
+            class="sg-brand-logo"
+            aria-hidden="true"
+          />
+          <span class="sg-brand-name">SmartGrader</span>
+        </a>
+      </div>
 
       <div class="p-toolbar-group-center">
-        @if (auth.isTeacher()) {
+        @if (auth.isTeacher() || auth.isAdmin()) {
           <nav class="sg-nav" aria-label="ניווט ראשי">
             <a
               routerLink="/"
               routerLinkActive="active"
               [routerLinkActiveOptions]="{ exact: true }"
-              >לוח בקרה</a
             >
-            <a routerLink="/students" routerLinkActive="active">סטודנטים</a>
-            <a routerLink="/assignments" routerLinkActive="active">תרגילים</a>
-            <a routerLink="/lessons" routerLinkActive="active">שיעורים</a>
-            <a routerLink="/submissions" routerLinkActive="active">הגשות</a>
+              <i class="pi pi-home" aria-hidden="true"></i>
+              לוח בקרה
+            </a>
+            <a routerLink="/students" routerLinkActive="active">
+              <i class="pi pi-users" aria-hidden="true"></i>
+              סטודנטים
+            </a>
+            <a routerLink="/assignments" routerLinkActive="active">
+              <i class="pi pi-file-edit" aria-hidden="true"></i>
+              תרגילים
+            </a>
+            <a routerLink="/lessons" routerLinkActive="active">
+              <i class="pi pi-book" aria-hidden="true"></i>
+              שיעורים
+            </a>
+            <a routerLink="/submissions" routerLinkActive="active">
+              <i class="pi pi-inbox" aria-hidden="true"></i>
+              הגשות
+            </a>
+            @if (auth.isAdmin()) {
+              <a routerLink="/logs" routerLinkActive="active">
+                <i class="pi pi-history" aria-hidden="true"></i>
+                יומן מערכת
+              </a>
+            }
           </nav>
         }
       </div>

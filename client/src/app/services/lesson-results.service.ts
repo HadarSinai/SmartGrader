@@ -27,4 +27,11 @@ export class LessonResultsService {
       request,
     );
   }
+
+  exportExcel(lessonId: number): Observable<Blob> {
+    return this.api.http.get(
+      this.api.url(`/api/lesson-results/lesson/${lessonId}/export`),
+      { responseType: "blob" },
+    );
+  }
 }

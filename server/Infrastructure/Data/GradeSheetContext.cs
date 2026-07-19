@@ -45,8 +45,8 @@ namespace SmartGrader.Infrastructure.Data
 
             modelBuilder.Entity<User>(user =>
             {
-                user.Property(u => u.Email).IsRequired();
-                user.HasIndex(u => u.Email).IsUnique();
+                user.Property(u => u.Username).IsRequired();
+                user.HasIndex(u => u.Username).IsUnique();
                 user.Property(u => u.PasswordHash).IsRequired();
                 user.Property(u => u.FullName).IsRequired();
                 user.Property(u => u.Role).HasConversion<string>();

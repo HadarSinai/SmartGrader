@@ -11,13 +11,23 @@ export const authGuard: CanActivateFn = () => {
   return router.createUrlTree(["/login"]);
 };
 
-/** Teacher-only routes. A logged-in student is sent to her own area. */
+/** Teacher-only routes (admin included). A logged-in student is sent to her own area. */
 export const teacherGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
   if (!auth.isLoggedIn()) return router.createUrlTree(["/login"]);
-  if (auth.isTeacher()) return true;
+  if (auth.isTeacher() || auth.isAdmin()) return true;
+  return router.createUrlTree(auth.homeRoute());
+};
+
+/** Admin-only routes (e.g. the system log). */
+export const adminGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  if (!auth.isLoggedIn()) return router.createUrlTree(["/login"]);
+  if (auth.isAdmin()) return true;
   return router.createUrlTree(auth.homeRoute());
 };
 

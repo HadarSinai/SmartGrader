@@ -19,14 +19,40 @@
             <div class="sg-h1">הגשות</div>
             <div class="sg-h2">מעקב, צפייה ועריכה של הגשות סטודנטים</div>
           </div>
+        </div>
+
+        <!-- Search + filters row -->
+        <div
+          class="flex flex-column md:flex-row md:align-items-center gap-3 px-4 pb-3"
+        >
+          <span class="p-input-icon-right sg-search">
+            <i class="pi pi-search" aria-hidden="true"></i>
+            <input
+              pInputText
+              type="text"
+              [(ngModel)]="query"
+              placeholder="חיפוש לפי שם תרגיל..."
+              aria-label="חיפוש הגשות"
+            />
+          </span>
+
+          <p-dropdown
+            inputId="statusFilter"
+            [options]="statusOptions"
+            [(ngModel)]="statusFilter"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="כל הסטטוסים"
+            aria-label="סינון לפי סטטוס"
+          ></p-dropdown>
 
           <p-button
-            label="הגשה חדשה"
-            icon="pi pi-plus"
-            styleClass="sg-btn-primary"
-            (onClick)="navigateToCreate()"
-          >
-          </p-button>
+            *ngIf="hasActiveFilters"
+            label="איפוס"
+            [text]="true"
+            (onClick)="clearFilters()"
+            aria-label="איפוס סינון"
+          ></p-button>
         </div>
       </ng-template>
 
@@ -54,7 +80,7 @@
       <!-- Desktop table -->
       <div class="sg-table-wrap desktop-only">
         <p-table
-          [value]="submissions"
+          [value]="filteredSubmissions"
           [loading]="loading"
           responsiveLayout="scroll"
           [paginator]="true"
@@ -71,15 +97,21 @@
                   class="flex flex-column align-items-center justify-content-center py-6 text-color-secondary"
                 >
                   <i class="pi pi-inbox text-4xl mb-3" aria-hidden="true"></i>
-                  <div class="font-bold text-lg mb-2 text-color">
-                    עוד אין הגשות
-                  </div>
-                  <p-button
-                    label="הגשה חדשה"
-                    icon="pi pi-plus"
-                    styleClass="sg-btn-primary"
-                    (onClick)="navigateToCreate()"
-                  ></p-button>
+                  <ng-container *ngIf="hasActiveFilters; else emptyNoFilters">
+                    <div class="font-bold text-lg mb-2 text-color">
+                      לא נמצאו הגשות התואמות לסינון
+                    </div>
+                    <p-button
+                      label="איפוס סינון"
+                      [text]="true"
+                      (onClick)="clearFilters()"
+                    ></p-button>
+                  </ng-container>
+                  <ng-template #emptyNoFilters>
+                    <div class="font-bold text-lg mb-2 text-color">
+                      עוד אין הגשות
+                    </div>
+                  </ng-template>
                 </div>
               </td>
             </tr>
@@ -92,10 +124,18 @@
                   aria-label="בחירת כל השורות"
                 ></p-tableHeaderCheckbox>
               </th>
-              <th>תרגיל</th>
-              <th class="text-center">נשלח</th>
-              <th class="text-center">סטטוס</th>
-              <th class="text-center">ציון</th>
+              <th pSortableColumn="assignmentName">
+                תרגיל <p-sortIcon field="assignmentName"></p-sortIcon>
+              </th>
+              <th class="text-center" pSortableColumn="submittedAt">
+                נשלח <p-sortIcon field="submittedAt"></p-sortIcon>
+              </th>
+              <th class="text-center" pSortableColumn="status">
+                סטטוס <p-sortIcon field="status"></p-sortIcon>
+              </th>
+              <th class="text-center" pSortableColumn="score">
+                ציון <p-sortIcon field="score"></p-sortIcon>
+              </th>
               <th class="text-center" style="width: 5rem">צפייה</th>
               <th class="text-center" style="width: 5rem">פעולות</th>
             </tr>
@@ -174,19 +214,31 @@
 
       <!-- Mobile cards -->
       <div class="mobile-only px-3 pb-3">
-        <p-dataView [value]="submissions" [loading]="loading" layout="list">
+        <p-dataView
+          [value]="filteredSubmissions"
+          [loading]="loading"
+          layout="list"
+        >
           <ng-template pTemplate="empty">
             <div
               class="flex flex-column align-items-center justify-content-center py-6 text-color-secondary"
             >
               <i class="pi pi-inbox text-4xl mb-3" aria-hidden="true"></i>
-              <div class="font-bold text-lg mb-2 text-color">עוד אין הגשות</div>
-              <p-button
-                label="הגשה חדשה"
-                icon="pi pi-plus"
-                styleClass="sg-btn-primary"
-                (onClick)="navigateToCreate()"
-              ></p-button>
+              <ng-container *ngIf="hasActiveFilters; else mobileEmptyNoFilters">
+                <div class="font-bold text-lg mb-2 text-color">
+                  לא נמצאו הגשות התואמות לסינון
+                </div>
+                <p-button
+                  label="איפוס סינון"
+                  [text]="true"
+                  (onClick)="clearFilters()"
+                ></p-button>
+              </ng-container>
+              <ng-template #mobileEmptyNoFilters>
+                <div class="font-bold text-lg mb-2 text-color">
+                  עוד אין הגשות
+                </div>
+              </ng-template>
             </div>
           </ng-template>
 

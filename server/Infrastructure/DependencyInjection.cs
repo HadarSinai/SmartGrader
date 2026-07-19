@@ -14,6 +14,7 @@ using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
 using SmartGrader.Infrastructure.Services.Feedback;
 using SmartGrader.Infrastructure.Services.Auth;
+using SmartGrader.Infrastructure.Services.Email;
 using Microsoft.Extensions.Configuration;
 
 
@@ -33,6 +34,7 @@ namespace SmartGrader.Infrastructure
             services.AddScoped<ISubmissionRepository, SubmissionRepository>();
             services.AddScoped<IAssignmentRepository, AssignmentRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ILogRepository, LogRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             //  services.AddSingleton<ICompilerService, RoslynCompilerService>();
 
@@ -46,6 +48,9 @@ namespace SmartGrader.Infrastructure
             services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddSingleton<IPasswordHasherService, PasswordHasherService>();
+
+            services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
+            services.AddSingleton<IEmailSender, SmtpEmailSender>();
 
             services.AddHttpClient<ICodeRunnerService, Judge0CodeRunner>();
             services.Configure<Judge0Options>(configuration.GetSection("Judge0"));

@@ -8,6 +8,7 @@ import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { ChipModule } from "primeng/chip";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
+import { DialogModule } from "primeng/dialog";
 import { DropdownModule } from "primeng/dropdown";
 import { InputTextModule } from "primeng/inputtext";
 import { Menu, MenuModule } from "primeng/menu";
@@ -15,8 +16,12 @@ import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
 import { TooltipModule } from "primeng/tooltip";
 
-import { StudentResponseDto } from "@models/student.model";
+import {
+  ImportStudentsResultDto,
+  StudentResponseDto,
+} from "@models/student.model";
 import { StudentsService } from "@services/students.service";
+import { downloadBlob } from "../../core/utils/download";
 
 @Component({
   selector: "app-students-list",
@@ -28,6 +33,7 @@ import { StudentsService } from "@services/students.service";
     ButtonModule,
     CardModule,
     ConfirmDialogModule,
+    DialogModule,
     InputTextModule,
     DropdownModule,
     TagModule,
@@ -57,6 +63,13 @@ export class StudentsListComponent implements OnInit {
   selectedStudents: StudentResponseDto[] = [];
 
   rowMenuItems: MenuItem[] = [];
+
+  // Excel export/import
+  exporting = false;
+  importDialogOpen = false;
+  importing = false;
+  importFile: File | null = null;
+  importResult: ImportStudentsResultDto | null = null;
 
   get classOptions() {
     const classes = Array.from(
@@ -183,5 +196,68 @@ export class StudentsListComponent implements OnInit {
   resetFilters(): void {
     this.query = "";
     this.classFilter = null;
+  }
+
+  exportExcel(): void {
+    this.exporting = true;
+    this.studentsService.exportExcel().subscribe({
+      next: (blob) => {
+        downloadBlob(blob, "students.xlsx");
+        this.exporting = false;
+        this.messageService.add({
+          severity: "success",
+          summary: "בוצע",
+          detail: "הקובץ ירד בהצלחה",
+        });
+      },
+      error: () => {
+        this.exporting = false;
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "הייצוא נכשל",
+        });
+      },
+    });
+  }
+
+  openImportDialog(): void {
+    this.importFile = null;
+    this.importResult = null;
+    this.importDialogOpen = true;
+  }
+
+  onImportFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.importFile = input.files?.[0] ?? null;
+    this.importResult = null;
+  }
+
+  uploadImport(): void {
+    if (!this.importFile) {
+      return;
+    }
+
+    this.importing = true;
+    this.studentsService.importExcel(this.importFile).subscribe({
+      next: (result) => {
+        this.importing = false;
+        this.importResult = result;
+        if (result.createdCount > 0) {
+          this.messageService.add({
+            severity: "success",
+            summary: "בוצע",
+            detail: `נוספו ${result.createdCount} רשומות בהצלחה`,
+          });
+          this.loadStudents();
+        }
+        if (result.errors.length === 0 && result.createdCount > 0) {
+          this.importDialogOpen = false;
+        }
+      },
+      error: () => {
+        this.importing = false;
+      },
+    });
   }
 }

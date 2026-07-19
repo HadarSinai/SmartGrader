@@ -1,4 +1,5 @@
 using FluentValidation;
+using SmartGrader.Application.Common.Validation;
 
 namespace SmartGrader.Application.UseCases.Auth.RegisterTeacher
 {
@@ -9,13 +10,11 @@ namespace SmartGrader.Application.UseCases.Auth.RegisterTeacher
             RuleFor(x => x.Dto.FullName)
                 .NotEmpty().WithMessage("Full name is required.");
 
-            RuleFor(x => x.Dto.Email)
-                .NotEmpty().WithMessage("Email is required.")
-                .EmailAddress().WithMessage("Email is not valid.");
+            RuleFor(x => x.Dto.Username)
+                .Username();
 
             RuleFor(x => x.Dto.Password)
-                .NotEmpty().WithMessage("Password is required.")
-                .MinimumLength(8).WithMessage("Password must be at least 8 characters long.");
+                .Password();
         }
     }
 }

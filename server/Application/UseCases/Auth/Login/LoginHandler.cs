@@ -9,7 +9,7 @@ namespace SmartGrader.Application.UseCases.Auth.Login
 {
     public class LoginHandler : IRequestHandler<LoginCommand, AuthResponseDto>
     {
-        private const string InvalidCredentialsMessage = "Invalid email or password.";
+        private const string InvalidCredentialsMessage = "Invalid username or password.";
 
         private readonly IUserRepository _userRepository;
         private readonly IStudentRepository _studentRepository;
@@ -30,9 +30,9 @@ namespace SmartGrader.Application.UseCases.Auth.Login
 
         public async Task<AuthResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailAsync(request.Dto.Email, cancellationToken);
+            var user = await _userRepository.GetByUsernameAsync(request.Dto.Username, cancellationToken);
 
-            // Generic error — never reveal whether the email exists
+            // Generic error — never reveal whether the username exists
             if (user is null || !_passwordHasher.Verify(user.PasswordHash, request.Dto.Password))
                 throw new BusinessRuleException(InvalidCredentialsMessage);
 

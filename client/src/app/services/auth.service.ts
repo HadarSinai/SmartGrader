@@ -15,7 +15,7 @@ const USER_KEY = "sg_user";
 
 interface StoredUser {
   fullName: string;
-  role: "Teacher" | "Student";
+  role: "Teacher" | "Student" | "Admin";
   studentId: number | null;
 }
 
@@ -32,6 +32,7 @@ export class AuthService {
   readonly studentId = computed(() => this._user()?.studentId ?? null);
   readonly isTeacher = computed(() => this.role() === "Teacher");
   readonly isStudent = computed(() => this.role() === "Student");
+  readonly isAdmin = computed(() => this.role() === "Admin");
 
   constructor(private api: ApiClient) {}
 

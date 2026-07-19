@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
+using SmartGrader.Application.UseCases.LessonResults.ExportLessonResults;
 using SmartGrader.Application.UseCases.LessonResults.GetLessonResult;
 
 namespace SmartGrader.Api.Controllers;
@@ -34,8 +35,19 @@ public class LessonResultController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("lesson/{lessonId:int}/export")]
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> Export(int lessonId, CancellationToken ct)
+    {
+        byte[] bytes = await _mediator.Send(new ExportLessonResultsQuery(lessonId), ct);
+        return File(
+            bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"lesson-{lessonId}-results.xlsx");
+    }
+
     [HttpPost("complete")]
-    [Authorize(Roles = "Teacher")]
+    [Authorize(Roles = "Teacher,Admin")]
     public async Task<IActionResult> Complete([FromBody] CompleteLessonRequestDto dto)
     {
         var command = _mapper.Map<CompleteLessonCommand>(dto);

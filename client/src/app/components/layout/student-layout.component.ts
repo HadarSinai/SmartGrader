@@ -23,16 +23,32 @@ import { AuthService } from "../../services/auth.service";
       <header class="sg-header">
         <div class="sg-page">
           <p-toolbar class="sg-topbar" aria-label="סרגל עליון">
-            <div class="p-toolbar-group-left"></div>
+            <div class="p-toolbar-group-left">
+              <a
+                class="sg-brand"
+                routerLink="/my/lessons"
+                aria-label="SmartGrader – המסע שלי"
+              >
+                <img
+                  src="assets/favicon.png"
+                  alt=""
+                  class="sg-brand-logo"
+                  aria-hidden="true"
+                />
+                <span class="sg-brand-name">SmartGrader</span>
+              </a>
+            </div>
 
             <div class="p-toolbar-group-center">
               <nav class="sg-nav" aria-label="ניווט ראשי">
-                <a routerLink="/my/lessons" routerLinkActive="active"
-                  >השיעורים שלי</a
-                >
-                <a routerLink="/my/grades" routerLinkActive="active"
-                  >הציונים שלי</a
-                >
+                <a routerLink="/my/lessons" routerLinkActive="active">
+                  <i class="pi pi-book" aria-hidden="true"></i>
+                  השיעורים שלי
+                </a>
+                <a routerLink="/my/grades" routerLinkActive="active">
+                  <i class="pi pi-chart-line" aria-hidden="true"></i>
+                  הציונים שלי
+                </a>
               </nav>
             </div>
 

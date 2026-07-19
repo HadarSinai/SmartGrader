@@ -17,3 +17,13 @@ export interface UpdateStudentRequestDto {
   fullName: string | null;
   className: string | null;
 }
+
+export interface ImportRowErrorDto {
+  rowNumber: number;
+  message: string;
+}
+
+export interface ImportStudentsResultDto {
+  createdCount: number;
+  errors: ImportRowErrorDto[];
+}

@@ -2,9 +2,10 @@ import { Routes } from "@angular/router";
 import { AppLayoutComponent } from "./components/layout/app-layout.component";
 import { StudentLayoutComponent } from "./components/layout/student-layout.component";
 import {
-    authGuard,
-    studentGuard,
-    teacherGuard,
+  adminGuard,
+  authGuard,
+  studentGuard,
+  teacherGuard,
 } from "./core/guards/auth.guards";
 import { AssignmentFormComponent } from "./pages/assignments/assignment-form.component";
 import { AssignmentsListComponent } from "./pages/assignments/assignments-list.component";
@@ -15,6 +16,7 @@ import { LessonResultDetailComponent } from "./pages/lesson-results/lesson-resul
 import { LessonResultsListComponent } from "./pages/lesson-results/lesson-results-list.component";
 import { LessonFormComponent } from "./pages/lessons/lesson-form.component";
 import { LessonsListComponent } from "./pages/lessons/lessons-list.component";
+import { LogsListComponent } from "./pages/logs/logs-list.component";
 import { MyAssignmentsListComponent } from "./pages/my/my-assignments-list.component";
 import { MyFeedbackComponent } from "./pages/my/my-feedback.component";
 import { MyGradesComponent } from "./pages/my/my-grades.component";
@@ -97,11 +99,6 @@ export const routes: Routes = [
         canActivate: [teacherGuard],
       },
       {
-        path: "students/:studentId/submissions/new",
-        component: SubmissionFormComponent,
-        canActivate: [teacherGuard],
-      },
-      {
         path: "students/:studentId/submissions/:submissionId",
         component: SubmissionDetailComponent,
         canActivate: [teacherGuard],
@@ -110,6 +107,11 @@ export const routes: Routes = [
         path: "students/:studentId/submissions/:submissionId/edit",
         component: SubmissionFormComponent,
         canActivate: [teacherGuard],
+      },
+      {
+        path: "logs",
+        component: LogsListComponent,
+        canActivate: [adminGuard],
       },
       { path: "assignments", redirectTo: "lessons", pathMatch: "full" },
       { path: "submissions", redirectTo: "students", pathMatch: "full" },

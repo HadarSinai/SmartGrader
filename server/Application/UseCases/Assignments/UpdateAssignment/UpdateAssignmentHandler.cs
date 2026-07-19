@@ -41,6 +41,8 @@ namespace SmartGrader.Application.UseCases.Assignments.UpdateAssignment
             if (request.Dto.MethodName is not null)
                 assignment.MethodName = request.Dto.MethodName;
 
+            assignment.SetTests(_mapper.Map<List<TestCase>>(request.Dto.Tests ?? new()));
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<AssignmentResponseDto>(assignment);

@@ -123,9 +123,15 @@ import { LessonsService } from "@services/lessons.service";
                       aria-label="בחירת כל השורות"
                     ></p-tableHeaderCheckbox>
                   </th>
-                  <th>שם</th>
-                  <th>נושא</th>
-                  <th class="text-center">תאריך</th>
+                  <th pSortableColumn="name">
+                    שם <p-sortIcon field="name"></p-sortIcon>
+                  </th>
+                  <th pSortableColumn="subject">
+                    נושא <p-sortIcon field="subject"></p-sortIcon>
+                  </th>
+                  <th class="text-center" pSortableColumn="lessonDate">
+                    תאריך <p-sortIcon field="lessonDate"></p-sortIcon>
+                  </th>
                   <th class="text-center">תרגילים</th>
                   <th class="text-center" style="width: 5rem">תוצאות</th>
                   <th class="text-center" style="width: 5rem">פעולות</th>

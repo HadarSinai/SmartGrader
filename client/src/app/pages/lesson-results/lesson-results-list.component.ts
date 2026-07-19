@@ -10,7 +10,9 @@ import { CardModule } from "primeng/card";
 import { CheckboxModule } from "primeng/checkbox";
 import { DataViewModule } from "primeng/dataview";
 import { DialogModule } from "primeng/dialog";
+import { DropdownModule } from "primeng/dropdown";
 import { InputNumberModule } from "primeng/inputnumber";
+import { InputTextModule } from "primeng/inputtext";
 import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
 import { TooltipModule } from "primeng/tooltip";
@@ -23,6 +25,7 @@ import {
 import { StudentResponseDto } from "@models/student.model";
 import { LessonResultsService } from "@services/lesson-results.service";
 import { StudentsService } from "@services/students.service";
+import { downloadBlob } from "../../core/utils/download";
 
 interface LessonResultRowVm {
   studentId: number;
@@ -48,6 +51,8 @@ interface LessonResultRowVm {
     DialogModule,
     InputNumberModule,
     CheckboxModule,
+    DropdownModule,
+    InputTextModule,
   ],
   template: `
     <section class="sg-page">
@@ -71,23 +76,79 @@ interface LessonResultRowVm {
                 <div class="sg-h1">תוצאות שיעור</div>
                 <div class="sg-h2">מעקב אחר התקדמות התלמידים בשיעור</div>
               </div>
+
+              <p-button
+                label="ייצוא"
+                icon="pi pi-download"
+                [outlined]="true"
+                styleClass="sg-btn-secondary"
+                [loading]="exporting"
+                (onClick)="exportExcel()"
+              ></p-button>
+            </div>
+
+            <!-- Search + filters row -->
+            <div
+              class="flex flex-column md:flex-row md:align-items-center gap-3 px-4 pb-3"
+            >
+              <span class="p-input-icon-right sg-search">
+                <i class="pi pi-search" aria-hidden="true"></i>
+                <input
+                  pInputText
+                  type="text"
+                  [(ngModel)]="query"
+                  placeholder="חיפוש לפי שם..."
+                  aria-label="חיפוש תלמידים"
+                />
+              </span>
+
+              <p-dropdown
+                inputId="completionFilter"
+                [options]="completionOptions"
+                [(ngModel)]="completionFilter"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="כל הסטטוסים"
+                aria-label="סינון לפי סטטוס"
+              ></p-dropdown>
+
+              <p-button
+                *ngIf="hasActiveFilters"
+                label="איפוס"
+                [text]="true"
+                (onClick)="clearFilters()"
+                aria-label="איפוס סינון"
+              ></p-button>
             </div>
           </ng-template>
 
           <!-- Desktop table -->
           <div class="sg-table-wrap desktop-only">
             <p-table
-              [value]="rows"
+              [value]="filteredRows"
               [loading]="loading"
               responsiveLayout="scroll"
               styleClass="sg-table"
             >
               <ng-template pTemplate="header">
                 <tr>
-                  <th class="text-center">שם התלמיד/ה</th>
-                  <th class="text-center">התקדמות</th>
-                  <th class="text-center">ציון סופי</th>
-                  <th class="text-center">סטטוס</th>
+                  <th class="text-center" pSortableColumn="studentName">
+                    שם התלמיד/ה
+                    <p-sortIcon field="studentName"></p-sortIcon>
+                  </th>
+                  <th
+                    class="text-center"
+                    pSortableColumn="completedAssignments"
+                  >
+                    התקדמות
+                    <p-sortIcon field="completedAssignments"></p-sortIcon>
+                  </th>
+                  <th class="text-center" pSortableColumn="finalScore">
+                    ציון סופי <p-sortIcon field="finalScore"></p-sortIcon>
+                  </th>
+                  <th class="text-center" pSortableColumn="isComplete">
+                    סטטוס <p-sortIcon field="isComplete"></p-sortIcon>
+                  </th>
                   <th class="text-center">פעולות</th>
                 </tr>
               </ng-template>
@@ -148,7 +209,15 @@ interface LessonResultRowVm {
                     colspan="5"
                     class="text-center px-3 py-6 text-color-secondary"
                   >
-                    אין תלמידים להצגה.
+                    <ng-container *ngIf="hasActiveFilters; else noStudents">
+                      לא נמצאו תוצאות התואמות לסינון.
+                      <p-button
+                        label="איפוס סינון"
+                        [text]="true"
+                        (onClick)="clearFilters()"
+                      ></p-button>
+                    </ng-container>
+                    <ng-template #noStudents>אין תלמידים להצגה.</ng-template>
                   </td>
                 </tr>
               </ng-template>
@@ -157,7 +226,11 @@ interface LessonResultRowVm {
 
           <!-- Mobile cards -->
           <div class="mobile-only px-3 pb-3">
-            <p-dataView [value]="rows" [loading]="loading" layout="list">
+            <p-dataView
+              [value]="filteredRows"
+              [loading]="loading"
+              layout="list"
+            >
               <ng-template pTemplate="list" let-items>
                 <div class="card-list">
                   <div *ngFor="let item of items" class="mobile-card">
@@ -282,6 +355,35 @@ export class LessonResultsListComponent implements OnInit {
   lessonId!: number;
   rows: LessonResultRowVm[] = [];
   loading = false;
+  exporting = false;
+
+  query = "";
+  completionFilter: boolean | null = null;
+
+  readonly completionOptions: { label: string; value: boolean | null }[] = [
+    { label: "כל הסטטוסים", value: null },
+    { label: "הושלם", value: true },
+    { label: "בתהליך", value: false },
+  ];
+
+  get filteredRows(): LessonResultRowVm[] {
+    const q = this.query.trim().toLowerCase();
+    return this.rows.filter(
+      (r) =>
+        (!q || r.studentName.toLowerCase().includes(q)) &&
+        (this.completionFilter === null ||
+          r.isComplete === this.completionFilter),
+    );
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!this.query.trim() || this.completionFilter !== null;
+  }
+
+  clearFilters(): void {
+    this.query = "";
+    this.completionFilter = null;
+  }
 
   // Finalize dialog
   finalizeDialogOpen = false;
@@ -430,5 +532,28 @@ export class LessonResultsListComponent implements OnInit {
 
   navigateToLessons(): void {
     this.router.navigate(["/lessons"]);
+  }
+
+  exportExcel(): void {
+    this.exporting = true;
+    this.lessonResultsService.exportExcel(this.lessonId).subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `lesson-${this.lessonId}-results.xlsx`);
+        this.exporting = false;
+        this.messageService.add({
+          severity: "success",
+          summary: "בוצע",
+          detail: "הקובץ ירד בהצלחה",
+        });
+      },
+      error: () => {
+        this.exporting = false;
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "הייצוא נכשל",
+        });
+      },
+    });
   }
 }

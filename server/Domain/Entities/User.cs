@@ -3,13 +3,14 @@ namespace SmartGrader.Domain.Entities
     public enum UserRole
     {
         Teacher = 0,
-        Student = 1
+        Student = 1,
+        Admin = 2
     }
 
     public class User
     {
         public int Id { get; private set; }
-        public string Email { get; private set; } = "";
+        public string Username { get; private set; } = "";
         public string PasswordHash { get; private set; } = "";
         public string FullName { get; private set; } = "";
         public UserRole Role { get; private set; }
@@ -17,11 +18,11 @@ namespace SmartGrader.Domain.Entities
 
         protected User() { }
 
-        public static User Create(string email, string passwordHash, string fullName, UserRole role)
+        public static User Create(string username, string passwordHash, string fullName, UserRole role)
         {
             return new User
             {
-                Email = email.Trim().ToLowerInvariant(),
+                Username = username.Trim().ToLowerInvariant(),
                 PasswordHash = passwordHash,
                 FullName = fullName.Trim(),
                 Role = role,

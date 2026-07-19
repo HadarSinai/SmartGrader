@@ -136,7 +136,9 @@ import { TooltipModule } from "primeng/tooltip";
                     שם <p-sortIcon field="title"></p-sortIcon>
                   </th>
                   <th class="text-center">מקרי בדיקה</th>
-                  <th class="text-center">הגשות</th>
+                  <th class="text-center" pSortableColumn="submissionsCount">
+                    הגשות <p-sortIcon field="submissionsCount"></p-sortIcon>
+                  </th>
                   <th class="text-center" style="width: 5rem">פעולות</th>
                 </tr>
               </ng-template>

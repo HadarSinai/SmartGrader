@@ -1,16 +1,16 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit, inject } from "@angular/core";
 import {
-    FormBuilder,
-    FormGroup,
-    ReactiveFormsModule,
-    Validators,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
 } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import {
-    CreateStudentRequestDto,
-    StudentResponseDto,
-    UpdateStudentRequestDto,
+  CreateStudentRequestDto,
+  StudentResponseDto,
+  UpdateStudentRequestDto,
 } from "@models/student.model";
 import { StudentsService } from "@services/students.service";
 import { ConfirmationService, MessageService } from "primeng/api";
@@ -19,6 +19,9 @@ import { CardModule } from "primeng/card";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { InputTextModule } from "primeng/inputtext";
 import { PasswordModule } from "primeng/password";
+import { PasswordChecklistComponent } from "../../components/password-checklist/password-checklist.component";
+import { NoHebrewDirective } from "../../core/directives/no-hebrew.directive";
+import { passwordStrengthValidator } from "../../core/validators/password.validator";
 import { AuthService } from "../../services/auth.service";
 
 @Component({
@@ -32,6 +35,8 @@ import { AuthService } from "../../services/auth.service";
     ButtonModule,
     ConfirmDialogModule,
     PasswordModule,
+    PasswordChecklistComponent,
+    NoHebrewDirective,
   ],
   providers: [ConfirmationService],
   template: `
@@ -110,25 +115,25 @@ import { AuthService } from "../../services/auth.service";
 
               <div class="formgrid grid">
                 <div class="field col-12 md:col-6">
-                  <label class="block font-bold mb-2" for="accountEmail"
-                    >אימייל</label
+                  <label class="block font-bold mb-2" for="accountUsername"
+                    >שם משתמש</label
                   >
                   <input
                     pInputText
                     class="w-full"
-                    id="accountEmail"
-                    type="email"
-                    dir="ltr"
-                    formControlName="email"
+                    id="accountUsername"
+                    type="text"
+                    formControlName="username"
                     autocomplete="off"
                   />
                   <small
                     class="p-error"
                     *ngIf="
-                      form.get('email')?.invalid && form.get('email')?.touched
+                      form.get('username')?.invalid &&
+                      form.get('username')?.touched
                     "
                   >
-                    נדרש אימייל תקין
+                    נדרש שם משתמש (לפחות 3 תווים, ללא רווחים)
                   </small>
                 </div>
 
@@ -137,6 +142,7 @@ import { AuthService } from "../../services/auth.service";
                     >סיסמה</label
                   >
                   <p-password
+                    sgNoHebrew
                     inputId="accountPassword"
                     formControlName="password"
                     [feedback]="false"
@@ -145,14 +151,18 @@ import { AuthService } from "../../services/auth.service";
                     styleClass="w-full"
                     inputStyleClass="w-full"
                   />
+                  <app-password-checklist
+                    *ngIf="form.get('password')?.value"
+                    [password]="form.get('password')?.value"
+                  />
                   <small
                     class="p-error"
                     *ngIf="
-                      form.get('password')?.invalid &&
+                      form.get('password')?.hasError('required') &&
                       form.get('password')?.touched
                     "
                   >
-                    נדרשת סיסמה באורך 8 תווים לפחות
+                    נדרשת סיסמה
                   </small>
                 </div>
               </div>
@@ -282,30 +292,33 @@ export class StudentFormComponent implements OnInit {
     this.form = this.fb.group({
       fullName: ["", Validators.required],
       className: ["", Validators.required],
-      email: [""],
+      username: [""],
       password: [""],
     });
 
     // Account fields are optional as a pair — filling one requires the other
-    this.form.get("email")?.addValidators((control) => {
+    this.form.get("username")?.addValidators((control) => {
       const password = this.form?.get("password")?.value;
       if (!control.value && !password) return null;
-      return Validators.email(control) || Validators.required(control);
+      if (!control.value) return { required: true };
+      if (control.value.length < 3 || /\s/.test(control.value))
+        return { username: true };
+      return null;
     });
     this.form.get("password")?.addValidators((control) => {
-      const email = this.form?.get("email")?.value;
-      if (!control.value && !email) return null;
-      return Validators.minLength(8)(control) || Validators.required(control);
+      const username = this.form?.get("username")?.value;
+      if (!control.value && !username) return null;
+      return passwordStrengthValidator(control) || Validators.required(control);
     });
     this.form
-      .get("email")
+      .get("username")
       ?.valueChanges.subscribe(() =>
         this.form.get("password")?.updateValueAndValidity({ emitEvent: false }),
       );
     this.form
       .get("password")
       ?.valueChanges.subscribe(() =>
-        this.form.get("email")?.updateValueAndValidity({ emitEvent: false }),
+        this.form.get("username")?.updateValueAndValidity({ emitEvent: false }),
       );
   }
 
@@ -347,12 +360,12 @@ export class StudentFormComponent implements OnInit {
     }
 
     this.loading = true;
-    const { fullName, className, email, password } = this.form.value;
+    const { fullName, className, username, password } = this.form.value;
 
     // New student with account fields filled → create student + login account together
-    if (!this.isEditMode && email && password) {
+    if (!this.isEditMode && username && password) {
       this.authService
-        .createStudentAccount({ fullName, className, email, password })
+        .createStudentAccount({ fullName, className, username, password })
         .subscribe({
           next: () => {
             this.messageService.add({
@@ -365,7 +378,7 @@ export class StudentFormComponent implements OnInit {
           error: (err: { status?: number }) => {
             this.accountError =
               err?.status === 409
-                ? "כבר קיים חשבון עם האימייל הזה"
+                ? "כבר קיים חשבון עם שם המשתמש הזה"
                 : "יצירת החשבון נכשלה, נסי שוב";
             this.loading = false;
           },
@@ -407,13 +420,13 @@ export class StudentFormComponent implements OnInit {
   }
 
   createAccount(): void {
-    const email = this.form.get("email")?.value;
+    const username = this.form.get("username")?.value;
     const password = this.form.get("password")?.value;
 
-    if (!email || !password || !this.studentId) {
-      this.form.get("email")?.markAsTouched();
+    if (!username || !password || !this.studentId) {
+      this.form.get("username")?.markAsTouched();
       this.form.get("password")?.markAsTouched();
-      this.accountError = "יש למלא אימייל וסיסמה";
+      this.accountError = "יש למלא שם משתמש וסיסמה";
       return;
     }
 
@@ -421,7 +434,7 @@ export class StudentFormComponent implements OnInit {
     this.accountError = null;
 
     this.authService
-      .createAccountForStudent(this.studentId, { email, password })
+      .createAccountForStudent(this.studentId, { username, password })
       .subscribe({
         next: () => {
           this.accountLoading = false;
@@ -436,7 +449,7 @@ export class StudentFormComponent implements OnInit {
           this.accountLoading = false;
           this.accountError =
             err?.status === 409
-              ? "כבר קיים חשבון עם האימייל הזה"
+              ? "כבר קיים חשבון עם שם המשתמש הזה"
               : "יצירת החשבון נכשלה, נסי שוב";
         },
       });

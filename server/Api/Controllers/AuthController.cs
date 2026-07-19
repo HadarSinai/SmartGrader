@@ -49,7 +49,7 @@ namespace SmartGrader.Api.Controllers
 
         // POST: api/auth/students — teacher creates a student account (User + Student)
         [HttpPost("students")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> CreateStudentAccount(
             [FromBody] CreateStudentAccountRequestDto dto,
             CancellationToken cancellationToken)
@@ -66,7 +66,7 @@ namespace SmartGrader.Api.Controllers
 
         // POST: api/auth/students/{studentId}/account — create a login account for an existing student
         [HttpPost("students/{studentId:int}/account")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> CreateAccountForStudent(
             int studentId,
             [FromBody] CreateAccountForStudentRequestDto dto,

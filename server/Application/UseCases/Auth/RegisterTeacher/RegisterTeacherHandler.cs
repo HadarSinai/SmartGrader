@@ -28,11 +28,11 @@ namespace SmartGrader.Application.UseCases.Auth.RegisterTeacher
 
         public async Task<AuthResponseDto> Handle(RegisterTeacherCommand request, CancellationToken cancellationToken)
         {
-            if (await _userRepository.ExistsByEmailAsync(request.Dto.Email, cancellationToken))
-                throw new UniqueConstraintException("A user with this email already exists.");
+            if (await _userRepository.ExistsByUsernameAsync(request.Dto.Username, cancellationToken))
+                throw new UniqueConstraintException("A user with this username already exists.");
 
             var user = User.Create(
-                request.Dto.Email,
+                request.Dto.Username,
                 _passwordHasher.Hash(request.Dto.Password),
                 request.Dto.FullName,
                 UserRole.Teacher);

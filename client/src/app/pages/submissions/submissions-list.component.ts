@@ -1,5 +1,6 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit, inject } from "@angular/core";
+import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 
 import { BadgeModule } from "primeng/badge";
@@ -8,6 +9,8 @@ import { CardModule } from "primeng/card";
 import { ChipModule } from "primeng/chip";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { DataViewModule } from "primeng/dataview";
+import { DropdownModule } from "primeng/dropdown";
+import { InputTextModule } from "primeng/inputtext";
 import { Menu, MenuModule } from "primeng/menu";
 import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
@@ -15,8 +18,9 @@ import { TooltipModule } from "primeng/tooltip";
 
 import { SubmissionExtended } from "@models/submission-extended.model";
 import {
-  STATUS_LABELS_HE,
-  SubmissionResponseDto,
+    STATUS_LABELS_HE,
+    SubmissionResponseDto,
+    SubmissionStatus,
 } from "@models/submission.model";
 import { SubmissionsService } from "@services/submissions.service";
 import { ConfirmationService, MenuItem, MessageService } from "primeng/api";
@@ -26,6 +30,7 @@ import { ConfirmationService, MenuItem, MessageService } from "primeng/api";
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     TableModule,
     DataViewModule,
     ButtonModule,
@@ -36,6 +41,8 @@ import { ConfirmationService, MenuItem, MessageService } from "primeng/api";
     BadgeModule,
     ConfirmDialogModule,
     MenuModule,
+    DropdownModule,
+    InputTextModule,
   ],
   providers: [ConfirmationService],
   templateUrl: "./submissions-list.component.html",
@@ -52,10 +59,39 @@ export class SubmissionsListComponent implements OnInit {
   loading = false;
   studentId!: number;
 
+  query = "";
+  statusFilter: SubmissionStatus | null = null;
+
+  readonly statusOptions: { label: string; value: SubmissionStatus | null }[] =
+    [
+      { label: "כל הסטטוסים", value: null },
+      ...(Object.keys(STATUS_LABELS_HE) as SubmissionStatus[]).map(
+        (status) => ({ label: STATUS_LABELS_HE[status], value: status }),
+      ),
+    ];
+
   // Multi-select (design only — no real bulk delete)
   selectedSubmissions: SubmissionExtended[] = [];
 
   rowMenuItems: MenuItem[] = [];
+
+  get filteredSubmissions(): SubmissionExtended[] {
+    const q = this.query.trim().toLowerCase();
+    return this.submissions.filter(
+      (s) =>
+        (!q || (s.assignmentName ?? "").toLowerCase().includes(q)) &&
+        (!this.statusFilter || s.status === this.statusFilter),
+    );
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!this.query.trim() || !!this.statusFilter;
+  }
+
+  clearFilters(): void {
+    this.query = "";
+    this.statusFilter = null;
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get("studentId");
@@ -89,10 +125,6 @@ export class SubmissionsListComponent implements OnInit {
 
   navigateToStudents(): void {
     this.router.navigate(["/students"]);
-  }
-
-  navigateToCreate(): void {
-    this.router.navigate(["/students", this.studentId, "submissions", "new"]);
   }
 
   navigateToView(submissionId: number): void {

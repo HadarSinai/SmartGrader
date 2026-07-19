@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 using SmartGrader.Application.Common.Behaviors;
+using SmartGrader.Application.Common.Interfaces;
+using SmartGrader.Application.Services.Logging;
 using SmartGrader.Application.UseCases.Lessons.CreateLesson;
 using FluentValidation;
 
@@ -24,6 +26,8 @@ namespace SmartGrader.Application
 
                 typeof(ValidationBehavior<,>));
             services.AddAutoMapper(assembly);
+
+            services.AddSingleton<ILogWriter, LogWriter>();
 
             return services;
         }

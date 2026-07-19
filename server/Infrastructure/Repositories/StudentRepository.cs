@@ -24,7 +24,9 @@ namespace SmartGrader.Infrastructure.Repositories
         public async Task<IReadOnlyList<Student>> GetAllAsync(CancellationToken ct = default)
         {
             return await _context.Students
-                .AsNoTracking() 
+                .AsNoTracking()
+                .Include(s => s.Submissions)
+                .Include(s => s.LessonResults)
                 .ToListAsync(ct);
         }
         public async Task<Student?> GetByIdAsync(int id, CancellationToken ct = default)

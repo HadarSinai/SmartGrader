@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using SmartGrader.Application.Common.Interfaces;
 using SmartGrader.Application.Services.BackgroundJobs;
 using SmartGrader.Application.Services.CodeRunner;
 using SmartGrader.Application.Services.Feedback;
@@ -13,6 +14,7 @@ public class AiWorker : IGradeSubmissionJob
     private readonly IUnitOfWork _uow;
     private readonly IFeedbackService _feedback;
     private readonly ICodeRunnerService _codeRunner;
+    private readonly ILogWriter _logWriter;
     private readonly ILogger<AiWorker> _logger;
 
     public AiWorker(
@@ -20,12 +22,14 @@ public class AiWorker : IGradeSubmissionJob
         IUnitOfWork uow,
         IFeedbackService feedback,
         ICodeRunnerService codeRunner,
+        ILogWriter logWriter,
         ILogger<AiWorker> logger)
     {
         _submissions = submissions;
         _uow = uow;
         _feedback = feedback;
         _codeRunner = codeRunner;
+        _logWriter = logWriter;
         _logger = logger;
     }
 
@@ -47,6 +51,15 @@ public class AiWorker : IGradeSubmissionJob
                 await _uow.SaveChangesAsync(ct);
             }
 
+            await _logWriter.WriteAsync(
+                LogActionTypes.AiGradingStarted,
+                $"החלה בדיקת הגשה #{submissionId}",
+                LogStatuses.Success,
+                LogSystemSources.AiWorker,
+                lessonId: submission.Assignment?.LessonId,
+                assignmentId: submission.AssignmentId,
+                ct: ct);
+
             var runnerResult = await _codeRunner.RunAsync(
                 submission.SourceCode,
                 submission.Assignment!.MethodName,
@@ -57,6 +70,15 @@ public class AiWorker : IGradeSubmissionJob
             {
                 submission.MarkCompilationFailed(runnerResult.CompileError ?? "Unknown compile error");
                 await _uow.SaveChangesAsync(ct);
+
+                await _logWriter.WriteAsync(
+                    LogActionTypes.CompilationFailed,
+                    $"שגיאת קומפילציה בהגשה #{submissionId}: {runnerResult.CompileError ?? "Unknown compile error"}",
+                    LogStatuses.Error,
+                    LogSystemSources.AiWorker,
+                    lessonId: submission.Assignment?.LessonId,
+                    assignmentId: submission.AssignmentId,
+                    ct: ct);
                 return;
             }
 
@@ -76,6 +98,15 @@ public class AiWorker : IGradeSubmissionJob
                 comments: aiJson);
 
             await _uow.SaveChangesAsync(ct);
+
+            await _logWriter.WriteAsync(
+                LogActionTypes.AiGradingCompleted,
+                $"בדיקת הגשה #{submissionId} הושלמה. ציון: {submission.Score:0.#}",
+                LogStatuses.Success,
+                LogSystemSources.AiWorker,
+                lessonId: submission.Assignment?.LessonId,
+                assignmentId: submission.AssignmentId,
+                ct: ct);
         }
         catch (Exception ex)
         {
@@ -86,6 +117,15 @@ public class AiWorker : IGradeSubmissionJob
                 submission.MarkAiFailed(ex.Message);
                 await _uow.SaveChangesAsync(ct);
             }
+
+            await _logWriter.WriteAsync(
+                LogActionTypes.AiFailed,
+                $"כשל בבדיקת הגשה #{submissionId}: {ex.Message}",
+                LogStatuses.Error,
+                LogSystemSources.AiWorker,
+                lessonId: submission.Assignment?.LessonId,
+                assignmentId: submission.AssignmentId,
+                ct: ct);
         }
     }
 }

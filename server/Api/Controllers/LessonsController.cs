@@ -66,7 +66,7 @@ namespace SmartGrader.Api.Controllers
         //    return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         //}
         [HttpPost]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> Create(
             [FromBody] CreateLessonRequestDto dto,
             CancellationToken cancellationToken)
@@ -81,7 +81,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpPut("{id:int}")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> Update(
             int id,
             [FromBody] UpdateLessonRequestDto dto,
@@ -94,7 +94,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
             await _mediator.Send(new DeleteLessonCommand(id), cancellationToken);
@@ -130,7 +130,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpPost("{lessonId:int}/assignments")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> CreateAssignment(
             int lessonId,
             [FromBody] CreateAssignmentRequestDto dto,
@@ -148,7 +148,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpPut("{lessonId:int}/assignments/{assignmentId:int}")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> UpdateAssignment(
             int lessonId,
             int assignmentId,
@@ -164,7 +164,7 @@ namespace SmartGrader.Api.Controllers
         }
 
         [HttpDelete("{lessonId:int}/assignments/{assignmentId:int}")]
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> DeleteAssignment(
             int lessonId,
             int assignmentId,

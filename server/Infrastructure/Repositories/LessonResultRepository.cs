@@ -26,6 +26,14 @@ namespace SmartGrader.Infrastructure.Repositories
                 .FirstOrDefaultAsync(x => x.StudentId == studentId && x.LessonId == lessonId, ct);
         }
 
+        public async Task<IReadOnlyList<LessonResult>> GetByLessonIdAsync(int lessonId, CancellationToken ct = default)
+        {
+            return await _db.LessonResults
+                .Where(x => x.LessonId == lessonId)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
         public async Task AddAsync(LessonResult entity, CancellationToken ct = default)
         {
             await _db.LessonResults.AddAsync(entity, ct);

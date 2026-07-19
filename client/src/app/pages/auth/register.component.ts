@@ -1,18 +1,21 @@
 import { CommonModule } from "@angular/common";
 import { Component } from "@angular/core";
 import {
-    AbstractControl,
-    FormBuilder,
-    FormGroup,
-    ReactiveFormsModule,
-    ValidationErrors,
-    Validators,
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
 } from "@angular/forms";
 import { Router, RouterModule } from "@angular/router";
 import { MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { InputTextModule } from "primeng/inputtext";
 import { PasswordModule } from "primeng/password";
+import { PasswordChecklistComponent } from "../../components/password-checklist/password-checklist.component";
+import { NoHebrewDirective } from "../../core/directives/no-hebrew.directive";
+import { passwordStrengthValidator } from "../../core/validators/password.validator";
 import { AuthService } from "../../services/auth.service";
 
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
@@ -33,6 +36,8 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
     ButtonModule,
     InputTextModule,
     PasswordModule,
+    PasswordChecklistComponent,
+    NoHebrewDirective,
   ],
   template: `
     <div class="sg-auth-page">
@@ -63,26 +68,28 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
           </div>
 
           <div class="sg-auth-field">
-            <label for="email">אימייל</label>
+            <label for="username">שם משתמש</label>
             <input
               pInputText
-              id="email"
-              type="email"
-              formControlName="email"
-              autocomplete="email"
-              dir="ltr"
+              id="username"
+              type="text"
+              formControlName="username"
+              autocomplete="username"
             />
             <small
               class="p-error"
-              *ngIf="form.get('email')?.invalid && form.get('email')?.touched"
+              *ngIf="
+                form.get('username')?.invalid && form.get('username')?.touched
+              "
             >
-              נדרש אימייל תקין
+              נדרש שם משתמש (לפחות 3 תווים, ללא רווחים)
             </small>
           </div>
 
           <div class="sg-auth-field">
             <label for="password">סיסמה</label>
             <p-password
+              sgNoHebrew
               inputId="password"
               formControlName="password"
               [feedback]="false"
@@ -91,19 +98,22 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
               styleClass="w-full"
               inputStyleClass="w-full"
             />
+            <app-password-checklist [password]="form.get('password')?.value" />
             <small
               class="p-error"
               *ngIf="
-                form.get('password')?.invalid && form.get('password')?.touched
+                form.get('password')?.hasError('required') &&
+                form.get('password')?.touched
               "
             >
-              נדרשת סיסמה באורך 8 תווים לפחות
+              נדרשת סיסמה
             </small>
           </div>
 
           <div class="sg-auth-field">
             <label for="confirmPassword">אימות סיסמה</label>
             <p-password
+              sgNoHebrew
               inputId="confirmPassword"
               formControlName="confirmPassword"
               [feedback]="false"
@@ -256,8 +266,16 @@ export class RegisterComponent {
     this.form = this.fb.group(
       {
         fullName: ["", [Validators.required]],
-        email: ["", [Validators.required, Validators.email]],
-        password: ["", [Validators.required, Validators.minLength(8)]],
+        username: [
+          "",
+          [
+            Validators.required,
+            Validators.minLength(3),
+            Validators.maxLength(50),
+            Validators.pattern(/^\S+$/),
+          ],
+        ],
+        password: ["", [Validators.required, passwordStrengthValidator]],
         confirmPassword: ["", [Validators.required]],
       },
       { validators: passwordsMatch },
@@ -273,9 +291,9 @@ export class RegisterComponent {
     this.loading = true;
     this.registerError = null;
 
-    const { fullName, email, password } = this.form.value;
+    const { fullName, username, password } = this.form.value;
 
-    this.auth.registerTeacher({ fullName, email, password }).subscribe({
+    this.auth.registerTeacher({ fullName, username, password }).subscribe({
       next: () => {
         this.loading = false;
         this.toast.add({
@@ -290,7 +308,7 @@ export class RegisterComponent {
         this.loading = false;
         this.registerError =
           err?.status === 409
-            ? "כבר קיים חשבון עם האימייל הזה"
+            ? "כבר קיים חשבון עם שם המשתמש הזה"
             : "ההרשמה נכשלה, נסי שוב";
       },
     });

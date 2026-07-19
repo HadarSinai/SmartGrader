@@ -1,15 +1,16 @@
 import { CommonModule } from "@angular/common";
 import { Component } from "@angular/core";
 import {
-    FormBuilder,
-    FormGroup,
-    ReactiveFormsModule,
-    Validators,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
 } from "@angular/forms";
 import { Router, RouterModule } from "@angular/router";
 import { ButtonModule } from "primeng/button";
 import { InputTextModule } from "primeng/inputtext";
 import { PasswordModule } from "primeng/password";
+import { NoHebrewDirective } from "../../core/directives/no-hebrew.directive";
 import { AuthService } from "../../services/auth.service";
 
 @Component({
@@ -22,6 +23,7 @@ import { AuthService } from "../../services/auth.service";
     ButtonModule,
     InputTextModule,
     PasswordModule,
+    NoHebrewDirective,
   ],
   template: `
     <div class="sg-auth-page">
@@ -33,26 +35,28 @@ import { AuthService } from "../../services/auth.service";
 
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <div class="sg-auth-field">
-            <label for="email">אימייל</label>
+            <label for="username">שם משתמש</label>
             <input
               pInputText
-              id="email"
-              type="email"
-              formControlName="email"
-              autocomplete="email"
-              dir="ltr"
+              id="username"
+              type="text"
+              formControlName="username"
+              autocomplete="username"
             />
             <small
               class="p-error"
-              *ngIf="form.get('email')?.invalid && form.get('email')?.touched"
+              *ngIf="
+                form.get('username')?.invalid && form.get('username')?.touched
+              "
             >
-              נדרש אימייל תקין
+              נדרש שם משתמש
             </small>
           </div>
 
           <div class="sg-auth-field">
             <label for="password">סיסמה</label>
             <p-password
+              sgNoHebrew
               inputId="password"
               formControlName="password"
               [feedback]="false"
@@ -73,7 +77,7 @@ import { AuthService } from "../../services/auth.service";
 
           <div class="sg-auth-error" *ngIf="loginError" role="alert">
             <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
-            <span>אימייל או סיסמה שגויים</span>
+            <span>שם משתמש או סיסמה שגויים</span>
           </div>
 
           <p-button
@@ -201,7 +205,7 @@ export class LoginComponent {
     private router: Router,
   ) {
     this.form = this.fb.group({
-      email: ["", [Validators.required, Validators.email]],
+      username: ["", [Validators.required]],
       password: ["", [Validators.required]],
     });
   }

@@ -48,6 +48,11 @@ namespace SmartGrader.Domain.Entities
             list.Add(new TestCase { Input = input, Expected = expected });
             Tests = list;     // כותב חזרה ל-JSON (ישמר ב-DB)
         }
+
+        public void SetTests(List<TestCase>? tests)
+        {
+            Tests = tests ?? new List<TestCase>();
+        }
     }
 }
 

@@ -1,4 +1,5 @@
 using FluentValidation;
+using SmartGrader.Application.Common.Validation;
 
 namespace SmartGrader.Application.UseCases.Auth.CreateAccountForStudent
 {
@@ -10,13 +11,11 @@ namespace SmartGrader.Application.UseCases.Auth.CreateAccountForStudent
             RuleFor(x => x.StudentId)
                 .GreaterThan(0).WithMessage("Id must be greater than 0.");
 
-            RuleFor(x => x.Dto.Email)
-                .NotEmpty().WithMessage("Email is required.")
-                .EmailAddress().WithMessage("Email is not valid.");
+            RuleFor(x => x.Dto.Username)
+                .Username();
 
             RuleFor(x => x.Dto.Password)
-                .NotEmpty().WithMessage("Password is required.")
-                .MinimumLength(8).WithMessage("Password must be at least 8 characters long.");
+                .Password();
         }
     }
 }
