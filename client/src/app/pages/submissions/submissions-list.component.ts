@@ -239,7 +239,7 @@ export class SubmissionsListComponent implements OnInit {
   private toExtended(s: SubmissionResponseDto): SubmissionExtended {
     return {
       ...s,
-      evaluatedBy: s.comments ? "AI" : "Manual",
+      evaluatedBy: s.feedback ? "AI" : "Manual",
     };
   }
 }

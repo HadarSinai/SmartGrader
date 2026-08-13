@@ -331,6 +331,7 @@ export class SubmissionFormComponent implements OnInit {
       const request: CreateSubmissionRequestDto = {
         assignmentId: formValue.assignmentId,
         sourceCode: formValue.sourceCode,
+        files: null,
       };
 
       this.submissionsService.create(this.studentId, request).subscribe({

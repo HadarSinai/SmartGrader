@@ -3,6 +3,12 @@ export interface TestCaseDto {
   expected: string | null;
 }
 
+export interface ExpectedFileDto {
+  fileName: string;
+  description: string | null;
+  methodName: string | null;
+}
+
 export interface AssignmentResponseDto {
   id: number;
   lessonId: number;
@@ -14,6 +20,7 @@ export interface AssignmentResponseDto {
   createdAt: string;
   submissionsCount: number;
   tests: TestCaseDto[] | null;
+  expectedFiles: ExpectedFileDto[] | null;
 }
 
 export interface CreateAssignmentRequestDto {
@@ -23,6 +30,7 @@ export interface CreateAssignmentRequestDto {
   isBonus: boolean;
   bonusValue: number;
   tests: TestCaseDto[] | null;
+  expectedFiles: ExpectedFileDto[] | null;
 }
 
 export interface UpdateAssignmentRequestDto {
@@ -32,4 +40,5 @@ export interface UpdateAssignmentRequestDto {
   isBonus: boolean;
   bonusValue: number;
   tests: TestCaseDto[] | null;
+  expectedFiles: ExpectedFileDto[] | null;
 }

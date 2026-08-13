@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using FluentValidation.Results;
 using Hangfire;
 using MediatR;
 using SmartGrader.Application.Common.Exceptions;
@@ -55,11 +56,40 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
             if (assignment is null)
                 throw new NotFoundException(nameof(Assignment), dto.AssignmentId);
 
+            // ✔ הגשה רב-קובצית: כאשר לתרגיל יש ExpectedFiles מוגדרים, מחייבים שהקבצים שהוגשו
+            // יתאימו (לפי FileName) לרשימת הקבצים הצפויה של התרגיל.
+            if (assignment.ExpectedFiles.Count > 0)
+            {
+                var submittedNames = (dto.Files ?? new())
+                    .Select(f => f.FileName)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var missing = assignment.ExpectedFiles
+                    .Select(f => f.FileName)
+                    .Where(name => !submittedNames.Contains(name))
+                    .ToList();
+
+                if (missing.Count > 0)
+                {
+                    throw new AppValidationException(new[]
+                    {
+                        new ValidationFailure(
+                            nameof(dto.Files),
+                            $"Missing required file(s): {string.Join(", ", missing)}")
+                    });
+                }
+            }
+
+            var sourceFiles = (dto.Files ?? new())
+                .Select(f => new SubmissionFile { FileName = f.FileName, Content = f.Content })
+                .ToList();
+
             // ✔ יצירת Submission דרך ctor בלבד (PendingAi)
             var submission = new Submission(
                 request.StudentId,
                 dto.AssignmentId,
-                dto.SourceCode
+                dto.SourceCode,
+                sourceFiles
             );
 
             // ✔ שמירה ב־DB (בלי AI, בלי ציונים)

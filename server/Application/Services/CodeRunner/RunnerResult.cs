@@ -1,3 +1,5 @@
+using SmartGrader.Domain.Entities;
+
 namespace SmartGrader.Application.Services.CodeRunner;
 
 public sealed record RunnerResult(

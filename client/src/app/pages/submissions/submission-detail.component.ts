@@ -10,11 +10,18 @@ import { MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { TagModule } from "primeng/tag";
+import { SubmissionFeedbackPanelComponent } from "@components/submission-feedback-panel/submission-feedback-panel.component";
 
 @Component({
   selector: "app-submission-detail",
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule, TagModule],
+  imports: [
+    CommonModule,
+    CardModule,
+    ButtonModule,
+    TagModule,
+    SubmissionFeedbackPanelComponent,
+  ],
   template: `
     <section class="sg-page">
       <div class="pt-3 pb-5">
@@ -170,9 +177,10 @@ import { TagModule } from "primeng/tag";
                     <pre>{{ submission.aiError }}</pre>
                   </div>
 
-                  <div *ngIf="submission.comments" class="sg-note-box">
-                    {{ submission.comments }}
-                  </div>
+                  <app-submission-feedback-panel
+                    *ngIf="submission.status === 'Done'"
+                    [submission]="submission"
+                  ></app-submission-feedback-panel>
 
                   <div
                     *ngIf="

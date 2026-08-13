@@ -1,75 +1,6 @@
-﻿//namespace SmartGrader.Domain.Entities
-//{
-//    public enum SubmissionStatus
-//    {
-//        PendingAi = 0,
-//        ProcessingAi = 1,
-//        Done = 2,
-//        AiFailed = 3
-//    }
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
-//    public class Submission
-//    {
-//        public int Id { get; private set; }
-
-//        public int StudentId { get; /*private*/ set; }
-//        public int AssignmentId { get; /*private*/ set; }
-
-//        public string SourceCode { get; private set; } = "";
-
-//        public double? Score { get; private set; }
-//        public string? Comments { get; private set; }
-
-//        public SubmissionStatus Status { get; private set; } = SubmissionStatus.PendingAi;
-//        public string? AiError { get; private set; }
-
-//        public DateTime SubmittedAt { get; private set; } = DateTime.UtcNow;
-
-//        // קשרים
-//        public Student Student { get; private set; } = null!;
-//        public Assignment Assignment { get; private set; } = null!;
-
-//        protected Submission() { }
-
-//        public Submission(int studentId, int assignmentId, string sourceCode)
-//        {
-//            StudentId = studentId;
-//            AssignmentId = assignmentId;
-//            SourceCode = sourceCode;
-//            SubmittedAt = DateTime.UtcNow;
-
-//            MarkPendingAi();
-//        }
-
-//        public void MarkPendingAi()
-//        {
-//            Status = SubmissionStatus.PendingAi;
-//            AiError = null;
-//            Score = null;
-//            Comments = null;
-//        }
-
-//        public void MarkProcessingAi()
-//        {
-//            Status = SubmissionStatus.ProcessingAi;
-//            AiError = null;
-//        }
-
-//        public void MarkDone(double score, string comments)
-//        {
-//            Score = score;
-//            Comments = comments;
-//            Status = SubmissionStatus.Done;
-//            AiError = null;
-//        }
-
-//        public void MarkAiFailed(string error)
-//        {
-//            Status = SubmissionStatus.AiFailed;
-//            AiError = error;
-//        }
-//    }
-//}
 namespace SmartGrader.Domain.Entities
 {
     public enum SubmissionStatus
@@ -89,9 +20,12 @@ namespace SmartGrader.Domain.Entities
         public int AssignmentId { get; private set; }
 
         public string SourceCode { get; private set; } = "";
+        public string SourceFilesJson { get; private set; } = "[]";
 
         public double? Score { get; private set; }
-        public string? Comments { get; private set; }
+        public string? FeedbackJson { get; private set; }
+
+        public string TestResultsJson { get; private set; } = "[]";
 
         public SubmissionStatus Status { get; private set; } = SubmissionStatus.PendingAi;
         public string? AiError { get; private set; }
@@ -105,17 +39,77 @@ namespace SmartGrader.Domain.Entities
 
         private Submission() { } // EF Core
 
-        public Submission(int studentId, int assignmentId, string sourceCode)
+        public Submission(int studentId, int assignmentId, string sourceCode, List<SubmissionFile>? sourceFiles = null)
         {
             StudentId = studentId;
             AssignmentId = assignmentId;
             SourceCode = sourceCode;
             SubmittedAt = DateTime.UtcNow;
+            SourceFiles = sourceFiles ?? new List<SubmissionFile>();
 
            // MarkPendingAi();
         }
 
-       
+        [NotMapped]
+        public List<TestCaseResult> TestResults
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(TestResultsJson))
+                    return new List<TestCaseResult>();
+
+                try
+                {
+                    return JsonSerializer.Deserialize<List<TestCaseResult>>(TestResultsJson)
+                           ?? new List<TestCaseResult>();
+                }
+                catch
+                {
+                    // אם יש דאטה מקולקל ב־DB – שלא יפיל את השרת
+                    return new List<TestCaseResult>();
+                }
+            }
+            private set
+            {
+                TestResultsJson = JsonSerializer.Serialize(value ?? new List<TestCaseResult>());
+            }
+        }
+
+        public void SetTestResults(List<TestCaseResult>? results)
+        {
+            TestResults = results ?? new List<TestCaseResult>();
+        }
+
+        [NotMapped]
+        public List<SubmissionFile> SourceFiles
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(SourceFilesJson))
+                    return new List<SubmissionFile>();
+
+                try
+                {
+                    return JsonSerializer.Deserialize<List<SubmissionFile>>(SourceFilesJson)
+                           ?? new List<SubmissionFile>();
+                }
+                catch
+                {
+                    // אם יש דאטה מקולקל ב־DB – שלא יפיל את השרת
+                    return new List<SubmissionFile>();
+                }
+            }
+            private set
+            {
+                SourceFilesJson = JsonSerializer.Serialize(value ?? new List<SubmissionFile>());
+            }
+        }
+
+        public void SetSourceFiles(List<SubmissionFile>? sourceFiles)
+        {
+            SourceFiles = sourceFiles ?? new List<SubmissionFile>();
+        }
+
         public void MarkPendingAi()
         {
             if (Status != SubmissionStatus.AiFailed)
@@ -125,7 +119,7 @@ namespace SmartGrader.Domain.Entities
             Status = SubmissionStatus.PendingAi;
             AiError = null;
             Score = null;
-            Comments = null;
+            FeedbackJson = null;
         }
 
         public void MarkProcessingAi()
@@ -137,14 +131,14 @@ namespace SmartGrader.Domain.Entities
             Status = SubmissionStatus.ProcessingAi;
             AiError = null;
         }
-        public void MarkDone(double score, string comments)
+        public void MarkDone(double score, string? feedbackJson)
         {
             if (Status != SubmissionStatus.ProcessingAi)
                 throw new InvalidOperationException(
                     $"Cannot mark Done from {Status}");
 
             Score = score;
-            Comments = comments ?? "";
+            FeedbackJson = feedbackJson;
             Status = SubmissionStatus.Done;
             AiError = null;
             GradedAt = DateTime.UtcNow;

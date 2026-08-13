@@ -15,6 +15,7 @@ namespace SmartGrader.Domain.Entities
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         //הכנסת השאלה
         public string TestsJson { get; private set; } = "[]";
+        public string ExpectedFilesJson { get; private set; } = "[]";
         public Lesson Lesson { get; set; }
         public ICollection<Submission> Submissions { get; set; }
         protected Assignment() { }
@@ -52,6 +53,36 @@ namespace SmartGrader.Domain.Entities
         public void SetTests(List<TestCase>? tests)
         {
             Tests = tests ?? new List<TestCase>();
+        }
+
+        [NotMapped]
+        public List<ExpectedFile> ExpectedFiles
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(ExpectedFilesJson))
+                    return new List<ExpectedFile>();
+
+                try
+                {
+                    return JsonSerializer.Deserialize<List<ExpectedFile>>(ExpectedFilesJson)
+                           ?? new List<ExpectedFile>();
+                }
+                catch
+                {
+                    // אם יש דאטה מקולקל ב־DB – שלא יפיל את השרת
+                    return new List<ExpectedFile>();
+                }
+            }
+            private set
+            {
+                ExpectedFilesJson = JsonSerializer.Serialize(value ?? new List<ExpectedFile>());
+            }
+        }
+
+        public void SetExpectedFiles(List<ExpectedFile>? expectedFiles)
+        {
+            ExpectedFiles = expectedFiles ?? new List<ExpectedFile>();
         }
     }
 }

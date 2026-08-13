@@ -7,9 +7,11 @@
         public int AssignmentId { get; set; }
 
         public string SourceCode { get; set; } = string.Empty;
+        public List<SubmissionFileDto> SourceFiles { get; set; } = new();
 
         public double? Score { get; set; }
-        public string? Comments { get; set; }
+        public AiFeedbackResultDto? Feedback { get; set; }
+        public List<TestCaseResultDto> TestResults { get; set; } = new();
 
         public string Status { get; set; } = string.Empty;
         public string? AiError { get; set; }

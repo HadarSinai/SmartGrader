@@ -12,11 +12,19 @@ import {
 } from "@models/submission.model";
 import { AuthService } from "@services/auth.service";
 import { SubmissionsService } from "@services/submissions.service";
+import { SubmissionFeedbackPanelComponent } from "@components/submission-feedback-panel/submission-feedback-panel.component";
 
 @Component({
   selector: "app-my-feedback",
   standalone: true,
-  imports: [CommonModule, RouterModule, ButtonModule, CardModule, TagModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    ButtonModule,
+    CardModule,
+    TagModule,
+    SubmissionFeedbackPanelComponent,
+  ],
   template: `
     <section class="sg-page">
       <div class="pt-3 pb-5">
@@ -109,9 +117,9 @@ import { SubmissionsService } from "@services/submissions.service";
                     icon="pi pi-check-circle"
                     [value]="statusLabel"
                   ></p-tag>
-                  <div *ngIf="submission.comments" class="sg-note-box">
-                    {{ submission.comments }}
-                  </div>
+                  <app-submission-feedback-panel
+                    [submission]="submission"
+                  ></app-submission-feedback-panel>
                 </ng-container>
 
                 <!-- שגיאת קומפילציה -->

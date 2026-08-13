@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartGrader.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using SmartGrader.Infrastructure.Data;
 namespace SmartGrader.Infrastructure.Migrations
 {
     [DbContext(typeof(GradeSheetContext))]
-    partial class GradeSheetContextModelSnapshot : ModelSnapshot
+    [Migration("20260720135249_AddFeedbackJsonAndTestResultsToSubmission")]
+    partial class AddFeedbackJsonAndTestResultsToSubmission
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
@@ -45,10 +48,6 @@ namespace SmartGrader.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ExpectedFilesJson")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsBonus")
@@ -255,10 +254,6 @@ namespace SmartGrader.Infrastructure.Migrations
                         .HasColumnType("REAL");
 
                     b.Property<string>("SourceCode")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("SourceFilesJson")
                         .IsRequired()
                         .HasColumnType("TEXT");
 

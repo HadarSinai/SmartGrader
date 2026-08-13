@@ -11,6 +11,7 @@ import { ActivatedRoute, Router } from "@angular/router";
 import {
   AssignmentResponseDto,
   CreateAssignmentRequestDto,
+  ExpectedFileDto,
   TestCaseDto,
   UpdateAssignmentRequestDto,
 } from "@models/assignment.model";
@@ -145,6 +146,86 @@ import { InputTextareaModule } from "primeng/inputtextarea";
                 <div
                   class="flex align-items-center justify-content-between gap-2 flex-wrap"
                 >
+                  <div class="font-bold">קבצים נדרשים (הגשה רב-קובצית)</div>
+                  <p-button
+                    label="הוספת קובץ"
+                    icon="pi pi-plus"
+                    [text]="true"
+                    (onClick)="addExpectedFile()"
+                    type="button"
+                  ></p-button>
+                </div>
+
+                <div
+                  formArrayName="expectedFiles"
+                  class="mt-3 flex flex-column gap-3"
+                >
+                  <div
+                    *ngFor="let file of expectedFiles.controls; let i = index"
+                    [formGroupName]="i"
+                    class="p-3 border-1 border-round-xl"
+                    style="border-color: var(--app-border); background: rgba(239,232,221,0.40)"
+                  >
+                    <div
+                      class="flex align-items-center justify-content-between gap-2 flex-wrap mb-3"
+                    >
+                      <div class="font-bold text-color">קובץ {{ i + 1 }}</div>
+                      <p-button
+                        icon="pi pi-trash"
+                        severity="danger"
+                        [text]="true"
+                        (onClick)="removeExpectedFile(i)"
+                        type="button"
+                      ></p-button>
+                    </div>
+
+                    <div class="grid">
+                      <div class="col-12 md:col-4">
+                        <label class="block font-bold mb-2">שם קובץ</label>
+                        <input
+                          pInputText
+                          class="w-full"
+                          formControlName="fileName"
+                          placeholder="לדוגמה: Calculator.cs"
+                        />
+                      </div>
+                      <div class="col-12 md:col-4">
+                        <label class="block font-bold mb-2"
+                          >שם המתודה בקובץ</label
+                        >
+                        <input
+                          pInputText
+                          class="w-full"
+                          formControlName="methodName"
+                          placeholder="לדוגמה: Sum"
+                        />
+                      </div>
+                      <div class="col-12 md:col-4">
+                        <label class="block font-bold mb-2">תיאור</label>
+                        <input
+                          pInputText
+                          class="w-full"
+                          formControlName="description"
+                          placeholder="הסבר קצר לקובץ"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    *ngIf="expectedFiles.length === 0"
+                    class="text-color-secondary p-3 border-1 border-round-xl"
+                    style="border-color: var(--app-border);"
+                  >
+                    ללא קבצים נדרשים — הגשה תישאר בפורמט הישן (קובץ יחיד).
+                  </div>
+                </div>
+              </div>
+
+              <div class="field col-12">
+                <div
+                  class="flex align-items-center justify-content-between gap-2 flex-wrap"
+                >
                   <div class="font-bold">מקרי בדיקה</div>
                   <p-button
                     label="הוספת מקרה"
@@ -257,11 +338,16 @@ export class AssignmentFormComponent implements OnInit {
       isBonus: [false],
       bonusValue: [0],
       tests: this.fb.array([]),
+      expectedFiles: this.fb.array([]),
     });
   }
 
   get tests(): FormArray {
     return this.form.get("tests") as FormArray;
+  }
+
+  get expectedFiles(): FormArray {
+    return this.form.get("expectedFiles") as FormArray;
   }
 
   ngOnInit(): void {
@@ -297,6 +383,12 @@ export class AssignmentFormComponent implements OnInit {
           });
         }
 
+        if (assignment.expectedFiles) {
+          assignment.expectedFiles.forEach((file) => {
+            this.expectedFiles.push(this.createExpectedFileGroup(file));
+          });
+        }
+
         this.loading = false;
       },
       error: (_error: unknown) => {
@@ -325,6 +417,22 @@ export class AssignmentFormComponent implements OnInit {
     this.tests.removeAt(index);
   }
 
+  createExpectedFileGroup(file?: ExpectedFileDto): FormGroup {
+    return this.fb.group({
+      fileName: [file?.fileName || "", Validators.required],
+      methodName: [file?.methodName || ""],
+      description: [file?.description || ""],
+    });
+  }
+
+  addExpectedFile(): void {
+    this.expectedFiles.push(this.createExpectedFileGroup());
+  }
+
+  removeExpectedFile(index: number): void {
+    this.expectedFiles.removeAt(index);
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       return;
@@ -339,6 +447,7 @@ export class AssignmentFormComponent implements OnInit {
       isBonus: formValue.isBonus,
       bonusValue: formValue.bonusValue,
       tests: formValue.tests,
+      expectedFiles: formValue.expectedFiles,
     };
 
     const operation = this.isEditMode

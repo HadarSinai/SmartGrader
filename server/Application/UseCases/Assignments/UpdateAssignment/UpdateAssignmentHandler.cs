@@ -42,6 +42,7 @@ namespace SmartGrader.Application.UseCases.Assignments.UpdateAssignment
                 assignment.MethodName = request.Dto.MethodName;
 
             assignment.SetTests(_mapper.Map<List<TestCase>>(request.Dto.Tests ?? new()));
+            assignment.SetExpectedFiles(_mapper.Map<List<ExpectedFile>>(request.Dto.ExpectedFiles ?? new()));
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

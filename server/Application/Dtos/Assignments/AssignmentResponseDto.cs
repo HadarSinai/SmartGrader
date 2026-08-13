@@ -14,6 +14,7 @@
            
 
             public List<TestCaseDto> Tests { get; set; } = new();
+            public List<ExpectedFileDto> ExpectedFiles { get; set; } = new();
     }
 
     }

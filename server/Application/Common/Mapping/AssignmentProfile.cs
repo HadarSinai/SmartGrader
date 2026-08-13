@@ -11,6 +11,9 @@ namespace SmartGrader.Api.Mapping
             // מיפוי בין TestCase <-> TestCaseDto (בשביל רשימת ה-Tests)
             CreateMap<TestCaseDto, TestCase>().ReverseMap();
 
+            // מיפוי בין ExpectedFile <-> ExpectedFileDto (בשביל רשימת ה-ExpectedFiles)
+            CreateMap<ExpectedFileDto, ExpectedFile>().ReverseMap();
+
             // Assignment -> Response (כולל Tests → TestsDto אוטומטית)
             CreateMap<Assignment, AssignmentResponseDto>();
 
@@ -19,16 +22,18 @@ namespace SmartGrader.Api.Mapping
                 .ForMember(d => d.Id, opt => opt.Ignore())
                 .ForMember(d => d.LessonId, opt => opt.Ignore())   // בא מה-Command
                 .ForMember(d => d.CreatedAt, opt => opt.Ignore())
-                .ForMember(d => d.TestsJson, opt => opt.Ignore());
-            // ⚠ לא נוגעים ב-Tests: AutoMapper ימפה את List<TestCaseDto> ל-List<TestCase>
-            // זה יקרא ל-set של Tests ויעדכן את TestsJson לבד
+                .ForMember(d => d.TestsJson, opt => opt.Ignore())
+                .ForMember(d => d.ExpectedFilesJson, opt => opt.Ignore());
+            // ⚠ לא נוגעים ב-Tests/ExpectedFiles: AutoMapper ימפה את הרשימות (TestCaseDto/ExpectedFileDto)
+            // זה יקרא ל-set של Tests/ExpectedFiles ויעדכן את TestsJson/ExpectedFilesJson לבד
 
             // Update DTO -> Assignment
             CreateMap<UpdateAssignmentRequestDto, Assignment>()
                 .ForMember(d => d.Id, opt => opt.Ignore())
                 .ForMember(d => d.LessonId, opt => opt.Ignore())
                 .ForMember(d => d.CreatedAt, opt => opt.Ignore())
-                .ForMember(d => d.TestsJson, opt => opt.Ignore());
+                .ForMember(d => d.TestsJson, opt => opt.Ignore())
+                .ForMember(d => d.ExpectedFilesJson, opt => opt.Ignore());
         }
     }
 }

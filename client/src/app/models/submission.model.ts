@@ -13,13 +13,52 @@ export const STATUS_LABELS_HE: Record<string, string> = {
   CompilationFailed: "שגיאת קומפילציה",
 };
 
+export interface SubmissionFileDto {
+  fileName: string;
+  content: string;
+}
+
+export interface TestCaseResultDto {
+  input: string;
+  expected: string;
+  actual: string;
+  passed: boolean;
+  error: string | null;
+}
+
+export interface AiFeedbackIssuesDto {
+  correctness: string[];
+  readability: string[];
+  performance: string[];
+}
+
+export interface AiFeedbackScoresDto {
+  testScore: number | null;
+  codeQualityScore: number | null;
+  efficiencyScore: number | null;
+  finalScore: number | null;
+}
+
+export interface AiFeedbackResultDto {
+  good: string[];
+  issues: AiFeedbackIssuesDto;
+  minimalChanges: string[];
+  optionalFullSolution: string | null;
+  scores: AiFeedbackScoresDto;
+  /** false כאשר תשובת ה-AI לא פורשה בהצלחה — יש להציג rawResponse כטקסט גולמי */
+  parseSucceeded: boolean;
+  rawResponse: string | null;
+}
+
 export interface SubmissionResponseDto {
   id: number;
   studentId: number;
   assignmentId: number;
   sourceCode: string | null;
+  sourceFiles: SubmissionFileDto[];
   score: number | null;
-  comments: string | null;
+  feedback: AiFeedbackResultDto | null;
+  testResults: TestCaseResultDto[];
   status: SubmissionStatus | null;
   aiError: string | null;
   compileError: string | null;
@@ -31,6 +70,7 @@ export interface SubmissionResponseDto {
 export interface CreateSubmissionRequestDto {
   assignmentId: number;
   sourceCode: string | null;
+  files: SubmissionFileDto[] | null;
 }
 
 export interface UpdateSubmissionRequestDto {

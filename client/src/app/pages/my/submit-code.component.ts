@@ -13,9 +13,14 @@ import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { InputTextareaModule } from "primeng/inputtextarea";
+import { MessageModule } from "primeng/message";
+import { PanelModule } from "primeng/panel";
 
-import { AssignmentResponseDto } from "@models/assignment.model";
-import { SubmissionResponseDto } from "@models/submission.model";
+import { AssignmentResponseDto, TestCaseDto } from "@models/assignment.model";
+import {
+  SubmissionFileDto,
+  SubmissionResponseDto,
+} from "@models/submission.model";
 import { AssignmentsService } from "@services/assignments.service";
 import { AuthService } from "@services/auth.service";
 import { SubmissionsService } from "@services/submissions.service";
@@ -31,6 +36,8 @@ import { SubmissionsService } from "@services/submissions.service";
     CardModule,
     ConfirmDialogModule,
     InputTextareaModule,
+    MessageModule,
+    PanelModule,
   ],
   providers: [ConfirmationService],
   template: `
@@ -59,8 +66,13 @@ import { SubmissionsService } from "@services/submissions.service";
           </ng-template>
 
           <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-fluid">
-            <div class="field">
+            <div class="field" *ngIf="!isMultiFile">
               <label class="sg-label block" for="sourceCode">הקוד שלך *</label>
+              <p-message
+                severity="info"
+                styleClass="w-full mb-2"
+                [text]="submissionHint"
+              ></p-message>
               <textarea
                 pInputTextarea
                 id="sourceCode"
@@ -69,7 +81,7 @@ import { SubmissionsService } from "@services/submissions.service";
                 class="sg-code-input w-full"
                 dir="ltr"
                 spellcheck="false"
-                [placeholder]="codePlaceholder"
+                [placeholder]="computedPlaceholder"
               ></textarea>
               <small
                 class="p-error"
@@ -80,6 +92,80 @@ import { SubmissionsService } from "@services/submissions.service";
               >
                 הקוד הוא שדה חובה
               </small>
+              <small class="sg-hint block mt-1">
+                לאחר ההגשה הקוד ייבדק אוטומטית ותתקבל התראה עם הפידבק.
+              </small>
+
+              <p-panel
+                *ngIf="exampleTest"
+                header="דוגמה לפורמט טסט"
+                [toggleable]="true"
+                [collapsed]="true"
+                styleClass="mt-2"
+              >
+                <div class="sg-example-test">
+                  <div>
+                    <strong>קלט:</strong>
+                    <code dir="ltr">{{ exampleTest.input }}</code>
+                  </div>
+                  <div>
+                    <strong>פלט צפוי:</strong>
+                    <code dir="ltr">{{ exampleTest.expected }}</code>
+                  </div>
+                </div>
+              </p-panel>
+            </div>
+
+            <div class="field" *ngIf="isMultiFile">
+              <label class="sg-label block">קבצי הקוד שלך *</label>
+              <p-message
+                severity="info"
+                styleClass="w-full mb-2"
+                text="תרגיל זה דורש הגשה של מספר קבצים. יש להעלות קובץ לכל שורה."
+              ></p-message>
+
+              <div
+                *ngFor="let expected of assignment?.expectedFiles"
+                class="sg-file-slot flex align-items-center gap-3 p-3 mb-2 border-1 border-round-xl"
+                style="border-color: var(--app-border)"
+              >
+                <input
+                  type="file"
+                  class="hidden"
+                  #fileInput
+                  (change)="onFileSelected(expected.fileName, $event)"
+                />
+                <p-button
+                  type="button"
+                  label="בחירת קובץ"
+                  icon="pi pi-upload"
+                  [outlined]="true"
+                  styleClass="sg-btn-secondary"
+                  (onClick)="fileInput.click()"
+                ></p-button>
+                <div class="flex flex-column">
+                  <span class="font-bold" dir="ltr">{{
+                    expected.fileName
+                  }}</span>
+                  <span
+                    class="text-color-secondary text-sm"
+                    *ngIf="expected.description"
+                  >
+                    {{ expected.description }}
+                  </span>
+                  <span
+                    class="text-sm"
+                    [class.text-green-600]="isFileLoaded(expected.fileName)"
+                  >
+                    {{
+                      isFileLoaded(expected.fileName)
+                        ? "✓ הקובץ נטען"
+                        : "טרם נבחר קובץ"
+                    }}
+                  </span>
+                </div>
+              </div>
+
               <small class="sg-hint block mt-1">
                 לאחר ההגשה הקוד ייבדק אוטומטית ותתקבל התראה עם הפידבק.
               </small>
@@ -116,6 +202,18 @@ import { SubmissionsService } from "@services/submissions.service";
         direction: ltr;
         text-align: left;
       }
+
+      .sg-example-test {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        font-size: var(--text-sm);
+      }
+
+      .sg-example-test code {
+        direction: ltr;
+        display: inline-block;
+      }
     `,
   ],
 })
@@ -125,11 +223,35 @@ export class SubmitCodeComponent implements OnInit {
   assignmentId!: number;
   assignment: AssignmentResponseDto | null = null;
   submitting = false;
+  private readonly loadedFiles = new Map<string, string>();
 
-  readonly codePlaceholder = "public int Sum(int a, int b)\n{\n    ...\n}";
+  readonly genericPlaceholder = "public int Sum(int a, int b)\n{\n    ...\n}";
+  readonly submissionHintBase =
+    "יש להגיש רק את גוף המתודה המבוקשת — בלי class, using או Main. הקוד נעטף אוטומטית בסביבת ההרצה.";
 
   get backLink(): (string | number)[] {
     return ["/my", "lessons", this.lessonId, "assignments"];
+  }
+
+  get computedPlaceholder(): string {
+    const methodName = this.assignment?.methodName;
+    if (!methodName) return this.genericPlaceholder;
+    return `public int ${methodName}(...)\n{\n    ...\n}`;
+  }
+
+  get submissionHint(): string {
+    const methodName = this.assignment?.methodName;
+    if (!methodName) return this.submissionHintBase;
+    return `יש להגיש רק את גוף המתודה "${methodName}" — בלי class, using או Main. הקוד נעטף אוטומטית בסביבת ההרצה.`;
+  }
+
+  get exampleTest(): TestCaseDto | null {
+    const tests = this.assignment?.tests;
+    return tests && tests.length > 0 ? tests[0] : null;
+  }
+
+  get isMultiFile(): boolean {
+    return !!this.assignment?.expectedFiles?.length;
   }
 
   constructor(
@@ -158,6 +280,10 @@ export class SubmitCodeComponent implements OnInit {
       .subscribe({
         next: (assignment: AssignmentResponseDto) => {
           this.assignment = assignment;
+          if (this.isMultiFile) {
+            this.form.get("sourceCode")?.clearValidators();
+            this.form.get("sourceCode")?.updateValueAndValidity();
+          }
         },
         error: () => {
           // Toast shown by ApiErrorInterceptor; stay on page with generic header
@@ -165,11 +291,48 @@ export class SubmitCodeComponent implements OnInit {
       });
   }
 
+  onFileSelected(fileName: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.loadedFiles.set(fileName, String(reader.result ?? ""));
+    };
+    reader.readAsText(file);
+  }
+
+  isFileLoaded(fileName: string): boolean {
+    return this.loadedFiles.has(fileName);
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
+
+    let files: SubmissionFileDto[] | null = null;
+    if (this.isMultiFile) {
+      const expectedFiles = this.assignment?.expectedFiles ?? [];
+      const missing = expectedFiles.filter(
+        (f) => !this.isFileLoaded(f.fileName),
+      );
+      if (missing.length > 0) {
+        this.messageService.add({
+          severity: "warn",
+          summary: "חסרים קבצים",
+          detail: `יש לבחור קובץ עבור: ${missing.map((f) => f.fileName).join(", ")}`,
+        });
+        return;
+      }
+      files = expectedFiles.map((f) => ({
+        fileName: f.fileName,
+        content: this.loadedFiles.get(f.fileName) ?? "",
+      }));
+    }
+
     const studentId = this.auth.studentId();
     if (studentId === null) return;
 
@@ -177,7 +340,8 @@ export class SubmitCodeComponent implements OnInit {
     this.submissionsService
       .create(studentId, {
         assignmentId: this.assignmentId,
-        sourceCode: this.form.value.sourceCode,
+        sourceCode: this.isMultiFile ? "" : this.form.value.sourceCode,
+        files,
       })
       .subscribe({
         next: (submission: SubmissionResponseDto) => {

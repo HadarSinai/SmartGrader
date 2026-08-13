@@ -1,16 +1,19 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using System.Linq;
+using SmartGrader.Application.Services.CodeRunner;
 using SmartGrader.Application.Services.Feedback;
+using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Infrastructure.Services.Feedback
 {
     public class OpenAiFeedbackService : IFeedbackService
     {
         private const string Url = "https://api.openai.com/v1/chat/completions";
+        private const int MaxFailedTestsInPrompt = 5;
         private readonly HttpClient _httpClient;
         private readonly OpenAiOptions _options;
 
@@ -20,30 +23,23 @@ namespace SmartGrader.Infrastructure.Services.Feedback
             _options = options.Value;
         }
 
-        public async Task<string> GetFeedbackAsync(
+        public async Task<AiFeedbackResult> GetFeedbackAsync(
             string assignmentDescription,
             string sourceCode,
             int passedTests,
             int totalTests,
+            IReadOnlyList<TestCaseResult> testDetails,
             CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(_options.ApiKey))
-                return "שגיאה: חסר OpenAi:ApiKey בקונפיגורציה.";
+                return RawFallback("שגיאה: חסר OpenAi:ApiKey בקונפיגורציה.");
 
             if (string.IsNullOrWhiteSpace(_options.Model))
-                return "שגיאה: חסר OpenAi:Model בקונפיגורציה.";
+                return RawFallback("שגיאה: חסר OpenAi:Model בקונפיגורציה.");
 
             if (totalTests < 0 || passedTests < 0 || passedTests > totalTests)
-                return "שגיאה: נתוני הטסטים לא תקינים (passed/total).";
+                return RawFallback("שגיאה: נתוני הטסטים לא תקינים (passed/total).");
 
-            // Prompt קצר יותר = פחות טוקנים = פחות עלות
-//            var developerPrompt =
-//@"You are a C# teacher reviewing a student's solution.
-//Rules: do NOT invent results/errors; be concise but include ALL issues; minimal fixes; full solution only if needed.
-//Return STRICT JSON only:
-//{ ""good"":[], ""issues"":{""correctness"":[], ""readability"":[], ""performance"":[]}, ""minimal_changes"":[], ""optional_full_solution"":null,
-//  ""scores"":{""test_score"":null, ""code_quality_score"":0, ""efficiency_score"":0, ""final_score"":0} }
-//Scoring: test_score = total>0 ? (passed/total)*100 : null; final = 0.7*tests + 0.2*quality + 0.1*efficiency (if test_score is null, explain).";
             var developerPrompt =
 @"You are a C# teacher reviewing a student's solution.
 Language: Hebrew (write all strings in Hebrew).
@@ -52,9 +48,13 @@ Return STRICT JSON only:
 { ""good"":[], ""issues"":{""correctness"":[], ""readability"":[], ""performance"":[]}, ""minimal_changes"":[], ""optional_full_solution"":null,
   ""scores"":{""test_score"":null, ""code_quality_score"":0, ""efficiency_score"":0, ""final_score"":0} }
 Scoring: test_score = total>0 ? (passed/total)*100 : null; final = 0.7*tests + 0.2*quality + 0.1*efficiency (if test_score is null, explain).";
+
+            var failedTestsSummary = BuildFailedTestsSummary(testDetails);
+
             var userContent =
 $@"Task: {assignmentDescription}
 Tests: {passedTests}/{totalTests}
+{failedTestsSummary}
 Code:
 {sourceCode}";
 
@@ -86,12 +86,22 @@ Code:
 
                 if (response.IsSuccessStatusCode)
                 {
-                    using var doc = JsonDocument.Parse(responseJson);
-                    return doc.RootElement
-                        .GetProperty("choices")[0]
-                        .GetProperty("message")
-                        .GetProperty("content")
-                        .GetString() ?? string.Empty;
+                    string content;
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(responseJson);
+                        content = doc.RootElement
+                            .GetProperty("choices")[0]
+                            .GetProperty("message")
+                            .GetProperty("content")
+                            .GetString() ?? string.Empty;
+                    }
+                    catch (JsonException)
+                    {
+                        return RawFallback(responseJson);
+                    }
+
+                    return ParseFeedback(content);
                 }
 
                 // Retry רק על עומס זמני
@@ -106,11 +116,49 @@ Code:
                 }
 
                 // שגיאה אחרת / נגמרו ניסיונות
-                return $"שגיאת AI ({code}): {responseJson}";
+                return RawFallback($"שגיאת AI ({code}): {responseJson}");
             }
 
-            return "שגיאה: OpenAI לא זמין כרגע. נסי שוב בעוד כמה רגעים.";
+            return RawFallback("שגיאה: OpenAI לא זמין כרגע. נסי שוב בעוד כמה רגעים.");
         }
+
+        private static string BuildFailedTestsSummary(IReadOnlyList<TestCaseResult> testDetails)
+        {
+            var failed = testDetails.Where(t => !t.Passed).Take(MaxFailedTestsInPrompt).ToList();
+            if (failed.Count == 0)
+                return "";
+
+            var lines = failed.Select((t, i) =>
+                $"  {i + 1}. Input: {t.Input} | Expected: {t.Expected} | Actual: {t.Actual}" +
+                (string.IsNullOrWhiteSpace(t.Error) ? "" : $" | Error: {t.Error}"));
+
+            return "Failed tests (grounding facts, do not invent others):\n" + string.Join("\n", lines) + "\n";
+        }
+
+        // מנסה לפרש את תשובת ה-AI כ-JSON מובנה. בכשל — לא זורק, אלא מחזיר תוצאה עם
+        // ParseSucceeded=false ותוכן גולמי לגיבוי, בהתאם לאופי החוסן הקיים (היום כל מחרוזת מתקבלת).
+        private static AiFeedbackResult ParseFeedback(string content)
+        {
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<AiFeedbackResult>(content);
+                if (parsed is null)
+                    return RawFallback(content);
+
+                return parsed with { ParseSucceeded = true };
+            }
+            catch (JsonException)
+            {
+                return RawFallback(content);
+            }
+        }
+
+        private static AiFeedbackResult RawFallback(string rawText) =>
+            new(Good: null, Issues: null, MinimalChanges: null, OptionalFullSolution: null, Scores: null)
+            {
+                ParseSucceeded = false,
+                RawResponse = rawText,
+            };
 
         private static TimeSpan GetRetryDelay(HttpResponseMessage response, int attempt)
         {

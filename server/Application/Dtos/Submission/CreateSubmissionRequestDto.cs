@@ -4,6 +4,7 @@
     {
         public int AssignmentId { get; set; }
         public string SourceCode { get; set; } = string.Empty;
-  
+        public List<SubmissionFileDto>? Files { get; set; }
+
     }
 }

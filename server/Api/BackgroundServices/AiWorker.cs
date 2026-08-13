@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using SmartGrader.Application.Common.Interfaces;
 using SmartGrader.Application.Services.BackgroundJobs;
 using SmartGrader.Application.Services.CodeRunner;
@@ -60,11 +61,21 @@ public class AiWorker : IGradeSubmissionJob
                 assignmentId: submission.AssignmentId,
                 ct: ct);
 
-            var runnerResult = await _codeRunner.RunAsync(
-                submission.SourceCode,
-                submission.Assignment!.MethodName,
-                submission.Assignment.Tests,
-                ct);
+            var assignment = submission.Assignment!;
+            var runnerResult = assignment.ExpectedFiles.Count > 0
+                ? await _codeRunner.RunAsync(
+                    submission.SourceFiles,
+                    assignment.ExpectedFiles,
+                    assignment.Tests,
+                    ct)
+                : await _codeRunner.RunAsync(
+                    submission.SourceCode,
+                    assignment.MethodName,
+                    assignment.Tests,
+                    ct);
+
+            // גם בנתיב כשל קומפילציה נשמר (הרשימה תהיה ריקה) — לעקביות עם שאר הנתיב
+            submission.SetTestResults(runnerResult.Details.ToList());
 
             if (runnerResult.HasCompileError)
             {
@@ -86,16 +97,19 @@ public class AiWorker : IGradeSubmissionJob
                 (submission.Assignment?.Description ?? submission.Assignment?.Title)
                 ?? "No assignment description";
 
-            var aiJson = await _feedback.GetFeedbackAsync(
+            var aiFeedback = await _feedback.GetFeedbackAsync(
                 assignmentDescription,
                 submission.SourceCode,
                 runnerResult.Passed,
                 runnerResult.Total,
+                runnerResult.Details,
                 ct);
 
+            // הציון עדיין מחושב מתוצאות הטסטים (לא הציון העצמי של ה-AI) — זהו פער ידוע
+            // שמוזכר כאן במפורש כנקודת החלטה עתידית, לא כשינוי בשלב הנוכחי.
             submission.MarkDone(
                 score: runnerResult.Total > 0 ? (double)runnerResult.Passed / runnerResult.Total * 100 : 0,
-                comments: aiJson);
+                feedbackJson: JsonSerializer.Serialize(aiFeedback));
 
             await _uow.SaveChangesAsync(ct);
 
