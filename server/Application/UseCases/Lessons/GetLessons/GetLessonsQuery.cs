@@ -9,8 +9,9 @@ using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.UseCases.Lessons.GetLessons
 {
-    // ClassId — סינון אופציונלי למורה; StudentId — סינון מחויב לפי הכיתה של התלמיד (מה-claim)
-    public record GetLessonsQuery(int? ClassId = null, int? StudentId = null) : IRequest<IReadOnlyList<LessonResponseDto>>;
+    // TeacherId — ראשון ובלי ברירת מחדל בכוונה (חובה להעביר אותו במפורש; null = מנהל/ת).
+    // ClassId — סינון אופציונלי למורה; StudentId — סינון מחויב לפי הכיתה של התלמיד (מה-claim).
+    public record GetLessonsQuery(int? TeacherId, int? ClassId = null, int? StudentId = null) : IRequest<IReadOnlyList<LessonResponseDto>>;
 }
 
 

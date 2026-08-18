@@ -3,7 +3,8 @@ export type SubmissionStatus =
   | "ProcessingAi"
   | "Done"
   | "AiFailed"
-  | "CompilationFailed";
+  | "CompilationFailed"
+  | "JudgeUnavailable";
 
 export const STATUS_LABELS_HE: Record<string, string> = {
   PendingAi: "ממתין לבדיקה",
@@ -11,6 +12,7 @@ export const STATUS_LABELS_HE: Record<string, string> = {
   Done: "נבדק",
   AiFailed: "שגיאת בדיקה",
   CompilationFailed: "שגיאת קומפילציה",
+  JudgeUnavailable: "תקלה במערכת הבדיקה",
 };
 
 export interface SubmissionFileDto {

@@ -9,12 +9,25 @@ export interface ExpectedFileDto {
   methodName: string | null;
 }
 
+/**
+ * אופן הבדיקה של תרגיל — נבחר ע"י המורה, קובע גם איך ה-Runner מריץ את הקוד
+ * וגם אילו הנחיות התלמיד רואה במסך ההגשה.
+ */
+export type GradingMode = "FullProgram" | "Method" | "MultiFileMethod";
+
+export const GRADING_MODE_LABELS_HE: Record<GradingMode, string> = {
+  FullProgram: "תוכנית שלמה (עם Main)",
+  Method: "מתודה בודדת",
+  MultiFileMethod: "פרויקט רב־קובצי (מתודת כניסה)",
+};
+
 export interface AssignmentResponseDto {
   id: number;
   lessonId: number;
   title: string | null;
   description: string | null;
   methodName: string | null;
+  gradingMode: GradingMode;
   isBonus: boolean;
   bonusValue: number;
   createdAt: string;
@@ -27,6 +40,7 @@ export interface CreateAssignmentRequestDto {
   title: string | null;
   description: string | null;
   methodName: string | null;
+  gradingMode: GradingMode;
   isBonus: boolean;
   bonusValue: number;
   tests: TestCaseDto[] | null;
@@ -37,6 +51,7 @@ export interface UpdateAssignmentRequestDto {
   title: string | null;
   description: string | null;
   methodName: string | null;
+  gradingMode: GradingMode;
   isBonus: boolean;
   bonusValue: number;
   tests: TestCaseDto[] | null;

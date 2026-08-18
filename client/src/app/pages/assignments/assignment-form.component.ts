@@ -12,6 +12,8 @@ import {
   AssignmentResponseDto,
   CreateAssignmentRequestDto,
   ExpectedFileDto,
+  GRADING_MODE_LABELS_HE,
+  GradingMode,
   TestCaseDto,
   UpdateAssignmentRequestDto,
 } from "@models/assignment.model";
@@ -24,6 +26,8 @@ import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { InputNumberModule } from "primeng/inputnumber";
 import { InputTextModule } from "primeng/inputtext";
 import { InputTextareaModule } from "primeng/inputtextarea";
+import { MessageModule } from "primeng/message";
+import { SelectButtonModule } from "primeng/selectbutton";
 
 @Component({
   selector: "app-assignment-form",
@@ -38,6 +42,8 @@ import { InputTextareaModule } from "primeng/inputtextarea";
     CheckboxModule,
     ButtonModule,
     ConfirmDialogModule,
+    MessageModule,
+    SelectButtonModule,
   ],
   providers: [ConfirmationService],
   template: `
@@ -120,7 +126,20 @@ import { InputTextareaModule } from "primeng/inputtextarea";
                 ></textarea>
               </div>
 
-              <div class="field col-12 md:col-6">
+              <div class="field col-12">
+                <label class="block font-bold mb-2">סוג ההגשה *</label>
+                <p-selectButton
+                  [options]="gradingModeOptions"
+                  formControlName="gradingMode"
+                  optionLabel="label"
+                  optionValue="value"
+                ></p-selectButton>
+                <small class="sg-hint block mt-2">{{
+                  gradingModeDescription
+                }}</small>
+              </div>
+
+              <div class="field col-12 md:col-6" *ngIf="isMethodMode">
                 <label class="block font-bold mb-2" for="methodName"
                   >שם המתודה *</label
                 >
@@ -146,7 +165,11 @@ import { InputTextareaModule } from "primeng/inputtextarea";
                 <div
                   class="flex align-items-center justify-content-between gap-2 flex-wrap"
                 >
-                  <div class="font-bold">קבצים נדרשים (הגשה רב-קובצית)</div>
+                  <div class="font-bold">
+                    קבצים נדרשים (הגשה רב-קובצית){{
+                      isFullProgramMode ? " — אופציונלי" : " *"
+                    }}
+                  </div>
                   <p-button
                     label="הוספת קובץ"
                     icon="pi pi-plus"
@@ -155,6 +178,12 @@ import { InputTextareaModule } from "primeng/inputtextarea";
                     type="button"
                   ></p-button>
                 </div>
+                <p-message
+                  *ngIf="isFullProgramMode"
+                  severity="info"
+                  styleClass="w-full mt-2"
+                  text="אם מוגדרים קבצים, התלמיד יעלה קובץ לכל שורה והתוכנית תורץ עם ה-Main שהוא כתב — בלי עטיפה."
+                ></p-message>
 
                 <div
                   formArrayName="expectedFiles"
@@ -189,7 +218,7 @@ import { InputTextareaModule } from "primeng/inputtextarea";
                           placeholder="לדוגמה: Calculator.cs"
                         />
                       </div>
-                      <div class="col-12 md:col-4">
+                      <div class="col-12 md:col-4" *ngIf="!isFullProgramMode">
                         <label class="block font-bold mb-2"
                           >שם המתודה בקובץ</label
                         >
@@ -217,7 +246,11 @@ import { InputTextareaModule } from "primeng/inputtextarea";
                     class="text-color-secondary p-3 border-1 border-round-xl"
                     style="border-color: var(--app-border);"
                   >
-                    ללא קבצים נדרשים — הגשה תישאר בפורמט הישן (קובץ יחיד).
+                    {{
+                      isFullProgramMode
+                        ? "ללא קבצים נדרשים — התלמיד יגיש קובץ יחיד עם Main."
+                        : "ללא קבצים נדרשים — הגשה תישאר בפורמט הישן (קובץ יחיד)."
+                    }}
                   </div>
                 </div>
               </div>
@@ -235,6 +268,11 @@ import { InputTextareaModule } from "primeng/inputtextarea";
                     type="button"
                   ></p-button>
                 </div>
+                <p-message
+                  severity="info"
+                  styleClass="w-full mt-2"
+                  [text]="testCaseInputHint"
+                ></p-message>
 
                 <div formArrayName="tests" class="mt-3 flex flex-column gap-3">
                   <div
@@ -330,16 +368,38 @@ export class AssignmentFormComponent implements OnInit {
   lessonId!: number;
   assignmentId: number | null = null;
 
+  readonly gradingModeOptions: { label: string; value: GradingMode }[] =
+    Object.entries(GRADING_MODE_LABELS_HE).map(([value, label]) => ({
+      label,
+      value: value as GradingMode,
+    }));
+
+  readonly gradingModeDescriptions: Record<GradingMode, string> = {
+    FullProgram:
+      "התלמיד מגיש תוכנית שלמה כולל using/class/Main משלו. מתאים לתחילת הקורס (לולאות, מערכים, מטריצות).",
+    Method:
+      "התלמיד מגיש רק גוף מתודה בודדת, בלי class/using/Main — הקוד נעטף אוטומטית בסביבת ההרצה.",
+    MultiFileMethod:
+      "התלמיד מגיש כמה קבצים (למשל מחלקות), ונבדקת קריאה למתודת כניסה מוגדרת — בלי Main של התלמיד.",
+  };
+
   constructor() {
     this.form = this.fb.group({
       title: ["", Validators.required],
       description: [""],
-      methodName: ["", Validators.required],
+      methodName: [""],
+      gradingMode: ["FullProgram" as GradingMode, Validators.required],
       isBonus: [false],
       bonusValue: [0],
       tests: this.fb.array([]),
       expectedFiles: this.fb.array([]),
     });
+
+    // MethodName נדרש רק במצב "מתודה בודדת" — שאר המצבים לא תלויים בו.
+    this.form.get("gradingMode")?.valueChanges.subscribe(() => {
+      this.updateMethodNameValidator();
+    });
+    this.updateMethodNameValidator();
   }
 
   get tests(): FormArray {
@@ -348,6 +408,45 @@ export class AssignmentFormComponent implements OnInit {
 
   get expectedFiles(): FormArray {
     return this.form.get("expectedFiles") as FormArray;
+  }
+
+  get gradingMode(): GradingMode {
+    return this.form.get("gradingMode")?.value as GradingMode;
+  }
+
+  get isMethodMode(): boolean {
+    return this.gradingMode === "Method";
+  }
+
+  get isFullProgramMode(): boolean {
+    return this.gradingMode === "FullProgram";
+  }
+
+  get gradingModeDescription(): string {
+    return this.gradingModeDescriptions[this.gradingMode] ?? "";
+  }
+
+  get testCaseInputHint(): string {
+    switch (this.gradingMode) {
+      case "FullProgram":
+        return "קלט (Input) הוא stdin מלא לתוכנית — כל שורה נקראת ב-Console.ReadLine() אחד, בדיוק כפי שהתלמיד יקליד בהרצה רגילה.";
+      case "MultiFileMethod":
+        return "קלט (Input) הוא מערך JSON של ארגומנטים למתודת הכניסה, למשל: [3, 5]";
+      default:
+        return "קלט (Input) הוא ערכי הפרמטרים של המתודה מופרדים ברווח, למשל: 3 5";
+    }
+  }
+
+  private updateMethodNameValidator(): void {
+    const control = this.form.get("methodName");
+    if (!control) return;
+
+    if (this.isMethodMode) {
+      control.setValidators([Validators.required]);
+    } else {
+      control.clearValidators();
+    }
+    control.updateValueAndValidity({ emitEvent: false });
   }
 
   ngOnInit(): void {
@@ -373,6 +472,7 @@ export class AssignmentFormComponent implements OnInit {
           title: assignment.title,
           description: assignment.description,
           methodName: assignment.methodName,
+          gradingMode: assignment.gradingMode,
           isBonus: assignment.isBonus,
           bonusValue: assignment.bonusValue,
         });
@@ -444,6 +544,7 @@ export class AssignmentFormComponent implements OnInit {
       title: formValue.title,
       description: formValue.description,
       methodName: formValue.methodName,
+      gradingMode: formValue.gradingMode,
       isBonus: formValue.isBonus,
       bonusValue: formValue.bonusValue,
       tests: formValue.tests,

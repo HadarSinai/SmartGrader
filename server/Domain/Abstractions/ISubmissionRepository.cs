@@ -14,7 +14,7 @@ namespace SmartGrader.Domain.Abstractions
         Task AddAsync(Submission submission, CancellationToken ct = default);
         Task<IReadOnlyList<Submission>> GetByStudentIdAsync(int studentId, CancellationToken ct = default);
         Task<IReadOnlyList<Submission>> GetByStudentAndLessonAsync(int studentId, int lessonId, CancellationToken ct = default);
-        Task<IReadOnlyList<Submission>> GetRecentGradedAsync(int limit, CancellationToken ct = default);
+        Task<IReadOnlyList<Submission>> GetRecentGradedAsync(int limit, int? teacherId, int? studentId, CancellationToken ct = default);
 
        // Task UpdateAsync(Submission submission, CancellationToken ct = default);
         Task DeleteAsync(Submission submission, CancellationToken ct = default);

@@ -7,6 +7,7 @@
         public const string AiGradingCompleted = "AiGradingCompleted";
         public const string CompilationFailed = "CompilationFailed";
         public const string AiFailed = "AiFailed";
+        public const string JudgeUnavailable = "JudgeUnavailable";
         public const string UnhandledError = "UnhandledError";
     }
 

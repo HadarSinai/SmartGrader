@@ -113,6 +113,9 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                     submission.status === 'CompilationFailed' ||
                     submission.status === 'AiFailed'
                   "
+                  [class.sg-status-box--warn]="
+                    submission.status === 'JudgeUnavailable'
+                  "
                 >
                   <div class="flex align-items-center gap-2 flex-wrap">
                     <ng-container [ngSwitch]="submission.status">
@@ -147,6 +150,12 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                         icon="pi pi-times-circle"
                       />
                       <p-tag
+                        *ngSwitchCase="'JudgeUnavailable'"
+                        severity="warning"
+                        [value]="statusLabels['JudgeUnavailable']"
+                        icon="pi pi-exclamation-circle"
+                      />
+                      <p-tag
                         *ngSwitchDefault
                         [value]="submission.status || 'לא ידוע'"
                         severity="secondary"
@@ -172,7 +181,22 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                     <pre>{{ submission.compileError }}</pre>
                   </div>
 
-                  <div *ngIf="submission.aiError">
+                  <div
+                    *ngIf="
+                      submission.status === 'JudgeUnavailable' &&
+                      submission.aiError
+                    "
+                  >
+                    <strong>פרטי התקלה (לא קשורה לקוד של התלמיד):</strong>
+                    <pre>{{ submission.aiError }}</pre>
+                  </div>
+
+                  <div
+                    *ngIf="
+                      submission.status !== 'JudgeUnavailable' &&
+                      submission.aiError
+                    "
+                  >
                     <strong>שגיאת AI:</strong>
                     <pre>{{ submission.aiError }}</pre>
                   </div>
@@ -185,7 +209,8 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                   <div
                     *ngIf="
                       submission.status === 'CompilationFailed' ||
-                      submission.status === 'AiFailed'
+                      submission.status === 'AiFailed' ||
+                      submission.status === 'JudgeUnavailable'
                     "
                   >
                     <p-button

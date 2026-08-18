@@ -801,6 +801,21 @@ body.a11y-reduce-motion * {
   direction: ltr;
   text-align: left;
 }
+/* תקלת מערכת (JudgeUnavailable) — ענבר ולא אדום: לא אשמת התלמיד */
+.sg-status-box--warn {
+  border-color: var(--status-warn);
+  background: var(--status-warn-bg);
+}
+.sg-status-box--warn pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: var(--text-sm);
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--status-warn-ink);
+  direction: ltr;
+  text-align: left;
+}
 
 /* Search input used in page headers */
 .sg-search {

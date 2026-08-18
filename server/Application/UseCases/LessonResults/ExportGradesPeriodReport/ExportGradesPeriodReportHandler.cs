@@ -35,7 +35,7 @@ public class ExportGradesPeriodReportHandler : IRequestHandler<ExportGradesPerio
         if (from > to)
             throw new BusinessRuleException("תאריך ההתחלה חייב להיות לפני תאריך הסיום");
 
-        var lessons = await _lessonRepo.GetByDateRangeAsync(from, to, ct);
+        var lessons = await _lessonRepo.GetByDateRangeAsync(from, to, request.TeacherId, ct);
         if (lessons.Count == 0)
             throw new BusinessRuleException("אין שיעורים בתקופה שנבחרה");
 
@@ -53,7 +53,7 @@ public class ExportGradesPeriodReportHandler : IRequestHandler<ExportGradesPerio
         var lessonColumn = 2;
         foreach (var lesson in lessons)
         {
-            ws.Cell(1, lessonColumn).Value = $"{lesson.Name} ({HebrewDateConverter.ToHebrewString(lesson.LessonDate)})";
+            ws.Cell(1, lessonColumn).Value = $"{lesson.Course.Name} ({HebrewDateConverter.ToHebrewString(lesson.LessonDate)})";
             lessonColumn++;
         }
         var averageColumn = lessonColumn;

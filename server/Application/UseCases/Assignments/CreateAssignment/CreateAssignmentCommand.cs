@@ -6,6 +6,7 @@ namespace SmartGrader.Application.UseCases.Assignments.CreateAssignment
 {
     public record CreateAssignmentCommand(
         int LessonId,
-        CreateAssignmentRequestDto Dto
+        CreateAssignmentRequestDto Dto,
+        int? TeacherId
     ) : IRequest<AssignmentResponseDto>;
 }

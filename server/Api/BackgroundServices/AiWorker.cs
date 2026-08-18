@@ -41,7 +41,10 @@ public class AiWorker : IGradeSubmissionJob
         var submission = await _submissions.GetByIdAsync(submissionId, ct);
         if (submission is null) return;
 
-        if (submission.Status is SubmissionStatus.Done or SubmissionStatus.AiFailed)
+        if (submission.Status is SubmissionStatus.Done
+            or SubmissionStatus.AiFailed
+            or SubmissionStatus.CompilationFailed
+            or SubmissionStatus.JudgeUnavailable)
             return;
 
         try
@@ -62,17 +65,56 @@ public class AiWorker : IGradeSubmissionJob
                 ct: ct);
 
             var assignment = submission.Assignment!;
-            var runnerResult = assignment.ExpectedFiles.Count > 0
-                ? await _codeRunner.RunAsync(
-                    submission.SourceFiles,
-                    assignment.ExpectedFiles,
-                    assignment.Tests,
-                    ct)
-                : await _codeRunner.RunAsync(
-                    submission.SourceCode,
-                    assignment.MethodName,
-                    assignment.Tests,
-                    ct);
+            RunnerResult runnerResult;
+            try
+            {
+                runnerResult = assignment.GradingMode switch
+                {
+                    // תוכנית שלמה עם Main של התלמיד — בלי עטיפה. אם הוגשה כקובץ יחיד (בלי
+                    // Files), עוטפים את SourceCode כ-SubmissionFile יחיד לאותו נתיב מיזוג.
+                    GradingMode.FullProgram => await _codeRunner.RunProgramAsync(
+                        submission.SourceFiles.Count > 0
+                            ? submission.SourceFiles
+                            : new List<SubmissionFile> { new() { FileName = "Program.cs", Content = submission.SourceCode ?? "" } },
+                        assignment.Tests,
+                        ct),
+
+                    GradingMode.MultiFileMethod => await _codeRunner.RunAsync(
+                        submission.SourceFiles,
+                        assignment.ExpectedFiles,
+                        assignment.Tests,
+                        ct),
+
+                    // GradingMode.Method וכל ערך אחר (הגנה עתידית)
+                    _ => await _codeRunner.RunAsync(
+                        submission.SourceCode,
+                        assignment.MethodName,
+                        assignment.Tests,
+                        ct),
+                };
+            }
+            catch (Exception ex) when (ex is HttpRequestException
+                or JsonException
+                or TaskCanceledException
+                or CodeRunnerUnavailableException)
+            {
+                // כשל תשתית: Judge0 לא זמין / timeout / תשובה לא תקינה — לא כשל של קוד התלמיד ולא של ה-AI.
+                // לפי ההחלטה: אין retry אוטומטי — רק סימון ברור ולוג ייעודי.
+                _logger.LogError(ex, "Judge0 unavailable for submissionId={SubmissionId}", submissionId);
+
+                submission.MarkJudgeUnavailable(ex.Message);
+                await _uow.SaveChangesAsync(ct);
+
+                await _logWriter.WriteAsync(
+                    LogActionTypes.JudgeUnavailable,
+                    $"מערכת בדיקת הקוד אינה זמינה עבור הגשה #{submissionId}: {ex.Message}",
+                    LogStatuses.Error,
+                    LogSystemSources.AiWorker,
+                    lessonId: submission.Assignment?.LessonId,
+                    assignmentId: submission.AssignmentId,
+                    ct: ct);
+                return;
+            }
 
             // גם בנתיב כשל קומפילציה נשמר (הרשימה תהיה ריקה) — לעקביות עם שאר הנתיב
             submission.SetTestResults(runnerResult.Details.ToList());
@@ -97,9 +139,15 @@ public class AiWorker : IGradeSubmissionJob
                 (submission.Assignment?.Description ?? submission.Assignment?.Title)
                 ?? "No assignment description";
 
+            // בהגשות רב-קובציות (FullProgram או MultiFileMethod) SourceCode ריק —
+            // מעבירים ל-AI את תוכן הקבצים המאוחד במקום מחרוזת ריקה.
+            var codeForFeedback = !string.IsNullOrWhiteSpace(submission.SourceCode)
+                ? submission.SourceCode
+                : string.Join("\n\n", submission.SourceFiles.Select(f => f.Content));
+
             var aiFeedback = await _feedback.GetFeedbackAsync(
                 assignmentDescription,
-                submission.SourceCode,
+                codeForFeedback,
                 runnerResult.Passed,
                 runnerResult.Total,
                 runnerResult.Details,

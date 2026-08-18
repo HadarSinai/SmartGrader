@@ -5,14 +5,14 @@ export interface LessonClassDto {
 
 export interface LessonResponseDto {
   id: number;
-  name: string | null;
+  courseId: number;
+  courseName: string;
   subject: string | null;
   lessonDate: string;
   lessonDateHebrew: string;
   hebrewYear: number;
   hebrewMonth: number;
   hebrewDay: number;
-  teacherName: string | null;
   createdAt: string;
   assignmentsCount: number;
   classes: LessonClassDto[];
@@ -20,21 +20,19 @@ export interface LessonResponseDto {
 }
 
 export interface CreateLessonRequestDto {
-  name: string | null;
+  courseId: number;
   subject: string | null;
   hebrewYear: number;
   hebrewMonth: number;
   hebrewDay: number;
-  teacherName: string | null;
   classIds: number[];
 }
 
 export interface UpdateLessonRequestDto {
-  name: string | null;
+  courseId: number;
   subject: string | null;
   hebrewYear: number;
   hebrewMonth: number;
   hebrewDay: number;
-  teacherName: string | null;
   classIds: number[];
 }

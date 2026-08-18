@@ -88,7 +88,7 @@ import { downloadBlob } from "../../core/utils/download";
                   pInputText
                   type="text"
                   [(ngModel)]="query"
-                  placeholder="חיפוש לפי שם או נושא..."
+                  placeholder="חיפוש לפי מקצוע או נושא..."
                   aria-label="חיפוש שיעורים"
                 />
               </span>
@@ -106,7 +106,7 @@ import { downloadBlob } from "../../core/utils/download";
               <div class="sg-active-filters" aria-label="מסננים פעילים">
                 <p-chip
                   *ngIf="query.trim()"
-                  label="שם/נושא: {{ query.trim() }}"
+                  label="מקצוע/נושא: {{ query.trim() }}"
                   [removable]="true"
                   (onRemove)="query = ''"
                 >
@@ -162,8 +162,8 @@ import { downloadBlob } from "../../core/utils/download";
                       aria-label="בחירת כל השורות"
                     ></p-tableHeaderCheckbox>
                   </th>
-                  <th pSortableColumn="name">
-                    שם <p-sortIcon field="name"></p-sortIcon>
+                  <th pSortableColumn="courseName">
+                    מקצוע <p-sortIcon field="courseName"></p-sortIcon>
                   </th>
                   <th pSortableColumn="subject">
                     נושא <p-sortIcon field="subject"></p-sortIcon>
@@ -183,10 +183,10 @@ import { downloadBlob } from "../../core/utils/download";
                   <td>
                     <p-tableCheckbox
                       [value]="lesson"
-                      [attr.aria-label]="'בחירת ' + (lesson.name || '')"
+                      [attr.aria-label]="'בחירת ' + lesson.courseName"
                     ></p-tableCheckbox>
                   </td>
-                  <td class="font-bold text-color">{{ lesson.name || "—" }}</td>
+                  <td class="font-bold text-color">{{ lesson.courseName }}</td>
                   <td>{{ lesson.subject || "—" }}</td>
                   <td class="text-center">{{ lesson.classNames || "—" }}</td>
                   <td class="text-center">
@@ -203,7 +203,7 @@ import { downloadBlob } from "../../core/utils/download";
                       pTooltip="מעבר לתרגילי השיעור"
                       tooltipPosition="top"
                       [attr.aria-label]="
-                        'תרגילי השיעור: ' + (lesson.name || '')
+                        'תרגילי השיעור: ' + lesson.courseName
                       "
                       (onClick)="viewAssignments(lesson.id)"
                     >
@@ -215,7 +215,7 @@ import { downloadBlob } from "../../core/utils/download";
                       [text]="true"
                       pTooltip="תוצאות השיעור"
                       tooltipPosition="top"
-                      [attr.aria-label]="'תוצאות שיעור: ' + (lesson.name || '')"
+                      [attr.aria-label]="'תוצאות שיעור: ' + lesson.courseName"
                       (onClick)="viewResults(lesson.id)"
                     ></p-button>
                   </td>
@@ -224,7 +224,7 @@ import { downloadBlob } from "../../core/utils/download";
                       icon="pi pi-ellipsis-h"
                       [text]="true"
                       [attr.aria-label]="
-                        'פעולות נוספות: ' + (lesson.name || '')
+                        'פעולות נוספות: ' + lesson.courseName
                       "
                       (onClick)="openRowMenu($event, rowMenu, lesson)"
                     ></p-button>
@@ -268,7 +268,7 @@ import { downloadBlob } from "../../core/utils/download";
                   <div *ngFor="let item of items" class="mobile-card">
                     <div class="mobile-card__header">
                       <div class="mobile-card__title">
-                        {{ item.name || "—" }}
+                        {{ item.courseName }}
                       </div>
                       <div class="mobile-card__subtitle">
                         {{ item.subject || "—" }}
@@ -309,7 +309,7 @@ import { downloadBlob } from "../../core/utils/download";
                         icon="pi pi-ellipsis-h"
                         [text]="true"
                         [attr.aria-label]="
-                          'פעולות נוספות: ' + (item.name || '')
+                          'פעולות נוספות: ' + item.courseName
                         "
                         (onClick)="openRowMenu($event, rowMenu, item)"
                       ></p-button>
@@ -418,7 +418,7 @@ export class LessonsListComponent implements OnInit {
     return this.lessons.filter(
       (l) =>
         (!q ||
-          (l.name ?? "").toLowerCase().includes(q) ||
+          l.courseName.toLowerCase().includes(q) ||
           (l.subject ?? "").toLowerCase().includes(q)) &&
         (!this.classFilter ||
           (l.classes ?? []).some((c) => c.id === this.classFilter)),
@@ -504,7 +504,9 @@ export class LessonsListComponent implements OnInit {
 
   confirmDelete(lesson: LessonResponseDto): void {
     this.confirmationService.confirm({
-      message: `האם למחוק את "${lesson.name}"? לא ניתן לשחזר פעולה זו.`,
+      message: `האם למחוק את השיעור "${lesson.courseName}${
+        lesson.subject ? " — " + lesson.subject : ""
+      }"? לא ניתן לשחזר פעולה זו.`,
       header: "אישור מחיקה",
       icon: "pi pi-exclamation-triangle",
       acceptLabel: "מחיקה",

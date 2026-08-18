@@ -8,4 +8,5 @@ public record ExportGradesPeriodReportQuery(
     int FromHebrewDay,
     int ToHebrewYear,
     int ToHebrewMonth,
-    int ToHebrewDay) : IRequest<byte[]>;
+    int ToHebrewDay,
+    int? TeacherId) : IRequest<byte[]>;

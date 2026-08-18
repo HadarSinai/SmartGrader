@@ -5,6 +5,7 @@ namespace SmartGrader.Application.UseCases.Lessons.UpdateLesson
 {
     public record UpdateLessonCommand(
         int Id,
-        UpdateLessonRequestDto Dto
+        UpdateLessonRequestDto Dto,
+        int? TeacherId
     ) : IRequest<LessonResponseDto>;
 }

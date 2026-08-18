@@ -58,7 +58,7 @@ interface MyLessonRow {
             >
               <ng-template pTemplate="header">
                 <tr>
-                  <th scope="col">שם השיעור</th>
+                  <th scope="col">מקצוע</th>
                   <th scope="col">נושא</th>
                   <th scope="col">תאריך</th>
                   <th scope="col">סטטוס</th>
@@ -69,7 +69,7 @@ interface MyLessonRow {
 
               <ng-template pTemplate="body" let-row>
                 <tr>
-                  <td>{{ row.lesson.name || "—" }}</td>
+                  <td>{{ row.lesson.courseName }}</td>
                   <td>{{ row.lesson.subject || "—" }}</td>
                   <td>{{ row.lesson.lessonDate | date: "dd.MM.yy HH:mm" }}</td>
                   <td>
@@ -108,7 +108,7 @@ interface MyLessonRow {
                       [text]="true"
                       (onClick)="openLesson(row.lesson.id)"
                       [ariaLabel]="
-                        'מעבר לתרגילים של ' + (row.lesson.name || 'השיעור')
+                        'מעבר לתרגילים של ' + row.lesson.courseName
                       "
                     ></p-button>
                   </td>

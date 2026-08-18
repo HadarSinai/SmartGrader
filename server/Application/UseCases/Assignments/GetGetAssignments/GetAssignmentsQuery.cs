@@ -4,6 +4,6 @@ using SmartGrader.Application.Dtos.Lessons;
 
 namespace SmartGrader.Application.UseCases.Assignments.GetAssignments
 {
-    public record GetAssignmentsQuery(int LessonId)
+    public record GetAssignmentsQuery(int LessonId, int? TeacherId)
         : IRequest<IReadOnlyList<AssignmentResponseDto>>;
 }

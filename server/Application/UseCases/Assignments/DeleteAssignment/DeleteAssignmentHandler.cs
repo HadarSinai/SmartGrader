@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
@@ -26,10 +27,8 @@ namespace SmartGrader.Application.UseCases.Assignments.DeleteAssignment
             DeleteAssignmentCommand request,
             CancellationToken cancellationToken)
         {
-            // 1) לוודא שהשיעור קיים
-            var lesson = await _lessonRepository.GetByIdAsync(request.LessonId, cancellationToken);
-            if (lesson is null)
-                throw new NotFoundException(nameof(Lesson), request.LessonId);
+            // 1) לוודא שהשיעור קיים ובבעלות המורה
+            await LessonAccess.GetOwnedOrThrowAsync(_lessonRepository, request.LessonId, request.TeacherId, cancellationToken);
 
             // 2) לוודא שהמשימה קיימת
             var assignment = await _repository.GetByIdAsync(request.AssignmentId, cancellationToken);

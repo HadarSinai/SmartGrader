@@ -85,6 +85,9 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                   submission.status === 'CompilationFailed' ||
                   submission.status === 'AiFailed'
                 "
+                [class.sg-status-box--warn]="
+                  submission.status === 'JudgeUnavailable'
+                "
                 [ngSwitch]="submission.status"
               >
                 <!-- בבדיקה -->
@@ -150,6 +153,16 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                   <span>{{ failureNote }}</span>
                 </ng-container>
 
+                <!-- תקלת מערכת הבדיקה — לא קשורה לקוד של התלמיד -->
+                <ng-container *ngSwitchCase="'JudgeUnavailable'">
+                  <p-tag
+                    severity="warning"
+                    icon="pi pi-exclamation-circle"
+                    [value]="statusLabel"
+                  ></p-tag>
+                  <span>{{ judgeUnavailableNote }}</span>
+                </ng-container>
+
                 <ng-container *ngSwitchDefault>
                   <p-tag
                     severity="warning"
@@ -186,6 +199,8 @@ export class MyFeedbackComponent implements OnInit, OnDestroy {
   loading = false;
 
   readonly failureNote = "אין צורך לעשות דבר — צוות ההוראה מטפל בהגשות שנכשלו.";
+  readonly judgeUnavailableNote =
+    "אירעה תקלה זמנית במערכת הבדיקה — הקוד שלך לא נבדק, וזו לא בעיה בקוד. צוות ההוראה מטפל בכך.";
 
   private submissionId!: number;
   private pollHandle: ReturnType<typeof setInterval> | null = null;

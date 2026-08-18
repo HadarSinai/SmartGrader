@@ -1,7 +1,6 @@
 ﻿using MediatR;
-using SmartGrader.Application.Common.Exceptions;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Domain.Abstractions;
-using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.UseCases.Lessons.DeleteLesson
 {
@@ -15,10 +14,7 @@ namespace SmartGrader.Application.UseCases.Lessons.DeleteLesson
 
         public async Task<Unit> Handle(DeleteLessonCommand request, CancellationToken cancellationToken)
         {
-            var lesson = await _repository.GetByIdAsync(request.Id, cancellationToken);
-
-            if (lesson is null)
-                throw new NotFoundException("Lesson", request.Id);
+            var lesson = await LessonAccess.GetOwnedOrThrowAsync(_repository, request.Id, request.TeacherId, cancellationToken);
 
             await _repository.DeleteAsync(lesson, cancellationToken);
 

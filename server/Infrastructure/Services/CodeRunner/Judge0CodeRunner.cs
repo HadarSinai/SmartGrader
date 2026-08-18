@@ -74,6 +74,18 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
         return await RunTestsAsync(wrappedSource, tests, ct);
     }
 
+    // ── נתיב GradingMode.FullProgram — תוכנית שלמה עם Main של התלמיד ───────
+
+    public async Task<RunnerResult> RunProgramAsync(
+        IReadOnlyList<SubmissionFile> sourceFiles,
+        IReadOnlyList<TestCase> tests,
+        CancellationToken ct = default)
+    {
+        // בלי עטיפה בכלל — הקבצים ממוזגים (usings מורמים לראש, ר' MergeFiles) ורצים כמו שהם.
+        string mergedSource = MergeFiles(sourceFiles.Select(f => f.Content));
+        return await RunTestsAsync(mergedSource, tests, ct);
+    }
+
     // ── לוגיקת הרצה משותפת מול Judge0 (זהה לשני הנתיבים) ────────────────────
 
     private async Task<RunnerResult> RunTestsAsync(
@@ -115,6 +127,12 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Error: "No response from Judge0"));
                 continue;
             }
+
+            // Judge0 Internal Error (13) — תקלת תשתית של Judge0 עצמו, לא בעיה בקוד התלמיד.
+            // נזרק כחריגה ייעודית כדי שינותב ב-AiWorker ל-MarkJudgeUnavailable ולא ל"טסט שנכשל".
+            if (result.Status?.Id == 13)
+                throw new CodeRunnerUnavailableException(
+                    $"Judge0 internal error: {result.Status?.Description ?? "Internal Error"}");
 
             // Compilation error — abort all remaining tests
             if (result.Status?.Id == 6)
@@ -245,13 +263,14 @@ public class Program
 
         var entryClassName = FindClassContaining(sourceFiles, methodName) ?? "StudentSolution";
 
-        var filesBlock = string.Join("\n\n", sourceFiles.Select(f => f.Content));
+        // MergeFiles מרים usings של כל הקבצים לראש (כולל אלה שנוסיף כאן) — מונע CS1529
+        // כשקובץ שני מתחיל ב-using אחרי שה-class-ים של הקובץ הראשון כבר נפתחו.
+        var mergedFiles = MergeFiles(
+            new[] { "using System;\nusing System.Linq;\nusing System.Text.Json;" }
+                .Concat(sourceFiles.Select(f => f.Content)));
 
         return $@"
-using System;
-using System.Linq;
-using System.Text.Json;
-{filesBlock}
+{mergedFiles}
 public class Program
 {{
     public static void Main(string[] args)
@@ -262,6 +281,37 @@ public class Program
         Console.WriteLine(result);
     }}
 }}";
+    }
+
+    // ── מיזוג קבצים עם הרמת using לראש (משותף ל-FullProgram וגם למסלול הרב-קובצי הישן) ──
+
+    private static readonly Regex UsingDirectiveRegex = new(
+        @"^\s*using\s+[\w.]+(\s*=\s*[\w.<>,\s]+)?\s*;\s*$",
+        RegexOptions.Multiline | RegexOptions.Compiled);
+
+    /// <summary>
+    /// ממזג כמה קבצי מקור ליחידת קומפילציה אחת: כל שורת using ברמה עליונה מכל הקבצים
+    /// מורמת לראש (עם dedupe), ואחריה גוף כל קובץ בלי שורות ה-using שלו. פותר CS1529
+    /// שנוצר כשקובץ ב' מתחיל ב-using אחרי שה-class-ים של קובץ א' כבר נפתחו בהדבקה נאיבית.
+    /// </summary>
+    private static string MergeFiles(IEnumerable<string> fileContents)
+    {
+        var usings = new List<string>();
+        var bodies = new List<string>();
+
+        foreach (var content in fileContents)
+        {
+            foreach (Match m in UsingDirectiveRegex.Matches(content))
+            {
+                var directive = m.Value.Trim();
+                if (!usings.Contains(directive, StringComparer.Ordinal))
+                    usings.Add(directive);
+            }
+
+            bodies.Add(UsingDirectiveRegex.Replace(content, "").Trim());
+        }
+
+        return string.Join("\n", usings) + "\n" + string.Join("\n\n", bodies);
     }
 
     private static string? FindClassContaining(IReadOnlyList<SubmissionFile> sourceFiles, string methodName)

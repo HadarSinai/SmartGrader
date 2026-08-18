@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
@@ -34,9 +35,7 @@ public class ExportLessonResultsHandler : IRequestHandler<ExportLessonResultsQue
 
     public async Task<byte[]> Handle(ExportLessonResultsQuery request, CancellationToken ct)
     {
-        var lesson = await _lessonRepo.GetByIdAsync(request.LessonId, ct);
-        if (lesson is null)
-            throw new NotFoundException("Lesson", request.LessonId);
+        var lesson = await LessonAccess.GetOwnedOrThrowAsync(_lessonRepo, request.LessonId, request.TeacherId, ct);
 
         var assignments = await _assignmentRepo.GetByLessonIdAsync(request.LessonId, ct);
         var total = assignments.Count;

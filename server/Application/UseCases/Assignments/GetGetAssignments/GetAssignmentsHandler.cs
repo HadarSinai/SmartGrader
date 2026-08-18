@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Dtos.Assignments;
 using SmartGrader.Domain.Abstractions;
 
@@ -9,11 +10,16 @@ namespace SmartGrader.Application.UseCases.Assignments.GetAssignments
         : IRequestHandler<GetAssignmentsQuery, IReadOnlyList<AssignmentResponseDto>>
     {
         private readonly IAssignmentRepository _repository;
+        private readonly ILessonRepository _lessonRepository;
         private readonly IMapper _mapper;
 
-        public GetAssignmentsHandler(IAssignmentRepository repository, IMapper mapper)
+        public GetAssignmentsHandler(
+            IAssignmentRepository repository,
+            ILessonRepository lessonRepository,
+            IMapper mapper)
         {
             _repository = repository;
+            _lessonRepository = lessonRepository;
             _mapper = mapper;
         }
 
@@ -21,6 +27,8 @@ namespace SmartGrader.Application.UseCases.Assignments.GetAssignments
             GetAssignmentsQuery request,
             CancellationToken cancellationToken)
         {
+            await LessonAccess.GetOwnedOrThrowAsync(_lessonRepository, request.LessonId, request.TeacherId, cancellationToken);
+
             var assignments = await _repository
                 .GetByLessonIdAsync(request.LessonId, cancellationToken);
 

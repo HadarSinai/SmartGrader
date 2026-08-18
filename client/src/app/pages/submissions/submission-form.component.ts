@@ -232,7 +232,7 @@ export class SubmissionFormComponent implements OnInit {
       next: (lessons: LessonResponseDto[]) => {
         this.lessons = lessons;
         this.lessonOptions = lessons.map((l) => ({
-          label: l.name || "ללא שם",
+          label: l.subject ? `${l.courseName} — ${l.subject}` : l.courseName,
           value: l.id,
         }));
       },

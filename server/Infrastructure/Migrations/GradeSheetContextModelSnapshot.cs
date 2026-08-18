@@ -51,6 +51,10 @@ namespace SmartGrader.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("GradingMode")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsBonus")
                         .HasColumnType("INTEGER");
 
@@ -75,7 +79,7 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.ToTable("Assignments");
                 });
 
-            modelBuilder.Entity("SmartGrader.Domain.Entities.Lesson", b =>
+            modelBuilder.Entity("SmartGrader.Domain.Entities.Course", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -84,22 +88,49 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("LessonDate")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TeacherId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeacherId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("SmartGrader.Domain.Entities.Lesson", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LessonDate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TeacherName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("TeacherId")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("TeacherId");
 
                     b.ToTable("Lessons");
                 });
@@ -343,6 +374,36 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.Navigation("Lesson");
                 });
 
+            modelBuilder.Entity("SmartGrader.Domain.Entities.Course", b =>
+                {
+                    b.HasOne("SmartGrader.Domain.Entities.User", "Teacher")
+                        .WithMany()
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Teacher");
+                });
+
+            modelBuilder.Entity("SmartGrader.Domain.Entities.Lesson", b =>
+                {
+                    b.HasOne("SmartGrader.Domain.Entities.Course", "Course")
+                        .WithMany("Lessons")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SmartGrader.Domain.Entities.User", "Teacher")
+                        .WithMany()
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Teacher");
+                });
+
             modelBuilder.Entity("SmartGrader.Domain.Entities.LessonResult", b =>
                 {
                     b.HasOne("SmartGrader.Domain.Entities.Lesson", "Lesson")
@@ -402,6 +463,11 @@ namespace SmartGrader.Infrastructure.Migrations
             modelBuilder.Entity("SmartGrader.Domain.Entities.Assignment", b =>
                 {
                     b.Navigation("Submissions");
+                });
+
+            modelBuilder.Entity("SmartGrader.Domain.Entities.Course", b =>
+                {
+                    b.Navigation("Lessons");
                 });
 
             modelBuilder.Entity("SmartGrader.Domain.Entities.Lesson", b =>

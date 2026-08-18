@@ -197,14 +197,18 @@ namespace SmartGrader.Api.Controllers
         }
 
         // PUT: api/students/{studentId}/submissions/{submissionId}
+        // Exception to the Teacher-only write rule: a student may edit & resubmit her own
+        // failed submission (CompilationFailed / JudgeUnavailable / AiFailed) — for herself only
         [HttpPut("{studentId:int}/submissions/{submissionId:int}")]
-        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> UpdateSubmission(
             int studentId,
             int submissionId,
             [FromBody] UpdateSubmissionRequestDto dto,
             CancellationToken cancellationToken)
         {
+            if (!IsAllowedForStudent(studentId))
+                return Forbid();
+
             SubmissionResponseDto updated =
                 await _mediator.Send(
                     new UpdateSubmissionCommand(studentId, submissionId, dto),

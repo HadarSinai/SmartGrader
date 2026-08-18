@@ -47,6 +47,7 @@ import { TopbarComponent } from "./topbar.component";
           </div>
           <nav class="sg-footer-links" aria-label="קישורי פוטר">
             <a routerLink="/">לוח בקרה</a>
+            <a routerLink="/courses">מקצועות</a>
             <a routerLink="/lessons">שיעורים</a>
             <a routerLink="/students">סטודנטים</a>
             <a routerLink="/classes">כיתות</a>

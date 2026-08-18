@@ -19,4 +19,12 @@ public interface ICodeRunnerService
         IReadOnlyList<ExpectedFile> expectedFiles,
         IReadOnlyList<TestCase> tests,
         CancellationToken ct = default);
+
+    // נתיב GradingMode.FullProgram: sourceFiles (אחד או יותר) מורכבים כמו שהם, בלי עטיפה —
+    // התלמיד כתב Main בעצמו. TestCase.Input הוא stdin מלא (יכול להיות רב-שורתי) בדיוק כפי
+    // שהתלמיד היה מקליד אותו בהרצה אינטראקטיבית.
+    Task<RunnerResult> RunProgramAsync(
+        IReadOnlyList<SubmissionFile> sourceFiles,
+        IReadOnlyList<TestCase> tests,
+        CancellationToken ct = default);
 }

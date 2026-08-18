@@ -49,12 +49,23 @@ namespace SmartGrader.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IReadOnlyList<Submission>> GetRecentGradedAsync(int limit, CancellationToken ct = default)
+        public async Task<IReadOnlyList<Submission>> GetRecentGradedAsync(int limit, int? teacherId, int? studentId, CancellationToken ct = default)
         {
-            return await _context.Submissions
+            var query = _context.Submissions
                 .Where(s => s.Status == SubmissionStatus.Done)
                 .Include(s => s.Student)
                 .Include(s => s.Assignment)
+                    .ThenInclude(a => a.Lesson)
+                .AsQueryable();
+
+            // ⚠️ הסינון חייב לקרות לפני ה-Take — אחרת לוקחים את 20 הגלובליים ואז מסננים ל-3
+            if (teacherId.HasValue)
+                query = query.Where(s => s.Assignment.Lesson.TeacherId == teacherId.Value);
+
+            if (studentId.HasValue)
+                query = query.Where(s => s.StudentId == studentId.Value);
+
+            return await query
                 .OrderByDescending(s => s.GradedAt ?? s.SubmittedAt)
                 .Take(limit)
                 .AsNoTracking()

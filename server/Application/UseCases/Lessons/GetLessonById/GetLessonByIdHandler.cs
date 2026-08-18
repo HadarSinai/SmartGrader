@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
-using SmartGrader.Application.Common.Exceptions;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Dtos.Lessons;
 using SmartGrader.Application.UseCases.Lessons.GetLessonById;
 using SmartGrader.Domain.Abstractions;
@@ -26,10 +26,9 @@ namespace SmartGrader.Application.UseCases.Lessons.GetLessonById
                 GetLessonByIdQuery request,
                 CancellationToken cancellationToken)
         {
-            var lesson = await _repository.GetByIdAsync(request.Id, cancellationToken);
-
-            if (lesson is null)
-                throw new NotFoundException("Lesson", request.Id);
+            // TeacherId חייב להיות null כשהקורא הוא תלמידה (ר' LessonsController.GetById) —
+            // אחרת LessonAccess תזרוק 404 על כל שיעור שאינו "בבעלות" ה-userId של התלמידה עצמה.
+            var lesson = await LessonAccess.GetOwnedOrThrowAsync(_repository, request.Id, request.TeacherId, cancellationToken);
 
             return _mapper.Map<LessonResponseDto>(lesson);
         }

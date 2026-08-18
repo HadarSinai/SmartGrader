@@ -7,6 +7,7 @@ namespace SmartGrader.Application.UseCases.Assignments.UpdateAssignment
     public record UpdateAssignmentCommand(
         int LessonId,
         int AssignmentId,
-        UpdateAssignmentRequestDto Dto
+        UpdateAssignmentRequestDto Dto,
+        int? TeacherId
     ) : IRequest<AssignmentResponseDto>;
 }

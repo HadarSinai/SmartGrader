@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
-using SmartGrader.Application.Common.Exceptions;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Dtos.Assignments;
 using SmartGrader.Application.Dtos.Lessons;
 using SmartGrader.Domain.Abstractions;
@@ -32,10 +32,7 @@ namespace SmartGrader.Application.UseCases.Assignments.CreateAssignment
             CreateAssignmentCommand request,
             CancellationToken cancellationToken)
         {
-            var lesson = await _lessonRepository.GetByIdAsync(request.LessonId, cancellationToken);
-
-            if (lesson is null)
-                throw new NotFoundException(nameof(Lesson), request.LessonId);
+            await LessonAccess.GetOwnedOrThrowAsync(_lessonRepository, request.LessonId, request.TeacherId, cancellationToken);
 
             var assignment = _mapper.Map<Assignment>(request.Dto);
             assignment.LessonId = request.LessonId;

@@ -3,6 +3,7 @@ import { Component, OnInit, inject } from "@angular/core";
 import {
     FormBuilder,
     FormGroup,
+    FormsModule,
     ReactiveFormsModule,
     Validators,
 } from "@angular/forms";
@@ -13,19 +14,25 @@ import {
     getHebrewToday,
 } from "@components/hebrew-date-picker/hebrew-date-picker.component";
 import { SchoolClassResponseDto } from "@models/class.model";
+import { CourseResponseDto } from "@models/course.model";
 import {
     CreateLessonRequestDto,
     LessonResponseDto,
     UpdateLessonRequestDto,
 } from "@models/lesson.model";
 import { ClassesService } from "@services/classes.service";
+import { CoursesService } from "@services/courses.service";
 import { LessonsService } from "@services/lessons.service";
 import { ConfirmationService, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
+import { DialogModule } from "primeng/dialog";
+import { DropdownModule } from "primeng/dropdown";
 import { InputTextModule } from "primeng/inputtext";
+import { MessagesModule } from "primeng/messages";
 import { MultiSelectModule } from "primeng/multiselect";
+import { TooltipModule } from "primeng/tooltip";
 
 @Component({
   selector: "app-lesson-form",
@@ -33,9 +40,14 @@ import { MultiSelectModule } from "primeng/multiselect";
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
+    TooltipModule,
     CardModule,
     InputTextModule,
     MultiSelectModule,
+    DropdownModule,
+    DialogModule,
+    MessagesModule,
     HebrewDatePickerComponent,
     ButtonModule,
     ConfirmDialogModule,
@@ -59,23 +71,58 @@ import { MultiSelectModule } from "primeng/multiselect";
           </ng-template>
 
           <form class="px-4 pb-4" [formGroup]="form" (ngSubmit)="onSubmit()">
+            <div
+              class="sg-empty-courses mb-3"
+              *ngIf="!coursesLoading && courseOptions.length === 0"
+            >
+              <i class="pi pi-info-circle" aria-hidden="true"></i>
+              <span>
+                עדיין אין מקצועות. כדי ליצור שיעור צריך קודם מקצוע אחד לפחות.
+              </span>
+              <p-button
+                label="הוספת מקצוע"
+                icon="pi pi-plus"
+                [text]="true"
+                type="button"
+                (onClick)="openQuickAddCourse()"
+              ></p-button>
+            </div>
+
             <div class="formgrid grid">
               <div class="field col-12 md:col-6">
-                <label class="block font-bold mb-2" for="name"
-                  >שם שיעור *</label
+                <label class="block font-bold mb-2" for="courseId"
+                  >מקצוע *</label
                 >
-                <input
-                  pInputText
-                  class="w-full"
-                  id="name"
-                  formControlName="name"
-                  placeholder="לדוגמה: שיעור פתיחה"
-                />
+                <div class="flex gap-2">
+                  <p-dropdown
+                    inputId="courseId"
+                    styleClass="w-full flex-1"
+                    [options]="courseOptions"
+                    formControlName="courseId"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="בחירת מקצוע"
+                    [filter]="courseOptions.length > 7"
+                    filterPlaceHolder="חיפוש מקצוע"
+                  ></p-dropdown>
+                  <p-button
+                    icon="pi pi-plus"
+                    [outlined]="true"
+                    type="button"
+                    pTooltip="הוספת מקצוע חדש"
+                    tooltipPosition="top"
+                    ariaLabel="הוספת מקצוע חדש"
+                    (onClick)="openQuickAddCourse()"
+                  ></p-button>
+                </div>
                 <small
                   class="p-error"
-                  *ngIf="form.get('name')?.invalid && form.get('name')?.touched"
+                  *ngIf="
+                    form.get('courseId')?.invalid &&
+                    form.get('courseId')?.touched
+                  "
                 >
-                  שם השיעור הוא שדה חובה
+                  יש לבחור מקצוע
                 </small>
               </div>
 
@@ -113,28 +160,6 @@ import { MultiSelectModule } from "primeng/multiselect";
                   "
                 >
                   תאריך הוא שדה חובה
-                </small>
-              </div>
-
-              <div class="field col-12 md:col-6">
-                <label class="block font-bold mb-2" for="teacherName"
-                  >שם מורה *</label
-                >
-                <input
-                  pInputText
-                  class="w-full"
-                  id="teacherName"
-                  formControlName="teacherName"
-                  placeholder="לדוגמה: הדר"
-                />
-                <small
-                  class="p-error"
-                  *ngIf="
-                    form.get('teacherName')?.invalid &&
-                    form.get('teacherName')?.touched
-                  "
-                >
-                  שם המורה הוא שדה חובה
                 </small>
               </div>
 
@@ -187,14 +212,64 @@ import { MultiSelectModule } from "primeng/multiselect";
       </div>
     </section>
 
+    <p-dialog
+      header="מקצוע חדש"
+      [(visible)]="quickAddVisible"
+      [modal]="true"
+      [style]="{ width: '24rem' }"
+      [dismissableMask]="true"
+    >
+      <div class="flex flex-column gap-2" dir="rtl">
+        <label for="quickCourseName">שם המקצוע *</label>
+        <input
+          pInputText
+          id="quickCourseName"
+          class="w-full"
+          [(ngModel)]="quickCourseName"
+          [ngModelOptions]="{ standalone: true }"
+          placeholder="לדוגמה: C#"
+          (keyup.enter)="saveQuickCourse()"
+        />
+      </div>
+
+      <ng-template pTemplate="footer">
+        <p-button
+          label="ביטול"
+          [text]="true"
+          (onClick)="quickAddVisible = false"
+        ></p-button>
+        <p-button
+          label="יצירה"
+          styleClass="sg-btn-primary"
+          [disabled]="!quickCourseName.trim()"
+          [loading]="quickAddSaving"
+          (onClick)="saveQuickCourse()"
+        ></p-button>
+      </ng-template>
+    </p-dialog>
+
     <p-confirmDialog></p-confirmDialog>
   `,
-  styles: [],
+  styles: [
+    `
+      .sg-empty-courses {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-md, 8px);
+        background: var(--app-surface-muted, #eee9e1);
+        color: var(--app-text-muted, #75695e);
+      }
+    `,
+  ],
 })
 export class LessonFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly lessonsService = inject(LessonsService);
   private readonly classesService = inject(ClassesService);
+  private readonly coursesService = inject(CoursesService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
@@ -206,19 +281,25 @@ export class LessonFormComponent implements OnInit {
   lessonId: number | null = null;
 
   classOptions: { label: string; value: number }[] = [];
+  courseOptions: { label: string; value: number }[] = [];
+  coursesLoading = false;
+
+  quickAddVisible = false;
+  quickCourseName = "";
+  quickAddSaving = false;
 
   constructor() {
     this.form = this.fb.group({
-      name: ["", Validators.required],
+      courseId: [null as number | null, Validators.required],
       subject: ["", Validators.required],
       lessonDate: [getHebrewToday(), Validators.required],
-      teacherName: ["", Validators.required],
       classIds: [[] as number[], Validators.required],
     });
   }
 
   ngOnInit(): void {
     this.loadClasses();
+    this.loadCourses();
 
     const id = this.route.snapshot.paramMap.get("id");
     if (id) {
@@ -246,19 +327,79 @@ export class LessonFormComponent implements OnInit {
     });
   }
 
+  loadCourses(): void {
+    this.coursesLoading = true;
+    this.coursesService.getAll().subscribe({
+      next: (courses: CourseResponseDto[]) => {
+        this.courseOptions = courses.map((c) => ({
+          label: c.name,
+          value: c.id,
+        }));
+        this.coursesLoading = false;
+      },
+      error: () => {
+        this.coursesLoading = false;
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "טעינת המקצועות נכשלה",
+        });
+      },
+    });
+  }
+
+  openQuickAddCourse(): void {
+    this.quickCourseName = "";
+    this.quickAddVisible = true;
+  }
+
+  saveQuickCourse(): void {
+    const name = this.quickCourseName.trim();
+    if (!name || this.quickAddSaving) {
+      return;
+    }
+
+    this.quickAddSaving = true;
+    this.coursesService.create({ name }).subscribe({
+      next: (course: CourseResponseDto) => {
+        this.courseOptions = [
+          ...this.courseOptions,
+          { label: course.name, value: course.id },
+        ];
+        // בחירה אוטומטית של המקצוע החדש — כך שלא צריך לצאת מהטופס
+        this.form.patchValue({ courseId: course.id });
+        this.form.markAsDirty();
+        this.quickAddSaving = false;
+        this.quickAddVisible = false;
+        this.messageService.add({
+          severity: "success",
+          summary: "בוצע",
+          detail: "המקצוע נוצר ונבחר",
+        });
+      },
+      error: () => {
+        this.quickAddSaving = false;
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "יצירת המקצוע נכשלה",
+        });
+      },
+    });
+  }
+
   loadLesson(id: number): void {
     this.loading = true;
     this.lessonsService.getById(id).subscribe({
       next: (lesson: LessonResponseDto) => {
         this.form.patchValue({
-          name: lesson.name,
+          courseId: lesson.courseId,
           subject: lesson.subject,
           lessonDate: {
             hebrewYear: lesson.hebrewYear,
             hebrewMonth: lesson.hebrewMonth,
             hebrewDay: lesson.hebrewDay,
           } satisfies HebrewDateValue,
-          teacherName: lesson.teacherName,
           classIds: lesson.classes.map((c) => c.id),
         });
         this.loading = false;
@@ -283,12 +424,11 @@ export class LessonFormComponent implements OnInit {
     const formValue = this.form.value;
     const lessonDate = formValue.lessonDate as HebrewDateValue;
     const request = {
-      name: formValue.name,
+      courseId: formValue.courseId,
       subject: formValue.subject,
       hebrewYear: lessonDate.hebrewYear,
       hebrewMonth: lessonDate.hebrewMonth,
       hebrewDay: lessonDate.hebrewDay,
-      teacherName: formValue.teacherName,
       classIds: formValue.classIds,
     };
 

@@ -8,16 +8,11 @@ namespace SmartGrader.Application.UseCases.Lessons.CreateLesson
     {
         public CreateLessonCommandValidator()
         {
-            RuleFor(x => x.Dto.Name)
-                .NotEmpty().WithMessage("Name is required")
-                .MaximumLength(100);
+            RuleFor(x => x.Dto.CourseId)
+                .GreaterThan(0).WithMessage("יש לבחור קורס");
 
             RuleFor(x => x.Dto.Subject)
                 .NotEmpty().WithMessage("Subject is required")
-                .MaximumLength(100);
-
-            RuleFor(x => x.Dto.TeacherName)
-                .NotEmpty().WithMessage("TeacherName is required")
                 .MaximumLength(100);
 
             RuleFor(x => x.Dto.HebrewYear)

@@ -20,6 +20,7 @@ const ACTION_TYPE_LABELS: Record<string, string> = {
   AiGradingCompleted: "בדיקה הושלמה",
   CompilationFailed: "שגיאת קומפילציה",
   AiFailed: "כשל AI",
+  JudgeUnavailable: "תקלה במערכת הבדיקה",
   UnhandledError: "שגיאה לא צפויה",
 };
 

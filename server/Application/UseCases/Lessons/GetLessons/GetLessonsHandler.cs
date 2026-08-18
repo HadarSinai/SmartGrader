@@ -28,20 +28,25 @@ namespace SmartGrader.Application.UseCases.Lessons.GetLessons
             GetLessonsQuery request,
             CancellationToken cancellationToken)
         {
-            var classId = request.ClassId;
-
-            // תלמידה רואה רק שיעורים המשויכים לכיתה שלה
+            // ⚠️ שני מסלולים בלעדיים זה לזה, לא if-ים מחוברים בשרשרת: תלמידה רואה רק את השיעורים
+            // של הכיתה שלה, ולעולם לא מסונן לפי TeacherId — אחרת עלולה לראות אפס שיעורים אם המסנן
+            // מוחל בטעות גם כשקוראים בשם תלמידה. מורה/מנהל לעולם לא מסונן לפי כיתת תלמידה.
             if (request.StudentId.HasValue)
             {
                 var student = await _studentRepository.GetByIdAsync(request.StudentId.Value, cancellationToken);
                 if (student is null)
                     throw new NotFoundException(nameof(Student), request.StudentId.Value);
 
-                classId = student.ClassId;
+                var studentLessons = await _repository.GetAllAsync(student.ClassId, teacherId: null, cancellationToken);
+                return MapToReadOnly(studentLessons);
             }
 
-            var lessons = await _repository.GetAllAsync(classId, cancellationToken);
+            var lessons = await _repository.GetAllAsync(request.ClassId, request.TeacherId, cancellationToken);
+            return MapToReadOnly(lessons);
+        }
 
+        private IReadOnlyList<LessonResponseDto> MapToReadOnly(IReadOnlyList<Lesson> lessons)
+        {
             // ✅ אם אין שיעורים – מחזירים אוסף ריק, לא null
             if (lessons == null || lessons.Count == 0)
                 return Array.Empty<LessonResponseDto>();

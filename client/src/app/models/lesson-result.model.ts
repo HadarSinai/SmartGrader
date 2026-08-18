@@ -18,15 +18,21 @@ export interface CompleteLessonRequestDto {
 
 export interface StudentGradeItemDto {
   lessonId: number;
-  lessonName: string;
+  subject: string;
   lessonDateHebrew: string;
   finalScore: number | null;
   isComplete: boolean;
 }
 
+export interface CourseAverageDto {
+  courseId: number;
+  courseName: string;
+  average: number | null;
+  grades: StudentGradeItemDto[];
+}
+
 export interface StudentGradesSummaryDto {
   studentId: number;
   studentName: string;
-  average: number | null;
-  grades: StudentGradeItemDto[];
+  courses: CourseAverageDto[];
 }

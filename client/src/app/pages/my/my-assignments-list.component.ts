@@ -52,7 +52,9 @@ interface MyAssignmentRow {
               </a>
               <div class="sg-title mt-2">
                 <div class="sg-h1">
-                  התרגילים שלי{{ lesson?.name ? " — " + lesson!.name : "" }}
+                  התרגילים שלי{{
+                    lesson?.courseName ? " — " + lesson!.courseName : ""
+                  }}
                 </div>
                 <div class="sg-h2">הסטטוס האישי שלך בכל תרגיל בשיעור זה</div>
               </div>
@@ -272,6 +274,15 @@ export class MyAssignmentsListComponent implements OnInit {
           statusLabel: label,
           statusSeverity: "danger",
           statusIcon: "pi pi-exclamation-triangle",
+        };
+      // תקלת תשתית — ענבר ולא אדום: לא אשמת התלמיד
+      case "JudgeUnavailable":
+        return {
+          assignment,
+          submission,
+          statusLabel: label,
+          statusSeverity: "warning",
+          statusIcon: "pi pi-exclamation-circle",
         };
       default:
         return {

@@ -56,7 +56,7 @@ import { SubmissionsService } from "@services/submissions.service";
                 <div class="sg-h1">הגשת קוד</div>
                 <div class="sg-h2" *ngIf="assignment">
                   {{ assignment.title }}
-                  <span *ngIf="assignment.methodName">
+                  <span *ngIf="showMethodName">
                     · שם המתודה:
                     <code dir="ltr">{{ assignment.methodName }}</code>
                   </span>
@@ -105,7 +105,7 @@ import { SubmissionsService } from "@services/submissions.service";
               >
                 <div class="sg-example-test">
                   <div>
-                    <strong>קלט:</strong>
+                    <strong>{{ inputLabel }}:</strong>
                     <code dir="ltr">{{ exampleTest.input }}</code>
                   </div>
                   <div>
@@ -121,7 +121,7 @@ import { SubmissionsService } from "@services/submissions.service";
               <p-message
                 severity="info"
                 styleClass="w-full mb-2"
-                text="תרגיל זה דורש הגשה של מספר קבצים. יש להעלות קובץ לכל שורה."
+                [text]="multiFileHint"
               ></p-message>
 
               <div
@@ -225,24 +225,55 @@ export class SubmitCodeComponent implements OnInit {
   submitting = false;
   private readonly loadedFiles = new Map<string, string>();
 
-  readonly genericPlaceholder = "public int Sum(int a, int b)\n{\n    ...\n}";
-  readonly submissionHintBase =
-    "יש להגיש רק את גוף המתודה המבוקשת — בלי class, using או Main. הקוד נעטף אוטומטית בסביבת ההרצה.";
+  readonly fullProgramPlaceholder =
+    "using System;\n\nclass Program\n{\n    static void Main()\n    {\n        // כתבי כאן את התוכנית שלך: קריאת קלט עם Console.ReadLine()\n        // והדפסת התוצאה עם Console.WriteLine()\n    }\n}";
+  readonly methodPlaceholder = "public int Sum(int a, int b)\n{\n    ...\n}";
 
   get backLink(): (string | number)[] {
     return ["/my", "lessons", this.lessonId, "assignments"];
   }
 
+  /** כל ההנחיות למטה נגזרות מ-gradingMode, כך שהתלמיד תמיד יודע איזו צורת קוד מצופה ממנו. */
+  get gradingMode(): string {
+    return this.assignment?.gradingMode ?? "Method";
+  }
+
+  get showMethodName(): boolean {
+    return this.gradingMode !== "FullProgram" && !!this.assignment?.methodName;
+  }
+
   get computedPlaceholder(): string {
+    if (this.gradingMode === "FullProgram") return this.fullProgramPlaceholder;
     const methodName = this.assignment?.methodName;
-    if (!methodName) return this.genericPlaceholder;
+    if (!methodName) return this.methodPlaceholder;
     return `public int ${methodName}(...)\n{\n    ...\n}`;
   }
 
   get submissionHint(): string {
+    if (this.gradingMode === "FullProgram") {
+      return "יש להגיש תוכנית שלמה — כולל using, class ו-Main. התוכנית קוראת קלט עם Console.ReadLine() ומדפיסה את הפלט עם Console.WriteLine().";
+    }
     const methodName = this.assignment?.methodName;
-    if (!methodName) return this.submissionHintBase;
+    if (!methodName) {
+      return "יש להגיש רק את גוף המתודה המבוקשת — בלי class, using או Main. הקוד נעטף אוטומטית בסביבת ההרצה.";
+    }
     return `יש להגיש רק את גוף המתודה "${methodName}" — בלי class, using או Main. הקוד נעטף אוטומטית בסביבת ההרצה.`;
+  }
+
+  get multiFileHint(): string {
+    if (this.gradingMode === "FullProgram") {
+      return "תרגיל זה דורש הגשה של מספר קבצים. יש להעלות קובץ לכל שורה — התוכנית תורץ כמו שהיא, עם ה-Main שכתבת.";
+    }
+    const entryMethod = this.assignment?.expectedFiles?.find(
+      (f) => f.methodName,
+    )?.methodName;
+    return entryMethod
+      ? `תרגיל זה דורש הגשה של מספר קבצים. יש להעלות קובץ לכל שורה — הבדיקה תקרא למתודה "${entryMethod}".`
+      : "תרגיל זה דורש הגשה של מספר קבצים. יש להעלות קובץ לכל שורה.";
+  }
+
+  get inputLabel(): string {
+    return this.gradingMode === "FullProgram" ? "קלט (stdin)" : "קלט";
   }
 
   get exampleTest(): TestCaseDto | null {

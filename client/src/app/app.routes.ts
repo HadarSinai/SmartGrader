@@ -11,6 +11,8 @@ import { AssignmentFormComponent } from "./pages/assignments/assignment-form.com
 import { AssignmentsListComponent } from "./pages/assignments/assignments-list.component";
 import { ClassFormComponent } from "./pages/classes/class-form.component";
 import { ClassesListComponent } from "./pages/classes/classes-list.component";
+import { CourseFormComponent } from "./pages/courses/course-form.component";
+import { CoursesListComponent } from "./pages/courses/courses-list.component";
 import { LoginComponent } from "./pages/auth/login.component";
 import { RegisterComponent } from "./pages/auth/register.component";
 import { DashboardComponent } from "./pages/dashboard/dashboard.component";
@@ -62,6 +64,21 @@ export const routes: Routes = [
       {
         path: "classes/:id/edit",
         component: ClassFormComponent,
+        canActivate: [teacherGuard],
+      },
+      {
+        path: "courses",
+        component: CoursesListComponent,
+        canActivate: [teacherGuard],
+      },
+      {
+        path: "courses/new",
+        component: CourseFormComponent,
+        canActivate: [teacherGuard],
+      },
+      {
+        path: "courses/:id/edit",
+        component: CourseFormComponent,
         canActivate: [teacherGuard],
       },
       // Forms

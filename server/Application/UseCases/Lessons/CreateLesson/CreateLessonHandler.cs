@@ -12,17 +12,20 @@ namespace SmartGrader.Application.UseCases.Lessons.CreateLesson
     {
         private readonly ILessonRepository _repository;
         private readonly ISchoolClassRepository _classRepository;
+        private readonly ICourseRepository _courseRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
         public CreateLessonHandler(
             ILessonRepository repository,
             ISchoolClassRepository classRepository,
+            ICourseRepository courseRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper)
         {
             _repository = repository;
             _classRepository = classRepository;
+            _courseRepository = courseRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
@@ -34,7 +37,12 @@ namespace SmartGrader.Application.UseCases.Lessons.CreateLesson
             var classes = await ResolveActiveClassesAsync(
                 _classRepository, request.Dto.ClassIds, cancellationToken);
 
+            var course = await _courseRepository.GetByIdAsync(request.Dto.CourseId, cancellationToken);
+            if (course is null || course.TeacherId != request.TeacherId)
+                throw new NotFoundException(nameof(Course), request.Dto.CourseId);
+
             var lesson = _mapper.Map<Lesson>(request.Dto);
+            lesson.TeacherId = request.TeacherId;
             foreach (var schoolClass in classes)
                 lesson.Classes.Add(schoolClass);
 

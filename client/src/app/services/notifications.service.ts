@@ -29,7 +29,7 @@ export class NotificationsService {
   ) {}
 
   start(): void {
-    if (this.isStarted || (!this.auth.isTeacher() && !this.auth.isAdmin())) {
+    if (this.isStarted || !this.auth.isLoggedIn()) {
       return;
     }
     this.isStarted = true;

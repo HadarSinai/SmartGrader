@@ -9,7 +9,8 @@ namespace SmartGrader.Domain.Entities
         ProcessingAi = 1,
         Done = 2,
         AiFailed = 3,
-        CompilationFailed = 4
+        CompilationFailed = 4,
+        JudgeUnavailable = 5
     }
 
     public class Submission
@@ -110,16 +111,27 @@ namespace SmartGrader.Domain.Entities
             SourceFiles = sourceFiles ?? new List<SubmissionFile>();
         }
 
+        public void UpdateSourceCode(string sourceCode, List<SubmissionFile>? sourceFiles = null)
+        {
+            SourceCode = sourceCode;
+            if (sourceFiles is not null)
+                SourceFiles = sourceFiles;
+        }
+
         public void MarkPendingAi()
         {
-            if (Status != SubmissionStatus.AiFailed)
+            if (Status != SubmissionStatus.AiFailed
+                && Status != SubmissionStatus.CompilationFailed
+                && Status != SubmissionStatus.JudgeUnavailable)
                 throw new InvalidOperationException(
                     $"Cannot move to PendingAi from {Status}");
 
             Status = SubmissionStatus.PendingAi;
             AiError = null;
+            CompileError = null;
             Score = null;
             FeedbackJson = null;
+            TestResults = new List<TestCaseResult>();
         }
 
         public void MarkProcessingAi()
@@ -161,6 +173,17 @@ namespace SmartGrader.Domain.Entities
 
             Status = SubmissionStatus.CompilationFailed;
             CompileError = error;
+        }
+
+        // כשל תשתית (Judge0 לא זמין / timeout / רשת) — נבדל מכשל קומפילציה ומכשל AI
+        public void MarkJudgeUnavailable(string error)
+        {
+            if (Status != SubmissionStatus.PendingAi && Status != SubmissionStatus.ProcessingAi)
+                throw new InvalidOperationException(
+                    $"Cannot mark JudgeUnavailable from {Status}");
+
+            Status = SubmissionStatus.JudgeUnavailable;
+            AiError = error;
         }
 
     }

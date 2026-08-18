@@ -6,6 +6,7 @@ import { ButtonModule } from "primeng/button";
 import { ToolbarModule } from "primeng/toolbar";
 import { TooltipModule } from "primeng/tooltip";
 import { AuthService } from "../../services/auth.service";
+import { NotificationsBellComponent } from "./notifications-bell.component";
 
 @Component({
   selector: "app-student-layout",
@@ -17,6 +18,7 @@ import { AuthService } from "../../services/auth.service";
     AvatarModule,
     ToolbarModule,
     TooltipModule,
+    NotificationsBellComponent,
   ],
   template: `
     <div class="sg-shell min-h-screen relative overflow-x-hidden">
@@ -53,6 +55,7 @@ import { AuthService } from "../../services/auth.service";
             </div>
 
             <div class="p-toolbar-group-left flex align-items-center gap-2">
+              <app-notifications-bell></app-notifications-bell>
               <p-avatar
                 [label]="avatarInitial()"
                 shape="circle"

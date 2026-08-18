@@ -3,10 +3,12 @@
     public class Lesson
     {
         public int Id { get; private set; }
-        public string Name { get; set; }
         public string Subject { get; set; }
         public DateTime LessonDate { get; set; }
-        public string TeacherName { get; set; }
+        public int TeacherId { get; set; }
+        public User Teacher { get; set; } = null!;
+        public int CourseId { get; set; }
+        public Course Course { get; set; } = null!;
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         protected   Lesson() { }
 

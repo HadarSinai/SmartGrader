@@ -36,6 +36,7 @@ namespace SmartGrader.Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ILogRepository, LogRepository>();
             services.AddScoped<ISchoolClassRepository, SchoolClassRepository>();
+            services.AddScoped<ICourseRepository, CourseRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             //  services.AddSingleton<ICompilerService, RoslynCompilerService>();
 
@@ -53,7 +54,11 @@ namespace SmartGrader.Infrastructure
             services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
             services.AddSingleton<IEmailSender, SmtpEmailSender>();
 
-            services.AddHttpClient<ICodeRunnerService, Judge0CodeRunner>();
+            var judge0Options = configuration.GetSection("Judge0").Get<Judge0Options>() ?? new Judge0Options();
+            services.AddHttpClient<ICodeRunnerService, Judge0CodeRunner>(c =>
+            {
+                c.Timeout = TimeSpan.FromSeconds(judge0Options.HttpTimeoutSeconds);
+            });
             services.Configure<Judge0Options>(configuration.GetSection("Judge0"));
 
             services.AddHangfire(config => config

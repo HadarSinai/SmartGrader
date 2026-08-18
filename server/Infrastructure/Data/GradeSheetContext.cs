@@ -14,6 +14,7 @@ namespace SmartGrader.Infrastructure.Data
         public DbSet<Log> Logs { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<SchoolClass> SchoolClasses { get; set; }
+        public DbSet<Course> Courses { get; set; }
 
         public GradeSheetContext(DbContextOptions<GradeSheetContext> options)
             : base(options)
@@ -38,6 +39,10 @@ namespace SmartGrader.Infrastructure.Data
                 .HasMany(a => a.Submissions)
                 .WithOne(s => s.Assignment)
                 .HasForeignKey(s => s.AssignmentId);
+
+            modelBuilder.Entity<Assignment>()
+                .Property(a => a.GradingMode)
+                .HasConversion<string>();
 
             modelBuilder.Entity<Student>()
                 .HasMany(s => s.LessonResults)
@@ -81,6 +86,19 @@ namespace SmartGrader.Infrastructure.Data
                 .WithMany(c => c.Lessons)
                 .UsingEntity(j => j.ToTable("LessonSchoolClasses"));
 
+            // בעלות מורה על שיעור + קורס — Restrict בכוונה: cascade היה מוחק Assignments → Submissions → עבודת תלמידים
+            modelBuilder.Entity<Lesson>().HasOne(l => l.Teacher).WithMany()
+                .HasForeignKey(l => l.TeacherId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Lesson>().HasOne(l => l.Course).WithMany(c => c.Lessons)
+                .HasForeignKey(l => l.CourseId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Course>(c =>
+            {
+                c.Property(x => x.Name).IsRequired().HasMaxLength(100);
+                c.HasOne(x => x.Teacher).WithMany().HasForeignKey(x => x.TeacherId).OnDelete(DeleteBehavior.Restrict);
+                c.HasIndex(x => new { x.TeacherId, x.Name }).IsUnique();
+            });
+            modelBuilder.Entity<Lesson>().HasIndex(l => l.TeacherId);
+            modelBuilder.Entity<Lesson>().HasIndex(l => l.CourseId);
         }
 
     }

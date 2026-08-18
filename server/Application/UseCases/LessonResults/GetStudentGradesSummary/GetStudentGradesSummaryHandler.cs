@@ -32,34 +32,45 @@ public class GetStudentGradesSummaryHandler : IRequestHandler<GetStudentGradesSu
             throw new NotFoundException("Student", request.StudentId);
 
         var results = await _lessonResultRepo.GetByStudentIdAsync(request.StudentId, ct);
-        var lessons = await _lessonRepo.GetAllAsync(ct);
+        var lessons = await _lessonRepo.GetAllAsync(classId: null, request.TeacherId, ct);
         var lessonsById = lessons.ToDictionary(l => l.Id);
 
-        var grades = results
+        var courses = results
             .Where(r => lessonsById.ContainsKey(r.LessonId))
-            .Select(r =>
+            .Select(r => new { Result = r, Lesson = lessonsById[r.LessonId] })
+            .GroupBy(x => x.Lesson.CourseId)
+            .Select(g =>
             {
-                var lesson = lessonsById[r.LessonId];
-                return new StudentGradeItemDto
+                var grades = g
+                    .Select(x => new StudentGradeItemDto
+                    {
+                        LessonId = x.Lesson.Id,
+                        Subject = x.Lesson.Subject,
+                        LessonDateHebrew = HebrewDateConverter.ToHebrewString(x.Lesson.LessonDate),
+                        FinalScore = x.Result.FinalScore,
+                        IsComplete = x.Result.IsComplete
+                    })
+                    .OrderBy(item => lessonsById[item.LessonId].LessonDate)
+                    .ToList();
+
+                var scores = grades.Where(gr => gr.FinalScore is not null).Select(gr => gr.FinalScore!.Value).ToList();
+
+                return new CourseAverageDto
                 {
-                    LessonId = lesson.Id,
-                    LessonName = lesson.Name,
-                    LessonDateHebrew = HebrewDateConverter.ToHebrewString(lesson.LessonDate),
-                    FinalScore = r.FinalScore,
-                    IsComplete = r.IsComplete
+                    CourseId = g.Key,
+                    CourseName = g.First().Lesson.Course.Name,
+                    Average = scores.Count > 0 ? Math.Round(scores.Average(), 1) : null,
+                    Grades = grades
                 };
             })
-            .OrderBy(g => lessonsById[g.LessonId].LessonDate)
+            .OrderBy(c => c.CourseName)
             .ToList();
-
-        var scores = grades.Where(g => g.FinalScore is not null).Select(g => g.FinalScore!.Value).ToList();
 
         return new StudentGradesSummaryDto
         {
             StudentId = student.Id,
             StudentName = student.FullName,
-            Average = scores.Count > 0 ? Math.Round(scores.Average(), 1) : null,
-            Grades = grades
+            Courses = courses
         };
     }
 }

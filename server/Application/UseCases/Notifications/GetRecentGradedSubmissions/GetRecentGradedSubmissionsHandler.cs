@@ -21,7 +21,7 @@ namespace SmartGrader.Application.UseCases.Notifications.GetRecentGradedSubmissi
             GetRecentGradedSubmissionsQuery request,
             CancellationToken cancellationToken)
         {
-            var items = await _repository.GetRecentGradedAsync(request.Limit, cancellationToken);
+            var items = await _repository.GetRecentGradedAsync(request.Limit, request.TeacherId, request.StudentId, cancellationToken);
             return _mapper.Map<IReadOnlyList<SubmissionResponseDto>>(items);
         }
     }

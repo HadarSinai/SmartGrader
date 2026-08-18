@@ -16,19 +16,20 @@ namespace SmartGrader.Infrastructure.Repositories
         }
 
 
-        public Task<IReadOnlyList<Lesson>> GetAllAsync(CancellationToken ct = default)
-            => GetAllAsync(classId: null, ct);
-
-        public async Task<IReadOnlyList<Lesson>> GetAllAsync(int? classId, CancellationToken ct = default)
+        public async Task<IReadOnlyList<Lesson>> GetAllAsync(int? classId, int? teacherId, CancellationToken ct = default)
         {
             var query = _context.Lessons
                 .Include(l => l.Assignments)
                 .Include(l => l.Classes)
+                .Include(l => l.Course)
                 .AsNoTracking()
                 .AsQueryable();
 
             if (classId.HasValue)
                 query = query.Where(l => l.Classes.Any(c => c.Id == classId.Value));
+
+            if (teacherId.HasValue)
+                query = query.Where(l => l.TeacherId == teacherId.Value);
 
             return await query.ToListAsync(ct);
         }
@@ -38,13 +39,21 @@ namespace SmartGrader.Infrastructure.Repositories
             return await _context.Lessons
                 .Include(l => l.Assignments)
                 .Include(l => l.Classes)
+                .Include(l => l.Course)
                 .FirstOrDefaultAsync(l => l.Id == id, ct);
         }
 
-        public async Task<IReadOnlyList<Lesson>> GetByDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default)
+        public async Task<IReadOnlyList<Lesson>> GetByDateRangeAsync(DateTime from, DateTime to, int? teacherId, CancellationToken ct = default)
         {
-            return await _context.Lessons
+            var query = _context.Lessons
                 .Where(l => l.LessonDate >= from && l.LessonDate <= to)
+                .Include(l => l.Course)
+                .AsQueryable();
+
+            if (teacherId.HasValue)
+                query = query.Where(l => l.TeacherId == teacherId.Value);
+
+            return await query
                 .OrderBy(l => l.LessonDate)
                 .AsNoTracking()
                 .ToListAsync(ct);
