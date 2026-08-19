@@ -160,8 +160,12 @@ public class AiWorker : IGradeSubmissionJob
 
             // הציון עדיין מחושב מתוצאות הטסטים (לא הציון העצמי של ה-AI) — זהו פער ידוע
             // שמוזכר כאן במפורש כנקודת החלטה עתידית, לא כשינוי בשלב הנוכחי.
+            // מעוגל לספרה אחת אחרי הנקודה: 2 מתוך 3 נותן 66.66666666666666, והערך הגולמי הזה
+            // הוצג כמו שהוא בשישה מסכים שונים.
             submission.MarkDone(
-                score: runnerResult.Total > 0 ? (double)runnerResult.Passed / runnerResult.Total * 100 : 0,
+                score: runnerResult.Total > 0
+                    ? Math.Round((double)runnerResult.Passed / runnerResult.Total * 100, 1)
+                    : 0,
                 feedbackJson: JsonSerializer.Serialize(aiFeedback));
 
             await _uow.SaveChangesAsync(ct);

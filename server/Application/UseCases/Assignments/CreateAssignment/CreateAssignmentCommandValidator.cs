@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using SmartGrader.Application.Common.Validation;
 using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.UseCases.Assignments.CreateAssignment
@@ -18,6 +19,11 @@ namespace SmartGrader.Application.UseCases.Assignments.CreateAssignment
             RuleFor(x => x.Dto.BonusValue)
                 .GreaterThanOrEqualTo(0)
                 .When(x => x.Dto.IsBonus);
+
+            // תרגיל שאין במה לנקד אותו — ר' AssignmentGradeability
+            RuleFor(x => x.Dto.Tests)
+                .Must(AssignmentGradeability.IsGradeable)
+                .WithMessage(AssignmentGradeability.Message);
 
             RuleFor(x => x.Dto.GradingMode)
                 .NotEmpty().WithMessage("GradingMode is required")

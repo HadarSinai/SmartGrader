@@ -26,6 +26,8 @@ export interface TestCaseResultDto {
   actual: string;
   passed: boolean;
   error: string | null;
+  /** "Wrong Answer" מול "Runtime Error (SIGSEGV)" — מבדיל תשובה שגויה מקריסה. */
+  statusDescription: string | null;
   /** נשמר בזמן הבדיקה. false = מקרה מוסתר. */
   isSample: boolean;
   /**

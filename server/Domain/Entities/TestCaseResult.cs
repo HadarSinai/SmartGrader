@@ -9,6 +9,9 @@ namespace SmartGrader.Domain.Entities
         string Actual,
         bool Passed,
         string? Error,
-        bool IsSample = false
+        bool IsSample = false,
+        // תיאור הסטטוס מ-Judge0 ("Wrong Answer" מול "Runtime Error (SIGSEGV)"). בלעדיו תשובה
+        // שגויה וקריסה נראו זהות לגמרי במסך — שתיהן סתם "נכשל".
+        string? StatusDescription = null
     );
 }

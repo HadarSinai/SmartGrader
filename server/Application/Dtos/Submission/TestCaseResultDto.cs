@@ -8,6 +8,9 @@ namespace SmartGrader.Application.Dtos.Submissions
         public bool Passed { get; set; }
         public string? Error { get; set; }
 
+        /// <summary>"Wrong Answer" מול "Runtime Error (SIGSEGV)" — מבדיל תשובה שגויה מקריסה.</summary>
+        public string? StatusDescription { get; set; }
+
         /// <summary>נשמר על התוצאה בזמן הבדיקה — ר' TestCaseResult. false = מקרה מוסתר.</summary>
         public bool IsSample { get; set; }
 

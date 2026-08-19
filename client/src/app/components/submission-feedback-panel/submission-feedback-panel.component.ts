@@ -6,7 +6,10 @@ import { TableModule } from "primeng/table";
 import { TabViewModule } from "primeng/tabview";
 import { TagModule } from "primeng/tag";
 
-import { SubmissionResponseDto } from "@models/submission.model";
+import {
+  SubmissionResponseDto,
+  TestCaseResultDto,
+} from "@models/submission.model";
 
 // מרכז את כל תצוגת המשוב המובנה (ציונים, קטגוריות, טסטים) במקום אחד, כדי שהלוגיקה
 // לא תוכפל בין מסך הסטודנט (my-feedback) למסך המורה (submission-detail).
@@ -66,18 +69,18 @@ import { SubmissionResponseDto } from "@models/submission.model";
               <li *ngFor="let item of feedback.good">{{ item }}</li>
             </ul>
           </p-tabPanel>
-          <p-tabPanel [header]="'נכונות' + countSuffix(feedback.issues?.correctness)">
-            <ul *ngIf="feedback.issues?.correctness?.length; else emptyList" class="sg-feedback-list">
+          <p-tabPanel [header]="'נכונות' + countSuffix(feedback.issues.correctness)">
+            <ul *ngIf="feedback.issues.correctness?.length; else emptyList" class="sg-feedback-list">
               <li *ngFor="let item of feedback.issues.correctness">{{ item }}</li>
             </ul>
           </p-tabPanel>
-          <p-tabPanel [header]="'קריאות' + countSuffix(feedback.issues?.readability)">
-            <ul *ngIf="feedback.issues?.readability?.length; else emptyList" class="sg-feedback-list">
+          <p-tabPanel [header]="'קריאות' + countSuffix(feedback.issues.readability)">
+            <ul *ngIf="feedback.issues.readability?.length; else emptyList" class="sg-feedback-list">
               <li *ngFor="let item of feedback.issues.readability">{{ item }}</li>
             </ul>
           </p-tabPanel>
-          <p-tabPanel [header]="'יעילות' + countSuffix(feedback.issues?.performance)">
-            <ul *ngIf="feedback.issues?.performance?.length; else emptyList" class="sg-feedback-list">
+          <p-tabPanel [header]="'יעילות' + countSuffix(feedback.issues.performance)">
+            <ul *ngIf="feedback.issues.performance?.length; else emptyList" class="sg-feedback-list">
               <li *ngFor="let item of feedback.issues.performance">{{ item }}</li>
             </ul>
           </p-tabPanel>
@@ -181,6 +184,14 @@ import { SubmissionResponseDto } from "@models/submission.model";
                 [value]="test.passed ? 'עבר' : 'נכשל'"
                 [icon]="test.passed ? 'pi pi-check' : 'pi pi-times'"
               ></p-tag>
+              <!-- מבדיל תשובה שגויה מקריסה: "נכשל" לבדו לא אומר אם הקוד רץ בכלל -->
+              <div
+                *ngIf="!test.passed && failureReason(test)"
+                class="sg-failure-reason"
+                dir="ltr"
+              >
+                {{ failureReason(test) }}
+              </div>
             </td>
           </tr>
           <tr *ngIf="!test.isHidden && expandedRows[i]">
@@ -335,6 +346,12 @@ import { SubmissionResponseDto } from "@models/submission.model";
         padding: 0.25rem;
       }
 
+      .sg-failure-reason {
+        margin-top: var(--space-1);
+        font-size: var(--text-sm);
+        color: var(--status-error-ink);
+      }
+
       .sg-hidden-test {
         color: var(--app-muted);
         font-style: italic;
@@ -387,6 +404,16 @@ export class SubmissionFeedbackPanelComponent {
   countSuffix(items: unknown[] | null | undefined): string {
     const count = items?.length ?? 0;
     return count > 0 ? ` (${count})` : "";
+  }
+
+  /**
+   * "Wrong Answer" הוא בדיוק מה שהתג כבר אומר — מוצג רק סטטוס שמוסיף מידע, כלומר קריסה
+   * או חריגת זמן.
+   */
+  failureReason(test: TestCaseResultDto): string | null {
+    const status = test.statusDescription;
+    if (!status || status === "Wrong Answer" || status === "Accepted") return null;
+    return status;
   }
 
   toggleRow(index: number): void {

@@ -350,12 +350,14 @@ import { SelectButtonModule } from "primeng/selectbutton";
                     </div>
                   </div>
 
+                  <!-- ⚠️ לא "מומלץ" אלא חובה: תרגיל בלי מקרי בדיקה נותן 0 לכל התלמידות -->
                   <div
                     *ngIf="tests.length === 0"
-                    class="text-color-secondary p-3 border-1 border-round-xl"
+                    class="p-error p-3 border-1 border-round-xl"
                     style="border-color: var(--app-border);"
                   >
-                    עדיין אין מקרי בדיקה. מומלץ להוסיף לפחות אחד.
+                    חובה להוסיף לפחות מקרה בדיקה אחד — בלעדיו אי אפשר לנקד את התרגיל
+                    וכל התלמידות יקבלו 0.
                   </div>
                 </div>
               </div>
@@ -425,13 +427,17 @@ export class AssignmentFormComponent implements OnInit {
       value: value as GradingMode,
     }));
 
+  // ⚠️ מי מדפיס — זו ההבחנה שקובעת את הבחירה, והיא הייתה חסרה כאן לגמרי. במצב "מתודה בודדת"
+  // העטיפה מדפיסה את הערך המוחזר; אם התלמידה מדפיסה גם היא, ב-stdout יש שתי שורות והבדיקה
+  // נכשלת למרות שהלוגיקה נכונה. לתרגיל מסוג "קלטי מספר והדפיסי את הסכום" המצב הנכון הוא
+  // "תוכנית שלמה" — שם התלמידה היא זו שמדפיסה.
   readonly gradingModeDescriptions: Record<GradingMode, string> = {
     FullProgram:
-      "התלמיד מגיש תוכנית שלמה כולל using/class/Main משלו. מתאים לתחילת הקורס (לולאות, מערכים, מטריצות).",
+      'תוכנית שלמה כולל using/class/Main. התלמידה קוראת את הקלט ומדפיסה את הפלט בעצמה. זה המצב הנכון לתרגיל מסוג "קלטי מספר והדפיסי את הסכום", וגם לתחילת הקורס (לולאות, מערכים, מטריצות).',
     Method:
-      "התלמיד מגיש רק גוף מתודה בודדת, בלי class/using/Main — הקוד נעטף אוטומטית בסביבת ההרצה.",
+      'רק גוף מתודה בודדת, בלי class/using/Main. המערכת קוראת למתודה ומדפיסה את הערך המוחזר — התלמידה לא מדפיסה בעצמה. זה המצב הנכון לתרגיל מסוג "כתבי מתודה שמחזירה את הסכום".',
     MultiFileMethod:
-      "התלמיד מגיש כמה קבצים (למשל מחלקות), ונבדקת קריאה למתודת כניסה מוגדרת — בלי Main של התלמיד.",
+      "כמה קבצים (למשל מחלקות), ונבדקת קריאה למתודת כניסה מוגדרת — בלי Main של התלמידה. גם כאן המערכת מדפיסה את הערך המוחזר.",
   };
 
   constructor() {
@@ -442,7 +448,9 @@ export class AssignmentFormComponent implements OnInit {
       gradingMode: ["FullProgram" as GradingMode, Validators.required],
       isBonus: [false],
       bonusValue: [0],
-      tests: this.fb.array([]),
+      // מקרה בדיקה אחד לפחות — אותו כלל בדיוק שנאכף בשרת (AssignmentGradeability),
+      // כאן רק כדי שהמורה תראה את זה לפני השמירה ולא כשגיאת 400
+      tests: this.fb.array([], Validators.required),
       expectedFiles: this.fb.array([]),
     });
 
@@ -573,7 +581,25 @@ export class AssignmentFormComponent implements OnInit {
   }
 
   removeTestCase(index: number): void {
-    this.tests.removeAt(index);
+    // מחיקת מקרה מלא היא איבוד עבודה אמיתי — עד עכשיו שורה נמחקה בלחיצה אחת בלי אזהרה,
+    // ו-PUT עם רשימה ריקה מחק בשקט את כל מקרי הבדיקה של התרגיל.
+    const group = this.tests.at(index);
+    const hasContent =
+      !!group?.get("input")?.value || !!group?.get("expected")?.value;
+
+    if (!hasContent) {
+      this.tests.removeAt(index);
+      return;
+    }
+
+    this.confirmationService.confirm({
+      message: `האם למחוק את מקרה בדיקה ${index + 1}? לא ניתן לשחזר פעולה זו.`,
+      header: "אישור מחיקה",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "מחיקה",
+      rejectLabel: "ביטול",
+      accept: () => this.tests.removeAt(index),
+    });
   }
 
   createExpectedFileGroup(file?: ExpectedFileDto): FormGroup {

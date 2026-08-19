@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using SmartGrader.Application.Common.Validation;
 using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.UseCases.Assignments.UpdateAssignment
@@ -21,6 +22,12 @@ namespace SmartGrader.Application.UseCases.Assignments.UpdateAssignment
                 .GreaterThanOrEqualTo(0)
                 .When(x => x.Dto.IsBonus)
                 .WithMessage("BonusValue must be 0 or greater when IsBonus is true.");
+
+            // ⚠️ גם בעדכון, לא רק ביצירה: PUT עם tests ריק מחק עד עכשיו את כל מקרי הבדיקה
+            // בשקט והפך תרגיל קיים ללא-ניתן-לניקוד. ר' AssignmentGradeability
+            RuleFor(x => x.Dto.Tests)
+                .Must(AssignmentGradeability.IsGradeable)
+                .WithMessage(AssignmentGradeability.Message);
 
             RuleFor(x => x.Dto.GradingMode)
                 .NotEmpty().WithMessage("GradingMode is required")

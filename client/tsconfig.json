@@ -22,6 +22,11 @@
       "@environments/*": ["./src/environments/*"]
     }
   },
+  "angularCompilerOptions": {
+    // ⚠️ בלי strictTemplates התבניות לא נבדקות מול הטיפוסים כלל — בדיוק בגלל זה דיאלוג
+    // "ציונים סופיים" נבנה בהצלחה שנים בזמן שהוא קרא שדות שאינם קיימים על ה-DTO והציג מסך ריק.
+    "strictTemplates": true
+  },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
 }

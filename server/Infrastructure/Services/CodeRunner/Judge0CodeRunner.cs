@@ -83,6 +83,10 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
         CancellationToken ct = default)
     {
         // בלי עטיפה בכלל — הקבצים ממוזגים (usings מורמים לראש, ר' MergeFiles) ורצים כמו שהם.
+        // ⚠️ מגבלה ידועה: זהו המסלול היחיד שבו ה-Main הוא של התלמידה, ולכן אי אפשר לכפות בו
+        // CultureInfo.InvariantCulture כמו בשני המסלולים העטופים. בפועל קונטיינר בלי LANG רץ
+        // ממילא בתרבות אינווריאנטית; אם הקונטיינר יוגדר עם locale בעל פסיק עשרוני, מקרי בדיקה
+        // עם שברים עשרוניים במצב זה עלולים להיכשל על קוד תקין.
         string mergedSource = MergeFiles(sourceFiles.Select(f => f.Content));
         return await RunTestsAsync(mergedSource, tests, ct);
     }
@@ -101,12 +105,14 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
         {
             // Judge0 (RapidAPI) דוחה עם 400 כל שדה שמכיל תווים שאינם ASCII-ניתן-לייצוג
             // (כולל עברית — נפוץ מאוד כאן) אלא אם הוא מקודד ב-Base64 ומצוין base64_encoded=true.
+            // ⚠️ expected_output לא נשלח בכוונה: ההשוואה נעשית כאן, אחרי נרמול של *שני* הצדדים
+            // (ר' NormalizeOutput). כשההשוואה נעשתה ב-Judge0 מול הערך הגולמי מהטופס, רווח אחד
+            // בסוף שורה או CRLF שהודבק מ-Word הפילו את כל הכיתה על קוד תקין לחלוטין.
             var requestBody = new
             {
                 source_code = EncodeBase64(wrappedSource),
                 language_id = _options.LanguageId,
                 stdin = EncodeBase64(test.Input),
-                expected_output = EncodeBase64(test.Expected),
                 cpu_time_limit = _options.TimeoutSeconds
             };
 
@@ -135,7 +141,8 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Actual: "",
                     Passed: false,
                     Error: "No response from Judge0",
-                    IsSample: test.IsSample));
+                    IsSample: test.IsSample,
+                    StatusDescription: "No response from Judge0"));
                 continue;
             }
 
@@ -170,31 +177,41 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Actual: "",
                     Passed: false,
                     Error: "Time Limit Exceeded",
-                    IsSample: test.IsSample));
+                    IsSample: test.IsSample,
+                    StatusDescription: result.Status?.Description ?? "Time Limit Exceeded"));
                 continue;
             }
 
-            // Accepted
+            // Status 3 = ההרצה הסתיימה בהצלחה. בלי expected_output זה כל מה שהסטטוס אומר —
+            // הנכונות נקבעת כאן, בהשוואה מנורמלת.
+            var actual = stdout ?? "";
+
             if (result.Status?.Id == 3)
             {
-                passed++;
+                bool isCorrect = NormalizeOutput(actual) == NormalizeOutput(test.Expected);
+                if (isCorrect) passed++;
+
                 details.Add(new TestCaseResult(
                     Input: test.Input,
                     Expected: test.Expected,
-                    Actual: stdout?.TrimEnd() ?? "",
-                    Passed: true,
+                    Actual: actual.TrimEnd(),
+                    Passed: isCorrect,
                     Error: null,
-                    IsSample: test.IsSample));
+                    IsSample: test.IsSample,
+                    StatusDescription: isCorrect ? "Accepted" : "Wrong Answer"));
             }
             else
             {
+                // שגיאת ריצה (חלוקה באפס, חריגה ממערך, NZEC וכו') — הסטטוס מבדיל אותה
+                // מתשובה שגויה, וזה בדיוק המידע שהיה נזרק עד עכשיו
                 details.Add(new TestCaseResult(
                     Input: test.Input,
                     Expected: test.Expected,
-                    Actual: stdout?.TrimEnd() ?? "",
+                    Actual: actual.TrimEnd(),
                     Passed: false,
                     Error: stderr ?? compileOutput,
-                    IsSample: test.IsSample));
+                    IsSample: test.IsSample,
+                    StatusDescription: result.Status?.Description));
             }
         }
 
@@ -204,6 +221,36 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
             HasCompileError: false,
             CompileError: null,
             Details: details);
+    }
+
+    /// <summary>
+    /// מנרמל פלט לפני השוואה — על <b>שני</b> הצדדים, גם על הפלט של התלמידה וגם על הפלט הצפוי
+    /// שהמורה הקלידה בטופס.
+    /// <list type="bullet">
+    /// <item>CRLF → LF: פלט צפוי שהודבק מ-Word נכשל אחרת מול פלט של קונטיינר לינוקס.</item>
+    /// <item>חיתוך רווחים בסוף <b>כל שורה</b>, לא רק בסוף הפלט: זה הסעיף הקריטי לתרגילי מטריצה —
+    /// <c>Console.Write(m[i,j] + " ")</c> הוא הדרך המקובלת להדפיס מטריצה, ומשאיר רווח בלתי נראה
+    /// בסוף כל שורה שהיה מפיל קוד נכון לחלוטין.</item>
+    /// <item>השמטת שורות ריקות בסוף.</item>
+    /// </list>
+    /// רווחים בתוך השורה נשמרים — הם משמעותיים (למשל ההפרדה בין תאי המטריצה עצמם).
+    /// </summary>
+    private static string NormalizeOutput(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "";
+
+        var lines = value
+            .Replace("\r\n", "\n")
+            .Replace("\r", "\n")
+            .Split('\n')
+            .Select(line => line.TrimEnd())
+            .ToList();
+
+        while (lines.Count > 0 && lines[^1].Length == 0)
+            lines.RemoveAt(lines.Count - 1);
+
+        return string.Join("\n", lines);
     }
 
     // ── Base64 עבור Judge0 (RapidAPI דוחה תווים לא-ASCII, כמו עברית, ללא base64_encoded=true) ──
@@ -232,23 +279,54 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
         string methodName,
         IReadOnlyList<(string Type, string Name)> parameters)
     {
+        // ⚠️ הקוד של התלמידה עובר דרך MergeFiles ולא מודבק גולמי לתוך ה-class: כל שיעור C#
+        // נפתח ב-using System;, התלמידות כותבות אותו מתוך הרגל, ו-using בתוך גוף מחלקה הוא
+        // CS1529 — שגיאת קומפילציה שאין לה שום קשר לתרגיל. MergeFiles מרים את שורות ה-using
+        // לראש (עם dedupe) ומשאיר רק את הגוף, בדיוק כמו בשני המסלולים האחרים.
+        var merged = MergeFiles(new[] { "using System;\nusing System.Globalization;\nusing System.Linq;", sourceCode });
+        var (usings, body) = SplitUsingsAndBody(merged);
+
         return $@"
-using System;
-using System.Linq;
+{usings}
 public static class StudentSolution
 {{
-    {sourceCode}
+    {body}
 }}
 public class Program
 {{
     public static void Main(string[] args)
     {{
+{InvariantCultureSetup}
         // תואם Mono (language_id 51). כשעוברים ל-.NET מודרני ניתן להחזיר ל-Console.ReadLine()!.Split
-        var parts = (Console.ReadLine() ?? """").Split(' ');
+        // RemoveEmptyEntries: רווח כפול בשדה ""קלט"" של המורה נתן [""3"", """", ""5""],
+        // ו-int.Parse("""") זרק שגיאת ריצה שנראתה כמו באג בקוד של התלמידה.
+        var parts = (Console.ReadLine() ?? """").Split(new[] {{ ' ' }}, StringSplitOptions.RemoveEmptyEntries);
         var result = StudentSolution.{methodName}({BuildArgs(parameters)});
         Console.WriteLine(result);
     }}
 }}";
+    }
+
+    /// <summary>
+    /// כופה תרבות אינווריאנטית על ההרצה כולה. בלי זה <c>Console.WriteLine(3.14)</c> ו-
+    /// <c>double.Parse</c> מסתמכים על ה-locale של הקונטיינר: על locale עם פסיק עשרוני התוכנית
+    /// מדפיסה <c>3,14</c> מול פלט צפוי <c>3.14</c>, וכל מקרה בדיקה עם שבר עשרוני נכשל בלי קשר לקוד.
+    /// </summary>
+    private const string InvariantCultureSetup =
+        "        System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;\n" +
+        "        System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;";
+
+    /// <summary>
+    /// מפצל פלט של <see cref="MergeFiles"/> לשורות ה-using שבראשו ולשאר הגוף — נחוץ רק למסלול
+    /// שבו הגוף חייב להיכנס לתוך class בעוד ה-usings חייבים להישאר מחוצה לו.
+    /// </summary>
+    private static (string Usings, string Body) SplitUsingsAndBody(string merged)
+    {
+        var usings = UsingDirectiveRegex.Matches(merged)
+            .Select(m => m.Value.Trim())
+            .ToList();
+
+        return (string.Join("\n", usings), UsingDirectiveRegex.Replace(merged, "").Trim());
     }
 
     private static IReadOnlyList<(string Type, string Name)> ExtractParameters(
@@ -306,7 +384,7 @@ public class Program
         // MergeFiles מרים usings של כל הקבצים לראש (כולל אלה שנוסיף כאן) — מונע CS1529
         // כשקובץ שני מתחיל ב-using אחרי שה-class-ים של הקובץ הראשון כבר נפתחו.
         var mergedFiles = MergeFiles(
-            new[] { "using System;\nusing System.Linq;\nusing System.Text.Json;" }
+            new[] { "using System;\nusing System.Globalization;\nusing System.Linq;\nusing System.Text.Json;" }
                 .Concat(sourceFiles.Select(f => f.Content)));
 
         return $@"
@@ -315,6 +393,7 @@ public class Program
 {{
     public static void Main(string[] args)
     {{
+{InvariantCultureSetup}
         var stdin = Console.ReadLine() ?? ""[]"";
         var argsJson = JsonDocument.Parse(stdin).RootElement;
         var result = {entryClassName}.{methodName}({BuildJsonArgs(parameters)});

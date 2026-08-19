@@ -383,39 +383,57 @@
     <i class="pi pi-spin pi-spinner text-3xl" aria-hidden="true"></i>
   </div>
 
-  <div *ngIf="!summaryLoading && studentSummary" class="flex flex-column gap-3">
-    <div class="sg-summary-average" aria-live="polite">
-      <ng-container *ngIf="studentSummary.average !== null; else noAverage">
-        ממוצע ציונים סופיים: <strong>{{ studentSummary.average }}</strong>
-      </ng-container>
-      <ng-template #noAverage>אין עדיין ציונים סופיים</ng-template>
+  <!-- ⚠️ ה-DTO מקובץ לפי קורס: { studentId, studentName, courses[] }, וכל ציון נושא subject
+       ולא lessonName. עד לתיקון הזה התבנית ניסתה לקרוא studentSummary.average ו-.grades —
+       שדות שלא קיימים — והדיאלוג יצא ריק תמיד. -->
+  <div *ngIf="!summaryLoading && studentSummary" class="flex flex-column gap-4">
+    <div
+      *ngIf="studentSummary.courses.length === 0"
+      class="text-center py-4 text-color-secondary"
+    >
+      אין עדיין תוצאות שיעור לתלמידה זו.
     </div>
 
-    <p-table [value]="studentSummary.grades" styleClass="sg-table">
-      <ng-template pTemplate="header">
-        <tr>
-          <th>שיעור</th>
-          <th class="text-center">תאריך</th>
-          <th class="text-center">ציון סופי</th>
-          <th class="text-center">סטטוס</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-grade>
-        <tr>
-          <td>{{ grade.lessonName || "—" }}</td>
-          <td class="text-center">{{ grade.lessonDateHebrew }}</td>
-          <td class="text-center">{{ grade.finalScore ?? "—" }}</td>
-          <td class="text-center">{{ grade.isComplete ? "הושלם" : "בתהליך" }}</td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="4" class="text-center py-4 text-color-secondary">
-            אין עדיין תוצאות שיעור לתלמיד/ה זו.
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+    <div
+      *ngFor="let course of studentSummary.courses"
+      class="flex flex-column gap-2"
+    >
+      <div class="sg-summary-average" aria-live="polite">
+        <strong>{{ course.courseName }}</strong>
+        <ng-container *ngIf="course.average !== null; else noAverage">
+          · ממוצע ציונים סופיים: <strong>{{ course.average }}</strong>
+        </ng-container>
+        <ng-template #noAverage>· אין עדיין ציונים סופיים</ng-template>
+      </div>
+
+      <p-table [value]="course.grades" styleClass="sg-table">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>שיעור</th>
+            <th class="text-center">תאריך</th>
+            <th class="text-center">ציון סופי</th>
+            <th class="text-center">סטטוס</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-grade>
+          <tr>
+            <td>{{ grade.subject || "—" }}</td>
+            <td class="text-center">{{ grade.lessonDateHebrew }}</td>
+            <td class="text-center">{{ grade.finalScore ?? "—" }}</td>
+            <td class="text-center">
+              {{ grade.isComplete ? "הושלם" : "בתהליך" }}
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="4" class="text-center py-4 text-color-secondary">
+              אין עדיין תוצאות שיעור בקורס זה.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
   </div>
 
   <ng-template pTemplate="footer">

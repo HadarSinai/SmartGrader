@@ -5,5 +5,6 @@ export interface SubmissionExtended extends SubmissionResponseDto {
   executionTime?: number;
   memoryUsage?: number;
   language?: string;
-  evaluatedBy?: 'AI' | 'Manual';
+  // ⚠️ evaluatedBy הוסר: הוא נגזר מ-`s.feedback ? "AI" : "Manual"`, אבל אין בכלל בדיקה ידנית
+  // במערכת — כל ההגשות נבדקות ב-AI — והערך גם לא הוצג בשום מסך.
 }
