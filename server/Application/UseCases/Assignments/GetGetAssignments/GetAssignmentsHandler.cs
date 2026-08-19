@@ -38,7 +38,10 @@ namespace SmartGrader.Application.UseCases.Assignments.GetAssignments
 
             var result = assignments ?? new List<Domain.Entities.Assignment>();
 
-            return _mapper.Map<IReadOnlyList<AssignmentResponseDto>>(result);
+            // ⚠️ אותו סינון כמו ב-GetAssignmentById — רשימת התרגילים היא נתיב דלף זהה.
+            return TestVisibility.RedactTests(
+                _mapper.Map<IReadOnlyList<AssignmentResponseDto>>(result),
+                request.IsStudentCaller);
         }
     }
 }

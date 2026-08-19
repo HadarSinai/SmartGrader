@@ -32,9 +32,12 @@ namespace SmartGrader.Api.Controllers
             _mediator = mediator;
         }
 
-        // IsAllowedForStudent / TeacherIdForSharedRead / OwnerScopeTeacherId יושבים ב-ApiControllerBase.
+        // IsAllowedForStudent / TeacherIdForSharedRead / OwnerScopeTeacherId / IsPrivilegedUser
+        // יושבים ב-ApiControllerBase.
         // ⚠️ IsAllowedForStudent לבדה מחזירה true לכל מורה — היא בודקת רק ש"תלמידה ניגשת לעצמה".
         // הסינון בין מורות נעשה במורד הזרם, לפי בעלות על השיעור, דרך TeacherId שמועבר לכל שאילתת הגשות.
+        // ⚠️ !IsPrivilegedUser הוא הדגל שקובע אם להסתיר תוצאות של מקרי בדיקה מוסתרים. אין להחליף
+        // אותו ב-TeacherIdForSharedRead is null — הוא null גם עבור מנהלת, שאמורה לראות הכל.
 
 
         [HttpGet]
@@ -141,7 +144,9 @@ namespace SmartGrader.Api.Controllers
                 return Forbid();
 
             IReadOnlyList<SubmissionResponseDto> result =
-                await _mediator.Send(new GetSubmissionsQuery(studentId, TeacherIdForSharedRead), cancellationToken);
+                await _mediator.Send(
+                    new GetSubmissionsQuery(studentId, TeacherIdForSharedRead, !IsPrivilegedUser),
+                    cancellationToken);
 
             return Ok(result);
         }
@@ -158,7 +163,7 @@ namespace SmartGrader.Api.Controllers
 
             SubmissionResponseDto result =
                 await _mediator.Send(
-                    new GetSubmissionByIdQuery(studentId, submissionId, TeacherIdForSharedRead),
+                    new GetSubmissionByIdQuery(studentId, submissionId, TeacherIdForSharedRead, !IsPrivilegedUser),
                     cancellationToken);
 
             return Ok(result);

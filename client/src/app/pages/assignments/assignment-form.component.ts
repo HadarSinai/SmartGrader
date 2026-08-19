@@ -274,6 +274,16 @@ import { SelectButtonModule } from "primeng/selectbutton";
                   [text]="testCaseInputHint"
                 ></p-message>
 
+                <!-- מקרה שאינו דוגמה מוסתר לחלוטין מהתלמידה (גם הקלט וגם הפלט הצפוי), לכן
+                     בלי אף דוגמה היא לא יכולה לדעת באיזה פורמט הקלט מגיע. אזהרה רכה בלבד —
+                     ההגשה עצמה לא נחסמת. -->
+                <p-message
+                  *ngIf="tests.length > 0 && !hasSampleTest"
+                  severity="warn"
+                  styleClass="w-full mt-2"
+                  text="אף מקרה בדיקה לא סומן כדוגמה — התלמידה לא תראה אף קלט לדוגמה ולא תדע באיזה פורמט להגיש. מומלץ לסמן לפחות אחד."
+                ></p-message>
+
                 <div formArrayName="tests" class="mt-3 flex flex-column gap-3">
                   <div
                     *ngFor="let test of tests.controls; let i = index"
@@ -315,6 +325,28 @@ import { SelectButtonModule } from "primeng/selectbutton";
                           placeholder="הקלידי פלט צפוי"
                         ></textarea>
                       </div>
+
+                      <!-- שורת הדגלים של המקרה. מוגדרת כרשימה של דגלים ולא כדגל בודד כדי
+                           שתוספת דגל נוסף בהמשך (למשל מקרה ליבה מול מקרה קצה, שמשפיע על
+                           הניקוד) תהיה הוספת בלוק כאן ולא שינוי פריסה. -->
+                      <div class="col-12">
+                        <div class="sg-test-flags">
+                          <div class="sg-test-flag">
+                            <p-checkbox
+                              [inputId]="'isSample' + i"
+                              formControlName="isSample"
+                              [binary]="true"
+                            ></p-checkbox>
+                            <label [for]="'isSample' + i">
+                              מקרה דוגמה — מוצג לתלמידה
+                            </label>
+                          </div>
+                        </div>
+                        <small class="sg-hint block mt-1">
+                          מקרה שאינו דוגמה לא נשלח לתלמידה כלל — לא לפני ההגשה ולא אחרי
+                          הבדיקה. היא רואה רק אם הוא עבר או נכשל.
+                        </small>
+                      </div>
                     </div>
                   </div>
 
@@ -352,7 +384,26 @@ import { SelectButtonModule } from "primeng/selectbutton";
 
     <p-confirmDialog></p-confirmDialog>
   `,
-  styles: [],
+  styles: [
+    `
+      .sg-test-flags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-4);
+      }
+
+      .sg-test-flag {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+
+      .sg-test-flag label {
+        font-weight: 600;
+        cursor: pointer;
+      }
+    `,
+  ],
 })
 export class AssignmentFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -506,11 +557,19 @@ export class AssignmentFormComponent implements OnInit {
     return this.fb.group({
       input: [testCase?.input || ""],
       expected: [testCase?.expected || ""],
+      isSample: [testCase?.isSample ?? false],
     });
   }
 
+  /** האם קיים לפחות מקרה דוגמה אחד — בסיס לאזהרה הרכה בטופס. */
+  get hasSampleTest(): boolean {
+    return this.tests.controls.some((c) => c.get("isSample")?.value === true);
+  }
+
   addTestCase(): void {
-    this.tests.push(this.createTestCaseGroup());
+    // המקרה הראשון מסומן כדוגמה כברירת מחדל: תרגיל בלי אף דוגמה משאיר את התלמידה בלי
+    // שום רמז לפורמט הקלט. כל מקרה נוסף מוסתר כברירת מחדל (fail closed).
+    this.tests.push(this.createTestCaseGroup({ input: "", expected: "", isSample: this.tests.length === 0 }));
   }
 
   removeTestCase(index: number): void {

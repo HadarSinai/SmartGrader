@@ -1,6 +1,11 @@
 export interface TestCaseDto {
   input: string | null;
   expected: string | null;
+  /**
+   * מקרה דוגמה — התלמידה רואה אותו. מקרה שאינו דוגמה מסונן בשרת ולא מגיע ללקוח כלל,
+   * כך שברשימה שמתקבלת בתצוגת תלמידה כל הפריטים הם isSample=true.
+   */
+  isSample: boolean;
 }
 
 export interface ExpectedFileDto {

@@ -144,6 +144,10 @@ Code:
 
         // מעביר ל-AI גם את הטסטים שעברו ולא רק את הנכשלים: בלעדיהם למודל אין שום עובדה
         // חיובית להיאחז בה, וטאב "מה טוב" יוצא ריק גם כשחלק מהמטלה כן עבד.
+        //
+        // ⚠️ מקרה בדיקה שאינו דוגמה נכנס לפרומפט בלי הקלט והפלט הצפוי שלו. המשוב של ה-AI מוצג
+        // לתלמידה כטקסט חופשי, כך שכל ערך שנכנס לכאן עלול לצאת אליה — זהו נתיב דלף זהה בפועל
+        // להחזרת ה-Tests ב-API, רק עקיף. הספירה (עברו/נכשלו) נשמרת, וזה מספיק כדי לבסס את המשוב.
         private static string BuildTestsSummary(IReadOnlyList<TestCaseResult> testDetails)
         {
             if (testDetails.Count == 0)
@@ -156,7 +160,9 @@ Code:
             {
                 sb.AppendLine("Passed:");
                 foreach (var (t, i) in passed.Select((t, i) => (t, i)))
-                    sb.AppendLine($"  {i + 1}. Input: {t.Input} | Expected: {t.Expected}");
+                    sb.AppendLine(t.IsSample
+                        ? $"  {i + 1}. Input: {t.Input} | Expected: {t.Expected}"
+                        : $"  {i + 1}. (hidden test — do not mention or guess its input/expected output)");
             }
 
             var failed = testDetails.Where(t => !t.Passed).Take(MaxFailedTestsInPrompt).ToList();
@@ -164,9 +170,10 @@ Code:
             {
                 sb.AppendLine("Failed:");
                 foreach (var (t, i) in failed.Select((t, i) => (t, i)))
-                    sb.AppendLine(
-                        $"  {i + 1}. Input: {t.Input} | Expected: {t.Expected} | Actual: {t.Actual}" +
-                        (string.IsNullOrWhiteSpace(t.Error) ? "" : $" | Error: {t.Error}"));
+                    sb.AppendLine(t.IsSample
+                        ? $"  {i + 1}. Input: {t.Input} | Expected: {t.Expected} | Actual: {t.Actual}" +
+                          (string.IsNullOrWhiteSpace(t.Error) ? "" : $" | Error: {t.Error}")
+                        : $"  {i + 1}. (hidden test — failed; do not mention or guess its input/expected output)");
             }
 
             return sb.ToString();

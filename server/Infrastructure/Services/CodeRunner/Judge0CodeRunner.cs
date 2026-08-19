@@ -134,7 +134,8 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Expected: test.Expected,
                     Actual: "",
                     Passed: false,
-                    Error: "No response from Judge0"));
+                    Error: "No response from Judge0",
+                    IsSample: test.IsSample));
                 continue;
             }
 
@@ -168,7 +169,8 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Expected: test.Expected,
                     Actual: "",
                     Passed: false,
-                    Error: "Time Limit Exceeded"));
+                    Error: "Time Limit Exceeded",
+                    IsSample: test.IsSample));
                 continue;
             }
 
@@ -181,7 +183,8 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Expected: test.Expected,
                     Actual: stdout?.TrimEnd() ?? "",
                     Passed: true,
-                    Error: null));
+                    Error: null,
+                    IsSample: test.IsSample));
             }
             else
             {
@@ -190,7 +193,8 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Expected: test.Expected,
                     Actual: stdout?.TrimEnd() ?? "",
                     Passed: false,
-                    Error: stderr ?? compileOutput));
+                    Error: stderr ?? compileOutput,
+                    IsSample: test.IsSample));
             }
         }
 

@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Domain.Abstractions;
 
@@ -22,7 +23,9 @@ namespace SmartGrader.Application.UseCases.Notifications.GetRecentGradedSubmissi
             CancellationToken cancellationToken)
         {
             var items = await _repository.GetRecentGradedAsync(request.Limit, request.TeacherId, request.StudentId, cancellationToken);
-            return _mapper.Map<IReadOnlyList<SubmissionResponseDto>>(items);
+            return TestVisibility.RedactTestResults(
+                _mapper.Map<IReadOnlyList<SubmissionResponseDto>>(items),
+                request.IsStudentCaller);
         }
     }
 }

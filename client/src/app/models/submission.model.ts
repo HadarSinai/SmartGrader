@@ -26,6 +26,13 @@ export interface TestCaseResultDto {
   actual: string;
   passed: boolean;
   error: string | null;
+  /** נשמר בזמן הבדיקה. false = מקרה מוסתר. */
+  isSample: boolean;
+  /**
+   * true כשהשרת ריקן את פרטי השורה עבור הקורא הנוכחי (מקרה מוסתר, תצוגת תלמידה).
+   * במצב הזה input/expected/actual/error ריקים ורק passed אמיתי.
+   */
+  isHidden: boolean;
 }
 
 export interface AiFeedbackIssuesDto {

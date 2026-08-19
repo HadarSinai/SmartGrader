@@ -44,10 +44,10 @@ namespace SmartGrader.Domain.Entities
                 TestsJson = JsonSerializer.Serialize(value ?? new List<TestCase>());
             }
         }
-        public void AddTest(string input, string expected)
+        public void AddTest(string input, string expected, bool isSample = false)
         {
             var list = Tests; // קורא מה-JSON
-            list.Add(new TestCase { Input = input, Expected = expected });
+            list.Add(new TestCase { Input = input, Expected = expected, IsSample = isSample });
             Tests = list;     // כותב חזרה ל-JSON (ישמר ב-DB)
         }
 

@@ -131,12 +131,12 @@ import { SubmissionResponseDto } from "@models/submission.model";
       <div *ngIf="totalCount === 1" class="sg-single-test-note">
         למטלה זו הוגדרה בדיקה אחת בלבד, ולכן הציון יכול להיות רק 0 או 100.
       </div>
+      <!-- ⚠️ המפתח הוא אינדקס השורה ולא test.input: שורות מוסתרות מגיעות עם קלט ריק,
+           ומפתח משותף היה מרחיב ומכווץ את כולן יחד. -->
       <p-table
         [value]="submission!.testResults"
         [rowHover]="true"
-        dataKey="input"
         styleClass="sg-table"
-        [expandedRowKeys]="expandedRows"
       >
         <ng-template pTemplate="header">
           <tr>
@@ -147,25 +147,34 @@ import { SubmissionResponseDto } from "@models/submission.model";
             <th style="width: 6rem">סטטוס</th>
           </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-test let-expanded="expanded" let-i="rowIndex">
+        <ng-template pTemplate="body" let-test let-i="rowIndex">
           <tr>
             <td>
+              <!-- לשורה מוסתרת אין מה להרחיב — אין כפתור בכלל, כדי לא להבטיח תוכן שלא קיים -->
               <button
+                *ngIf="!test.isHidden"
                 type="button"
                 class="sg-row-toggle"
-                (click)="toggleRow(test)"
-                [attr.aria-label]="expandedRows[test.input] ? 'כווץ שורה' : 'הרחב שורה'"
+                (click)="toggleRow(i)"
+                [attr.aria-label]="expandedRows[i] ? 'כווץ שורה' : 'הרחב שורה'"
               >
                 <i
                   class="pi"
-                  [class.pi-chevron-down]="expandedRows[test.input]"
-                  [class.pi-chevron-left]="!expandedRows[test.input]"
+                  [class.pi-chevron-down]="expandedRows[i]"
+                  [class.pi-chevron-left]="!expandedRows[i]"
                 ></i>
               </button>
             </td>
-            <td>{{ test.input }}</td>
-            <td>{{ test.expected }}</td>
-            <td>{{ test.actual }}</td>
+            <ng-container *ngIf="!test.isHidden; else hiddenCells">
+              <td>{{ test.input }}</td>
+              <td>{{ test.expected }}</td>
+              <td>{{ test.actual }}</td>
+            </ng-container>
+            <ng-template #hiddenCells>
+              <td colspan="3" class="sg-hidden-test">
+                בדיקה {{ i + 1 }} · מוסתרת
+              </td>
+            </ng-template>
             <td>
               <p-tag
                 [severity]="test.passed ? 'success' : 'danger'"
@@ -174,7 +183,7 @@ import { SubmissionResponseDto } from "@models/submission.model";
               ></p-tag>
             </td>
           </tr>
-          <tr *ngIf="expandedRows[test.input]">
+          <tr *ngIf="!test.isHidden && expandedRows[i]">
             <td></td>
             <td colspan="4">
               <div class="sg-test-detail">
@@ -326,6 +335,11 @@ import { SubmissionResponseDto } from "@models/submission.model";
         padding: 0.25rem;
       }
 
+      .sg-hidden-test {
+        color: var(--app-muted);
+        font-style: italic;
+      }
+
       .sg-test-detail {
         display: flex;
         flex-direction: column;
@@ -341,15 +355,16 @@ import { SubmissionResponseDto } from "@models/submission.model";
 export class SubmissionFeedbackPanelComponent {
   @Input() submission: SubmissionResponseDto | null = null;
 
-  expandedRows: Record<string, boolean> = {};
+  expandedRows: Record<number, boolean> = {};
 
   ngOnChanges(): void {
-    // הרחבה כברירת מחדל רק לטסטים שנכשלו — עוברים ניתנים להרחבה לפי דרישה
+    // הרחבה כברירת מחדל רק לטסטים שנכשלו — עוברים ניתנים להרחבה לפי דרישה.
+    // שורה מוסתרת לעולם לא נפתחת: אין לה תוכן להציג.
     const results = this.submission?.testResults ?? [];
-    this.expandedRows = results.reduce((acc, t) => {
-      if (!t.passed) acc[t.input] = true;
+    this.expandedRows = results.reduce((acc, t, i) => {
+      if (!t.passed && !t.isHidden) acc[i] = true;
       return acc;
-    }, {} as Record<string, boolean>);
+    }, {} as Record<number, boolean>);
   }
 
   get passedCount(): number {
@@ -374,10 +389,10 @@ export class SubmissionFeedbackPanelComponent {
     return count > 0 ? ` (${count})` : "";
   }
 
-  toggleRow(test: { input: string }): void {
+  toggleRow(index: number): void {
     this.expandedRows = {
       ...this.expandedRows,
-      [test.input]: !this.expandedRows[test.input],
+      [index]: !this.expandedRows[index],
     };
   }
 }

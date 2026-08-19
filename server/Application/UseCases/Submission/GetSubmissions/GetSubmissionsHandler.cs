@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Domain.Abstractions;
 
@@ -28,7 +29,10 @@ namespace SmartGrader.Application.UseCases.Submissions.GetSubmissions
                 request.TeacherId,
                 cancellationToken);
 
-            return _mapper.Map<IReadOnlyList<SubmissionResponseDto>>(submissions);
+            // ⚠️ רשימת ההגשות נושאת TestResults מלאים בדיוק כמו הפריט הבודד — אותו סינון.
+            return TestVisibility.RedactTestResults(
+                _mapper.Map<IReadOnlyList<SubmissionResponseDto>>(submissions),
+                request.IsStudentCaller);
         }
     }
 }

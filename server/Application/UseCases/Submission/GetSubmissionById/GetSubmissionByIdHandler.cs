@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Domain.Abstractions;
@@ -40,7 +41,11 @@ namespace SmartGrader.Application.UseCases.Submissions.GetSubmissionById
                     "Submission does not belong to this student.",
                     request.SubmissionId);
 
-            return _mapper.Map<SubmissionResponseDto>(submission);
+            // ⚠️ נתיב הדלף השני: אחרי הבדיקה TestResults נושא Input/Expected/Actual לכל מקרה,
+            // כולל המוסתרים. מרוקנים כאן, ומשאירים רק Passed. ר' TestVisibility.
+            return TestVisibility.RedactTestResults(
+                _mapper.Map<SubmissionResponseDto>(submission),
+                request.IsStudentCaller);
         }
     }
 }

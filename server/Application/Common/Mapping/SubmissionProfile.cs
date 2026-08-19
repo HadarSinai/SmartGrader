@@ -9,7 +9,9 @@ namespace SmartGrader.Application.Common.Mapping
     {
         public SubmissionProfile()
         {
-            CreateMap<TestCaseResult, TestCaseResultDto>();
+            // IsHidden אינו קיים על הישות — הוא נקבע ב-TestVisibility אחרי המיפוי, לפי תפקיד הקורא
+            CreateMap<TestCaseResult, TestCaseResultDto>()
+                .ForMember(d => d.IsHidden, opt => opt.Ignore());
             CreateMap<SubmissionFile, SubmissionFileDto>();
 
             CreateMap<Submission, SubmissionResponseDto>()
