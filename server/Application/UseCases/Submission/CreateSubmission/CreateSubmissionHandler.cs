@@ -68,6 +68,16 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
             if (lesson is null || !LessonAccess.IsAssignedToClass(lesson, student.ClassId))
                 throw new NotFoundException(nameof(Assignment), dto.AssignmentId);
 
+            // ✔ הגשה אחת בלבד לכל (StudentId, AssignmentId). בלי הבדיקה הזו תלמידה שלא אהבה
+            // את הציון פשוט הגישה שוב וקיבלה שורה מנוקדת שנייה, ושתיהן נספרו בממוצע. הכלל נאכף
+            // גם באינדקס ייחודי ב-DB, כך ששתי לחיצות במקביל לא יוצרות שתי שורות.
+            var existing = await _submissionRepository
+                .GetByStudentAndAssignmentAsync(request.StudentId, dto.AssignmentId, cancellationToken);
+
+            if (existing is not null)
+                throw new BusinessRuleException(
+                    $"כבר קיימת הגשה לתרגיל הזה (הגשה #{existing.Id}). לא ניתן להגיש פעם נוספת.");
+
             // ✔ הגשה רב-קובצית: כאשר לתרגיל יש ExpectedFiles מוגדרים, מחייבים שהקבצים שהוגשו
             // יתאימו (לפי FileName) לרשימת הקבצים הצפויה של התרגיל.
             if (assignment.ExpectedFiles.Count > 0)

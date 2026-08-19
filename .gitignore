@@ -16,3 +16,6 @@ dist/
 # Env
 .env
 .env.local
+
+# DB backup taken before the one-submission-per-assignment unique index
+*.db.bak-*

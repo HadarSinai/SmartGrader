@@ -57,6 +57,15 @@ namespace SmartGrader.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<Submission?> GetByStudentAndAssignmentAsync(int studentId, int assignmentId, CancellationToken ct = default)
+        {
+            return await _context.Submissions
+                .Where(s => s.StudentId == studentId && s.AssignmentId == assignmentId)
+                .Include(s => s.Assignment)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(ct);
+        }
+
         // כל ההגשות של שיעור בשאילתה אחת — מחליף את ה-N+1 שב-ExportLessonResultsHandler
         // (קריאת GetByStudentAndLessonAsync אחת לכל תלמידה, כל אחת עם שני Include).
         public async Task<IReadOnlyList<Submission>> GetByLessonIdAsync(int lessonId, CancellationToken ct = default)

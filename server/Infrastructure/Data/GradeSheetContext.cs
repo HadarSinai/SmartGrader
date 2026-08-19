@@ -54,6 +54,13 @@ namespace SmartGrader.Infrastructure.Data
                 .HasForeignKey(r => r.LessonId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // הגשה אחת בדיוק לכל (תלמידה, תרגיל). הבדיקה ב-CreateSubmissionHandler לבדה אינה
+            // מספיקה: שתי לחיצות במקביל עוברות אותה שתיהן ויוצרות שתי שורות מנוקדות, שנספרות
+            // שתיהן בממוצע. האכיפה האמיתית היא כאן.
+            modelBuilder.Entity<Submission>()
+                .HasIndex(s => new { s.StudentId, s.AssignmentId })
+                .IsUnique();
+
             modelBuilder.Entity<Assignment>()
                 .Property(a => a.GradingMode)
                 .HasConversion<string>();

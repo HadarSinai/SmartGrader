@@ -12,6 +12,10 @@ namespace SmartGrader.Domain.Abstractions
         Task AddAsync(Submission submission, CancellationToken ct = default);
         Task<IReadOnlyList<Submission>> GetByStudentIdAsync(int studentId, int? teacherId, CancellationToken ct = default);
         Task<IReadOnlyList<Submission>> GetByStudentAndLessonAsync(int studentId, int lessonId, CancellationToken ct = default);
+
+        // ההגשה היחידה של תלמידה לתרגיל. הכלל הוא שורה אחת בדיוק לכל (StudentId, AssignmentId),
+        // נאכף גם באינדקס ייחודי ב-DB — ר' CreateSubmissionHandler.
+        Task<Submission?> GetByStudentAndAssignmentAsync(int studentId, int assignmentId, CancellationToken ct = default);
         Task<IReadOnlyList<Submission>> GetByLessonIdAsync(int lessonId, CancellationToken ct = default);
         Task<IReadOnlyList<Submission>> GetRecentGradedAsync(int limit, int? teacherId, int? studentId, CancellationToken ct = default);
 

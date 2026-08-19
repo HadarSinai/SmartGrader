@@ -2,7 +2,7 @@
 
 
 using Hangfire;
-using Hangfire.InMemory;
+using Hangfire.Storage.SQLite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SmartGrader.Application.Services.CodeRunner;
@@ -61,11 +61,18 @@ namespace SmartGrader.Infrastructure
             });
             services.Configure<Judge0Options>(configuration.GetSection("Judge0"));
 
+            // ⚠️ אחסון קבוע, לא UseInMemoryStorage: עם אחסון בזיכרון כל הגשה שממתינה בתור
+            // נעלמת בשקט בעת הפעלה מחדש של השרת — היא לעולם לא נבדקת ואף אחד לא מקבל הודעה.
+            // קובץ נפרד מ-GradeSheet.db בכוונה: Hangfire כותב לתור בתדירות גבוהה, ו-SQLite נועל
+            // ברמת הקובץ — שיתוף הקובץ עם EF היה יוצר תחרות נעילות מיותרת.
+            var hangfireConnection =
+                configuration.GetConnectionString("Hangfire") ?? "Data Source=hangfire.db";
+
             services.AddHangfire(config => config
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
-                .UseInMemoryStorage());
+                .UseSQLiteStorage(hangfireConnection));
 
             services.AddHangfireServer();
 
