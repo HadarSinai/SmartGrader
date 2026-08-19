@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.Dtos.Submissions;
@@ -25,9 +25,10 @@ namespace SmartGrader.Application.UseCases.Submissions.GetSubmissionById
             GetSubmissionByIdQuery request,
             CancellationToken cancellationToken)
         {
-            // שולפים לפי מזהה ההגשה
+            // שולפים לפי מזהה ההגשה — כבר מסונן לפי בעלות המורה על השיעור
             var submission = await _repository.GetByIdAsync(
                 request.SubmissionId,
+                request.TeacherId,
                 cancellationToken);
 
             if (submission is null)

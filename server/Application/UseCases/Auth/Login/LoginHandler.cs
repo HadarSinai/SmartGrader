@@ -11,6 +11,10 @@ namespace SmartGrader.Application.UseCases.Auth.Login
     {
         private const string InvalidCredentialsMessage = "Invalid username or password.";
 
+        private const string OrphanStudentAccountMessage =
+            "החשבון שלך אינו מקושר לרשומת תלמידה במערכת, ולכן אין לו לאן להיכנס. " +
+            "יש לפנות למורה כדי לקשר אותו.";
+
         private readonly IUserRepository _userRepository;
         private readonly IStudentRepository _studentRepository;
         private readonly IPasswordHasherService _passwordHasher;
@@ -40,7 +44,14 @@ namespace SmartGrader.Application.UseCases.Auth.Login
             if (user.Role == UserRole.Student)
             {
                 var student = await _studentRepository.GetByUserIdAsync(user.Id, cancellationToken);
-                studentId = student?.Id;
+
+                // ⚠️ עד לתיקון הזה studentId נשאר null, ה-claim הושמט מהטוקן, והתלמידה נכנסה
+                // למסכים ריקים עם כפתור הגשה שאינו עושה כלום — ולולאת ניתוב בין "/" ל-homeRoute.
+                // עדיף להיכשל כאן, פעם אחת, עם הסבר.
+                if (student is null)
+                    throw new BusinessRuleException(OrphanStudentAccountMessage);
+
+                studentId = student.Id;
             }
 
             var token = _tokenGenerator.GenerateToken(user, studentId);

@@ -14,6 +14,7 @@ namespace SmartGrader.Infrastructure.Services.Feedback
     {
         private const string Url = "https://api.openai.com/v1/chat/completions";
         private const int MaxFailedTestsInPrompt = 5;
+        private const int MaxPassedTestsInPrompt = 3;
         private readonly HttpClient _httpClient;
         private readonly OpenAiOptions _options;
 
@@ -40,21 +41,40 @@ namespace SmartGrader.Infrastructure.Services.Feedback
             if (totalTests < 0 || passedTests < 0 || passedTests > totalTests)
                 return RawFallback("שגיאה: נתוני הטסטים לא תקינים (passed/total).");
 
+            // הערה: התבנית מתארת טיפוסים (<number>) ולא ערכים לדוגמה. גרסה קודמת כתבה כאן
+            // אפסים ממשיים, והמודל העתיק אותם כלשונם — כל תלמיד קיבל איכות קוד 0 ויעילות 0.
             var developerPrompt =
-@"You are a C# teacher reviewing a student's solution.
-Language: Hebrew (write all strings in Hebrew).
-Rules: do NOT invent results/errors; be concise but include ALL issues; minimal fixes; full solution only if needed.
-Return STRICT JSON only:
-{ ""good"":[], ""issues"":{""correctness"":[], ""readability"":[], ""performance"":[]}, ""minimal_changes"":[], ""optional_full_solution"":null,
-  ""scores"":{""test_score"":null, ""code_quality_score"":0, ""efficiency_score"":0, ""final_score"":0} }
-Scoring: test_score = total>0 ? (passed/total)*100 : null; final = 0.7*tests + 0.2*quality + 0.1*efficiency (if test_score is null, explain).";
+@"You are a C# teacher reviewing a student's solution. The reader is the student.
+Language: Hebrew (write ALL strings in Hebrew, gender-neutral phrasing).
+Rules:
+- Do NOT invent results or errors. The test results below are the only facts about what ran.
+- Be concise but include ALL real issues.
+- ""good"" must always contain at least one genuine positive observation, even when every test
+  failed (a correct loop, sensible naming, right use of a language feature). Never return it empty.
+- ""minimal_changes"": the smallest concrete edits that make the code pass. Not vague advice.
+- ""optional_full_solution"": only when the minimal changes cannot convey the fix on their own.
 
-            var failedTestsSummary = BuildFailedTestsSummary(testDetails);
+Return STRICT JSON only. The values below are TYPE placeholders, not default values:
+{ ""good"":[<string>], ""issues"":{""correctness"":[<string>], ""readability"":[<string>], ""performance"":[<string>]},
+  ""minimal_changes"":[<string>], ""optional_full_solution"":<string|null>,
+  ""scores"":{""test_score"":<number|null>, ""code_quality_score"":<number>, ""efficiency_score"":<number>, ""final_score"":<number>} }
+
+Scoring — every score is on a 0-100 scale, and the three component scores are INDEPENDENT:
+- test_score: total>0 ? (passed/total)*100 : null. Compute it from the numbers given, do not guess.
+- code_quality_score: naming, structure and readability ONLY. Code that fails every test can still
+  score 80 here if it is written well. Never copy test_score into this field.
+  Anchors: 90+ clean and idiomatic, 70 readable with minor issues, 50 works but messy, 30 hard to follow.
+- efficiency_score: algorithmic complexity and wasted work ONLY. Same independence rule.
+  Anchors: 90+ optimal for the task, 70 reasonable, 50 needlessly heavy, 30 badly inefficient.
+- final_score = 0.7*test_score + 0.2*code_quality_score + 0.1*efficiency_score, rounded to a whole
+  number. When test_score is null, set final_score to null as well rather than inventing one.";
+
+            var testsSummary = BuildTestsSummary(testDetails);
 
             var userContent =
 $@"Task: {assignmentDescription}
-Tests: {passedTests}/{totalTests}
-{failedTestsSummary}
+Tests: {passedTests} passed out of {totalTests}
+{testsSummary}
 Code:
 {sourceCode}";
 
@@ -122,17 +142,34 @@ Code:
             return RawFallback("שגיאה: OpenAI לא זמין כרגע. נסי שוב בעוד כמה רגעים.");
         }
 
-        private static string BuildFailedTestsSummary(IReadOnlyList<TestCaseResult> testDetails)
+        // מעביר ל-AI גם את הטסטים שעברו ולא רק את הנכשלים: בלעדיהם למודל אין שום עובדה
+        // חיובית להיאחז בה, וטאב "מה טוב" יוצא ריק גם כשחלק מהמטלה כן עבד.
+        private static string BuildTestsSummary(IReadOnlyList<TestCaseResult> testDetails)
         {
-            var failed = testDetails.Where(t => !t.Passed).Take(MaxFailedTestsInPrompt).ToList();
-            if (failed.Count == 0)
+            if (testDetails.Count == 0)
                 return "";
 
-            var lines = failed.Select((t, i) =>
-                $"  {i + 1}. Input: {t.Input} | Expected: {t.Expected} | Actual: {t.Actual}" +
-                (string.IsNullOrWhiteSpace(t.Error) ? "" : $" | Error: {t.Error}"));
+            var sb = new StringBuilder("Test results (grounding facts — do not invent others):\n");
 
-            return "Failed tests (grounding facts, do not invent others):\n" + string.Join("\n", lines) + "\n";
+            var passed = testDetails.Where(t => t.Passed).Take(MaxPassedTestsInPrompt).ToList();
+            if (passed.Count > 0)
+            {
+                sb.AppendLine("Passed:");
+                foreach (var (t, i) in passed.Select((t, i) => (t, i)))
+                    sb.AppendLine($"  {i + 1}. Input: {t.Input} | Expected: {t.Expected}");
+            }
+
+            var failed = testDetails.Where(t => !t.Passed).Take(MaxFailedTestsInPrompt).ToList();
+            if (failed.Count > 0)
+            {
+                sb.AppendLine("Failed:");
+                foreach (var (t, i) in failed.Select((t, i) => (t, i)))
+                    sb.AppendLine(
+                        $"  {i + 1}. Input: {t.Input} | Expected: {t.Expected} | Actual: {t.Actual}" +
+                        (string.IsNullOrWhiteSpace(t.Error) ? "" : $" | Error: {t.Error}"));
+            }
+
+            return sb.ToString();
         }
 
         // מנסה לפרש את תשובת ה-AI כ-JSON מובנה. בכשל — לא זורק, אלא מחזיר תוצאה עם

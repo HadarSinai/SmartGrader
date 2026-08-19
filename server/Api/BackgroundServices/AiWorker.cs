@@ -38,7 +38,12 @@ public class AiWorker : IGradeSubmissionJob
     {
         var ct = CancellationToken.None;
 
-        var submission = await _submissions.GetByIdAsync(submissionId, ct);
+        // teacherId: null — קורא מערכת, לא משתמש/ת. הבדיקה רצה על כל הגשה בתור בלי קשר לבעלות.
+        var submission = await _submissions.GetByIdAsync(submissionId, teacherId: null, ct);
+
+        // ההגשה נעלמה מה-DB בין הכנסת העבודה לתור לבין הרצתה. מאז שהמחיקות הוגבלו
+        // (Restrict + חסימה ב-handlers) זה כמעט בלתי אפשרי — הגשה ב-PendingAi/ProcessingAi
+        // לא ניתנת למחיקה, וגם מחיקת שיעור/תרגיל/תלמידה נחסמת כשיש עבודה. נשאר כהגנה.
         if (submission is null) return;
 
         if (submission.Status is SubmissionStatus.Done

@@ -50,29 +50,38 @@ import { SubmissionResponseDto } from "@models/submission.model";
           </div>
         </div>
 
+        <!-- מבהיר את הפער בין הציון שנרשם להגשה (טסטים בלבד) להערכת ה-AI שמוצגת מעליו,
+             כדי שציון 0 לצד "איכות קוד 80" לא ייראה כמו תקלה -->
+        <p class="sg-score-note" *ngIf="submission?.feedback?.scores">
+          הציון שנרשם להגשה מחושב מתוצאות הבדיקות בלבד. האריחים שלמעלה הם הערכת ה־AI
+          ואינם משנים אותו.
+        </p>
+
         <!-- קטגוריות משוב -->
+        <!-- מונה בכותרת כל טאב: בלעדיו צריך לפתוח את כל חמשת הטאבים כדי לגלות היכן
+             בכלל יש הערות, ורובם בדרך כלל ריקים -->
         <p-tabView styleClass="sg-feedback-tabs">
-          <p-tabPanel header="מה טוב">
+          <p-tabPanel [header]="'מה טוב' + countSuffix(feedback.good)">
             <ul *ngIf="feedback.good?.length; else emptyList" class="sg-feedback-list">
               <li *ngFor="let item of feedback.good">{{ item }}</li>
             </ul>
           </p-tabPanel>
-          <p-tabPanel header="נכונות">
+          <p-tabPanel [header]="'נכונות' + countSuffix(feedback.issues?.correctness)">
             <ul *ngIf="feedback.issues?.correctness?.length; else emptyList" class="sg-feedback-list">
               <li *ngFor="let item of feedback.issues.correctness">{{ item }}</li>
             </ul>
           </p-tabPanel>
-          <p-tabPanel header="קריאות">
+          <p-tabPanel [header]="'קריאות' + countSuffix(feedback.issues?.readability)">
             <ul *ngIf="feedback.issues?.readability?.length; else emptyList" class="sg-feedback-list">
               <li *ngFor="let item of feedback.issues.readability">{{ item }}</li>
             </ul>
           </p-tabPanel>
-          <p-tabPanel header="יעילות">
+          <p-tabPanel [header]="'יעילות' + countSuffix(feedback.issues?.performance)">
             <ul *ngIf="feedback.issues?.performance?.length; else emptyList" class="sg-feedback-list">
               <li *ngFor="let item of feedback.issues.performance">{{ item }}</li>
             </ul>
           </p-tabPanel>
-          <p-tabPanel header="שינויים מומלצים">
+          <p-tabPanel [header]="'שינויים מומלצים' + countSuffix(feedback.minimalChanges)">
             <ul *ngIf="feedback.minimalChanges?.length; else emptyList" class="sg-feedback-list">
               <li *ngFor="let item of feedback.minimalChanges">{{ item }}</li>
             </ul>
@@ -94,7 +103,34 @@ import { SubmissionResponseDto } from "@models/submission.model";
 
     <!-- תוצאות טסטים -->
     <div *ngIf="submission?.testResults?.length" class="sg-test-results">
-      <div class="sg-label">תוצאות בדיקה ({{ passedCount }}/{{ submission!.testResults.length }})</div>
+      <!-- ניסוח מילולי במקום "(0/1)": צירוף סוגריים+ספרות+לוכסן מתהפך ויזואלית בהקשר RTL
+           ואי אפשר לדעת מהמסך איזה מספר הוא "עברו" ואיזה "סה"כ" -->
+      <div class="sg-test-summary">
+        <span class="sg-label">תוצאות הבדיקות</span>
+        <span class="sg-test-summary__counts">
+          <span class="sg-count sg-count--pass">
+            <i class="pi pi-check"></i> עברו: {{ passedCount }}
+          </span>
+          <span class="sg-count sg-count--fail" *ngIf="failedCount > 0">
+            <i class="pi pi-times"></i> נכשלו: {{ failedCount }}
+          </span>
+          <span class="sg-count sg-count--total">מתוך {{ totalCount }}</span>
+        </span>
+      </div>
+
+      <div
+        class="sg-test-bar"
+        role="img"
+        [attr.aria-label]="'עברו ' + passedCount + ' בדיקות מתוך ' + totalCount"
+      >
+        <div class="sg-test-bar__fill" [style.width.%]="passedPercent"></div>
+      </div>
+
+      <!-- מטלה עם בדיקה אחת נותנת ציון בינארי (0 או 100) בלי שום דירוג ביניים.
+           ההערה מסמנת זאת למורה במקום להשאיר את זה מפתיע במסך התלמידה -->
+      <div *ngIf="totalCount === 1" class="sg-single-test-note">
+        למטלה זו הוגדרה בדיקה אחת בלבד, ולכן הציון יכול להיות רק 0 או 100.
+      </div>
       <p-table
         [value]="submission!.testResults"
         [rowHover]="true"
@@ -194,6 +230,13 @@ import { SubmissionResponseDto } from "@models/submission.model";
         color: var(--accent);
       }
 
+      .sg-score-note {
+        margin: 0;
+        font-size: var(--text-sm);
+        color: var(--app-muted);
+        line-height: 1.5;
+      }
+
       .sg-feedback-list {
         margin: 0;
         padding-inline-start: 1.25rem;
@@ -213,6 +256,66 @@ import { SubmissionResponseDto } from "@models/submission.model";
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
+      }
+
+      .sg-test-summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+      }
+
+      .sg-test-summary__counts {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+      }
+
+      .sg-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: var(--text-sm);
+        font-weight: 600;
+        padding: 0.15rem 0.6rem;
+        border-radius: var(--radius-md);
+      }
+
+      .sg-count--pass {
+        color: var(--status-success-ink);
+        background: var(--status-success-bg);
+      }
+
+      .sg-count--fail {
+        color: var(--status-error-ink);
+        background: var(--status-error-bg);
+      }
+
+      .sg-count--total {
+        color: var(--app-muted);
+      }
+
+      .sg-test-bar {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--status-error-bg);
+        overflow: hidden;
+      }
+
+      .sg-test-bar__fill {
+        height: 100%;
+        background: var(--status-success);
+        transition: width 0.3s ease;
+      }
+
+      .sg-single-test-note {
+        font-size: var(--text-sm);
+        color: var(--status-warn-ink);
+        background: var(--status-warn-bg);
+        border-radius: var(--radius-md);
+        padding: var(--space-2) var(--space-3);
       }
 
       .sg-row-toggle {
@@ -251,6 +354,24 @@ export class SubmissionFeedbackPanelComponent {
 
   get passedCount(): number {
     return (this.submission?.testResults ?? []).filter((t) => t.passed).length;
+  }
+
+  get totalCount(): number {
+    return (this.submission?.testResults ?? []).length;
+  }
+
+  get failedCount(): number {
+    return this.totalCount - this.passedCount;
+  }
+
+  get passedPercent(): number {
+    return this.totalCount === 0 ? 0 : (this.passedCount / this.totalCount) * 100;
+  }
+
+  // מוסיף מונה לכותרת טאב רק כשיש בו הערות, כדי לא לזרוע "(0)" על פני כל הטאבים
+  countSuffix(items: unknown[] | null | undefined): string {
+    const count = items?.length ?? 0;
+    return count > 0 ? ` (${count})` : "";
   }
 
   toggleRow(test: { input: string }): void {

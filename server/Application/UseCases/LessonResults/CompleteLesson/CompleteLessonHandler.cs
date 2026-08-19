@@ -1,4 +1,5 @@
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 using SmartGrader.Domain.Abstractions;
@@ -9,20 +10,26 @@ public class CompleteLessonHandler
 {
     private readonly ILessonResultRepository _repository;
     private readonly ISubmissionRepository _submissions;
+    private readonly ILessonRepository _lessons;
     private readonly IUnitOfWork _unitOfWork;
 
     public CompleteLessonHandler(
         ILessonResultRepository repository,
         ISubmissionRepository submissions,
+        ILessonRepository lessons,
         IUnitOfWork unitOfWork)
     {
         _repository = repository;
         _submissions = submissions;
+        _lessons = lessons;
         _unitOfWork = unitOfWork;
     }
 
     public async Task<LessonResult> Handle(CompleteLessonCommand command, CancellationToken ct)
     {
+        // כתיבת ציון סופי מותרת רק למורה שהשיעור בבעלותה (null = מנהל/ת). 404 ולא 403 — ר' LessonAccess.
+        await LessonAccess.GetOwnedOrThrowAsync(_lessons, command.LessonId, command.TeacherId, ct);
+
         // אין לסכם שיעור כשההגשה האחרונה של התלמיד באחד התרגילים עדיין לא הגיעה למצב סופי.
         // AiFailed מותר בכוונה — מאפשר למורה לתת ציון ידני כשה-AI נכשל.
         var submissions = await _submissions.GetByStudentAndLessonAsync(

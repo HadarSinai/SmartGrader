@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -98,21 +99,30 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
 
         foreach (var test in tests)
         {
+            // Judge0 (RapidAPI) דוחה עם 400 כל שדה שמכיל תווים שאינם ASCII-ניתן-לייצוג
+            // (כולל עברית — נפוץ מאוד כאן) אלא אם הוא מקודד ב-Base64 ומצוין base64_encoded=true.
             var requestBody = new
             {
-                source_code = wrappedSource,
+                source_code = EncodeBase64(wrappedSource),
                 language_id = _options.LanguageId,
-                stdin = test.Input,
-                expected_output = test.Expected,
+                stdin = EncodeBase64(test.Input),
+                expected_output = EncodeBase64(test.Expected),
                 cpu_time_limit = _options.TimeoutSeconds
             };
 
             var response = await _httpClient.PostAsJsonAsync(
-                "submissions?wait=true",
+                "submissions?wait=true&base64_encoded=true",
                 requestBody,
                 ct);
 
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                // גוף התשובה מכיל את הסיבה האמיתית (למשל שגיאת ולידציה של Judge0) —
+                // EnsureSuccessStatusCode לבדו מאבד אותה ומשאיר רק את קוד הסטטוס בלוג.
+                var errorBody = await response.Content.ReadAsStringAsync(ct);
+                throw new HttpRequestException(
+                    $"Judge0 request failed: {(int)response.StatusCode} {response.StatusCode}. {errorBody}");
+            }
 
             var result = await response.Content.ReadFromJsonAsync<Judge0Response>(
                 cancellationToken: ct);
@@ -128,6 +138,11 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                 continue;
             }
 
+            // Judge0 מחזיר stdout/stderr/compile_output גם הם ב-Base64 כש-base64_encoded=true.
+            string? stdout = DecodeBase64(result.Stdout);
+            string? stderr = DecodeBase64(result.Stderr);
+            string? compileOutput = DecodeBase64(result.CompileOutput);
+
             // Judge0 Internal Error (13) — תקלת תשתית של Judge0 עצמו, לא בעיה בקוד התלמיד.
             // נזרק כחריגה ייעודית כדי שינותב ב-AiWorker ל-MarkJudgeUnavailable ולא ל"טסט שנכשל".
             if (result.Status?.Id == 13)
@@ -141,7 +156,7 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Passed: 0,
                     Total: tests.Count,
                     HasCompileError: true,
-                    CompileError: result.CompileOutput,
+                    CompileError: compileOutput,
                     Details: details);
             }
 
@@ -164,7 +179,7 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                 details.Add(new TestCaseResult(
                     Input: test.Input,
                     Expected: test.Expected,
-                    Actual: result.Stdout?.TrimEnd() ?? "",
+                    Actual: stdout?.TrimEnd() ?? "",
                     Passed: true,
                     Error: null));
             }
@@ -173,9 +188,9 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                 details.Add(new TestCaseResult(
                     Input: test.Input,
                     Expected: test.Expected,
-                    Actual: result.Stdout?.TrimEnd() ?? "",
+                    Actual: stdout?.TrimEnd() ?? "",
                     Passed: false,
-                    Error: result.Stderr ?? result.CompileOutput));
+                    Error: stderr ?? compileOutput));
             }
         }
 
@@ -185,6 +200,27 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
             HasCompileError: false,
             CompileError: null,
             Details: details);
+    }
+
+    // ── Base64 עבור Judge0 (RapidAPI דוחה תווים לא-ASCII, כמו עברית, ללא base64_encoded=true) ──
+
+    private static string EncodeBase64(string? value) =>
+        Convert.ToBase64String(Encoding.UTF8.GetBytes(value ?? ""));
+
+    private static string? DecodeBase64(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return value;
+
+        try
+        {
+            return Encoding.UTF8.GetString(Convert.FromBase64String(value));
+        }
+        catch (FormatException)
+        {
+            // ליתר ביטחון: אם ה-Judge0 בסביבה מסוימת מחזיר טקסט רגיל בכל זאת.
+            return value;
+        }
     }
 
     private static string BuildWrappedSource(

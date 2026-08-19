@@ -26,6 +26,18 @@ export const apiErrorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => err);
       }
 
+      // 403 arrives from the API with an empty body, so the generic branch below would show
+      // the raw "Http failure response for ..." string. Give it real copy instead.
+      if (err.status === 403) {
+        toast.add({
+          severity: "error",
+          summary: "אין הרשאה",
+          detail: "אין לך הרשאה לצפות בתוכן הזה או לבצע את הפעולה הזו.",
+          life: 5000,
+        });
+        return throwError(() => err);
+      }
+
       const detail =
         err.error?.detail ||
         err.error?.message ||

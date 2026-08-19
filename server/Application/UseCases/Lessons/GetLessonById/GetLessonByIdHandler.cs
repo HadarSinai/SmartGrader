@@ -1,10 +1,8 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Dtos.Lessons;
-using SmartGrader.Application.UseCases.Lessons.GetLessonById;
 using SmartGrader.Domain.Abstractions;
-using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.UseCases.Lessons.GetLessonById
 {
@@ -12,13 +10,16 @@ namespace SmartGrader.Application.UseCases.Lessons.GetLessonById
     : IRequestHandler<GetLessonByIdQuery, LessonResponseDto>
     {
         private readonly ILessonRepository _repository;
+        private readonly IStudentRepository _studentRepository;
         private readonly IMapper _mapper;
 
         public GetLessonByIdHandler(
             ILessonRepository repository,
+            IStudentRepository studentRepository,
             IMapper mapper)
         {
             _repository = repository;
+            _studentRepository = studentRepository;
             _mapper = mapper;
         }
 
@@ -28,7 +29,9 @@ namespace SmartGrader.Application.UseCases.Lessons.GetLessonById
         {
             // TeacherId חייב להיות null כשהקורא הוא תלמידה (ר' LessonsController.GetById) —
             // אחרת LessonAccess תזרוק 404 על כל שיעור שאינו "בבעלות" ה-userId של התלמידה עצמה.
-            var lesson = await LessonAccess.GetOwnedOrThrowAsync(_repository, request.Id, request.TeacherId, cancellationToken);
+            // במקומו מועבר StudentId, וההרשאה נבדקת מול הכיתה שאליה השיעור משויך.
+            var lesson = await LessonAccess.GetAccessibleOrThrowAsync(
+                _repository, _studentRepository, request.Id, request.TeacherId, request.StudentId, cancellationToken);
 
             return _mapper.Map<LessonResponseDto>(lesson);
         }

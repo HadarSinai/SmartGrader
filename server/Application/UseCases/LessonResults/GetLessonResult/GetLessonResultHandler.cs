@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Dtos;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
@@ -13,22 +14,28 @@ public class GetLessonResultHandler
     private readonly ILessonResultRepository _lessonResultRepo;
     private readonly IAssignmentRepository _assignmentRepo;
     private readonly ISubmissionRepository _submissionRepo;
+    private readonly ILessonRepository _lessonRepo;
     private readonly IMapper _mapper;
 
     public GetLessonResultHandler(
         ILessonResultRepository lessonResultRepo,
         IAssignmentRepository assignmentRepo,
         ISubmissionRepository submissionRepo,
+        ILessonRepository lessonRepo,
         IMapper mapper)
     {
         _lessonResultRepo = lessonResultRepo;
         _assignmentRepo = assignmentRepo;
         _submissionRepo = submissionRepo;
+        _lessonRepo = lessonRepo;
         _mapper = mapper;
     }
 
     public async Task<LessonResultResponseDto?> Handle(GetLessonResultQuery request, CancellationToken ct)
     {
+        // בעלות המורה על השיעור — הועברה לכאן מהקונטרולר (אין לוגיקה עסקית בקונטרולרים).
+        await LessonAccess.GetOwnedOrThrowAsync(_lessonRepo, request.LessonId, request.TeacherId, ct);
+
         var assignments = await _assignmentRepo.GetByLessonIdAsync(request.LessonId, ct);
         var total = assignments.Count;
 

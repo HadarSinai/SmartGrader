@@ -23,7 +23,7 @@ namespace SmartGrader.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class StudentsController : ControllerBase
+    public class StudentsController : ApiControllerBase
     {
         private readonly IMediator _mediator;
 
@@ -32,20 +32,10 @@ namespace SmartGrader.Api.Controllers
             _mediator = mediator;
         }
 
-        /// <summary>
-        /// A student may access only her own data: the studentId claim from the
-        /// token must match the studentId in the route. Teachers can access all.
-        /// </summary>
-        private bool IsAllowedForStudent(int studentId)
-        {
-            if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
-                return true;
+        // IsAllowedForStudent / TeacherIdForSharedRead / OwnerScopeTeacherId יושבים ב-ApiControllerBase.
+        // ⚠️ IsAllowedForStudent לבדה מחזירה true לכל מורה — היא בודקת רק ש"תלמידה ניגשת לעצמה".
+        // הסינון בין מורות נעשה במורד הזרם, לפי בעלות על השיעור, דרך TeacherId שמועבר לכל שאילתת הגשות.
 
-            var claim = User.FindFirstValue("studentId");
-            return claim is not null && int.TryParse(claim, out var ownId) && ownId == studentId;
-        }
-
-    
 
         [HttpGet]
         [Authorize(Roles = "Teacher,Admin")]
@@ -151,7 +141,7 @@ namespace SmartGrader.Api.Controllers
                 return Forbid();
 
             IReadOnlyList<SubmissionResponseDto> result =
-                await _mediator.Send(new GetSubmissionsQuery(studentId), cancellationToken);
+                await _mediator.Send(new GetSubmissionsQuery(studentId, TeacherIdForSharedRead), cancellationToken);
 
             return Ok(result);
         }
@@ -168,7 +158,7 @@ namespace SmartGrader.Api.Controllers
 
             SubmissionResponseDto result =
                 await _mediator.Send(
-                    new GetSubmissionByIdQuery(studentId, submissionId),
+                    new GetSubmissionByIdQuery(studentId, submissionId, TeacherIdForSharedRead),
                     cancellationToken);
 
             return Ok(result);
@@ -211,7 +201,7 @@ namespace SmartGrader.Api.Controllers
 
             SubmissionResponseDto updated =
                 await _mediator.Send(
-                    new UpdateSubmissionCommand(studentId, submissionId, dto),
+                    new UpdateSubmissionCommand(studentId, submissionId, dto, TeacherIdForSharedRead),
                     cancellationToken);
 
             return Ok(updated);
@@ -226,7 +216,7 @@ namespace SmartGrader.Api.Controllers
             CancellationToken cancellationToken)
         {
             await _mediator.Send(
-                new DeleteSubmissionCommand(studentId,submissionId),
+                new DeleteSubmissionCommand(studentId, submissionId, OwnerScopeTeacherId),
                 cancellationToken);
 
             return NoContent();

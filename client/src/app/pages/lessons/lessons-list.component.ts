@@ -504,9 +504,11 @@ export class LessonsListComponent implements OnInit {
 
   confirmDelete(lesson: LessonResponseDto): void {
     this.confirmationService.confirm({
+      // הטקסט אומר במפורש מה נמחק יחד עם השיעור. מחיקה של שיעור שיש בו הגשות או ציונים
+      // סופיים נחסמת בשרת, וההודעה משם מציינת כמה יש — ולכן אין כאן אישור שני.
       message: `האם למחוק את השיעור "${lesson.courseName}${
         lesson.subject ? " — " + lesson.subject : ""
-      }"? לא ניתן לשחזר פעולה זו.`,
+      }"? כל התרגילים שלו יימחקו גם הם. לא ניתן לשחזר פעולה זו.`,
       header: "אישור מחיקה",
       icon: "pi pi-exclamation-triangle",
       acceptLabel: "מחיקה",

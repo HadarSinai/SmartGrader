@@ -48,6 +48,7 @@ namespace SmartGrader.Infrastructure.Repositories
             var query = _context.Lessons
                 .Where(l => l.LessonDate >= from && l.LessonDate <= to)
                 .Include(l => l.Course)
+                .Include(l => l.Classes) // דוח התקופה מצמצם את רשימת התלמידות לכיתות של השיעורים
                 .AsQueryable();
 
             if (teacherId.HasValue)

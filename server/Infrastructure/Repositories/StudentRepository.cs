@@ -38,6 +38,25 @@ namespace SmartGrader.Infrastructure.Repositories
 
             return await query.ToListAsync(ct);
         }
+        public async Task<IReadOnlyList<Student>> GetByClassIdsAsync(
+            IReadOnlyList<int> classIds, bool includeArchived, CancellationToken ct = default)
+        {
+            if (classIds.Count == 0)
+                return Array.Empty<Student>();
+
+            var query = _context.Students
+                .AsNoTracking()
+                .Include(s => s.Class)
+                .Where(s => classIds.Contains(s.ClassId));
+
+            if (!includeArchived)
+                query = query.Where(s => !s.Class.IsArchived);
+
+            return await query
+                .OrderBy(s => s.FullName)
+                .ToListAsync(ct);
+        }
+
         public async Task<Student?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _context.Students

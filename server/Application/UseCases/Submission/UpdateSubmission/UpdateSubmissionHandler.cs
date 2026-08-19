@@ -33,9 +33,10 @@ namespace SmartGrader.Application.UseCases.Submissions.UpdateSubmission
             UpdateSubmissionCommand request,
             CancellationToken cancellationToken)
         {
-            // 🎯 שולפים ההגשה לפי SubmissionId
+            // 🎯 שולפים ההגשה לפי SubmissionId — כבר מסונן לפי בעלות המורה על השיעור
             var submission = await _repository.GetByIdAsync(
                 request.SubmissionId,
+                request.TeacherId,
                 cancellationToken);
 
             if (submission is null)

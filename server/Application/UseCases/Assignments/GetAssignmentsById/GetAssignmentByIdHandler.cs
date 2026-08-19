@@ -1,9 +1,8 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.Dtos.Assignments;
-using SmartGrader.Application.Dtos.Lessons;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
 
@@ -14,15 +13,18 @@ namespace SmartGrader.Application.UseCases.Assignments.GetAssignmentById
     {
         private readonly IAssignmentRepository _repository;
         private readonly ILessonRepository _lessonRepository;
+        private readonly IStudentRepository _studentRepository;
         private readonly IMapper _mapper;
 
         public GetAssignmentByIdHandler(
             IAssignmentRepository repository,
             ILessonRepository lessonRepository,
+            IStudentRepository studentRepository,
             IMapper mapper)
         {
             _repository = repository;
             _lessonRepository = lessonRepository;
+            _studentRepository = studentRepository;
             _mapper = mapper;
         }
 
@@ -30,7 +32,8 @@ namespace SmartGrader.Application.UseCases.Assignments.GetAssignmentById
             GetAssignmentByIdQuery request,
             CancellationToken cancellationToken)
         {
-            await LessonAccess.GetOwnedOrThrowAsync(_lessonRepository, request.LessonId, request.TeacherId, cancellationToken);
+            await LessonAccess.GetAccessibleOrThrowAsync(
+                _lessonRepository, _studentRepository, request.LessonId, request.TeacherId, request.StudentId, cancellationToken);
 
             var assignment = await _repository.GetByIdAsync(request.AssignmentId, cancellationToken);
 

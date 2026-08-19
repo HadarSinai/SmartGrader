@@ -40,10 +40,19 @@ public class ExportLessonResultsHandler : IRequestHandler<ExportLessonResultsQue
         var assignments = await _assignmentRepo.GetByLessonIdAsync(request.LessonId, ct);
         var total = assignments.Count;
 
-        var students = await _studentRepo.GetAllAsync(ct);
+        // ⚠️ לא GetAllAsync: היא מחזירה את כל תלמידות בית הספר, כולל כיתות בארכיון, כך שהייצוא
+        // של מורה אחת חשף את שמות כל התלמידות במערכת. הרשימה מצומצמת לכיתות שהשיעור משויך אליהן.
+        var classIds = lesson.Classes.Select(c => c.Id).ToList();
+        var students = await _studentRepo.GetByClassIdsAsync(classIds, includeArchived: false, ct);
 
         var results = await _lessonResultRepo.GetByLessonIdAsync(request.LessonId, ct);
         var resultsByStudent = results.ToDictionary(r => r.StudentId);
+
+        // שאילתה אחת לכל השיעור במקום GetByStudentAndLessonAsync לכל תלמידה בנפרד (N+1)
+        var completedByStudent = (await _submissionRepo.GetByLessonIdAsync(request.LessonId, ct))
+            .Where(s => s.Status == SubmissionStatus.Done)
+            .GroupBy(s => s.StudentId)
+            .ToDictionary(g => g.Key, g => g.Select(s => s.AssignmentId).Distinct().Count());
 
         using var workbook = new XLWorkbook();
         var ws = workbook.Worksheets.Add("ציונים");
@@ -58,12 +67,7 @@ public class ExportLessonResultsHandler : IRequestHandler<ExportLessonResultsQue
         var row = 2;
         foreach (var student in students)
         {
-            var submissions = await _submissionRepo.GetByStudentAndLessonAsync(student.Id, request.LessonId, ct);
-            var completed = submissions
-                .Where(s => s.Status == SubmissionStatus.Done)
-                .Select(s => s.AssignmentId)
-                .Distinct()
-                .Count();
+            completedByStudent.TryGetValue(student.Id, out var completed);
 
             resultsByStudent.TryGetValue(student.Id, out var result);
 

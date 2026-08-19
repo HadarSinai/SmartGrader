@@ -5,8 +5,6 @@ using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SmartGrader.Application.Common.Authorization;
-using SmartGrader.Domain.Abstractions;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 using SmartGrader.Application.UseCases.LessonResults.ExportGradesPeriodReport;
 using SmartGrader.Application.UseCases.LessonResults.ExportLessonResults;
@@ -22,29 +20,23 @@ public class LessonResultController : ApiControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IMapper _mapper;
-    private readonly ILessonRepository _lessonRepository;
-    public LessonResultController(
-       IMediator mediator, IMapper mapper, ILessonRepository lessonRepository
-        )
+
+    public LessonResultController(IMediator mediator, IMapper mapper)
     {
         _mediator = mediator;
         _mapper = mapper;
-        _lessonRepository = lessonRepository;
-
     }
 
-    // תלמידה — רק לעצמה; מורה/מנהל — רק על שיעור בבעלותם (LessonAccess). באג קיים שתוקן: לפני התיקון
-    // כל תלמידה מחוברת יכלה לקרוא תוצאות של כל תלמידה אחרת דרך ה-endpoint הזה.
+    // תלמידה — רק לעצמה; מורה/מנהל — רק על שיעור בבעלותם (LessonAccess, בתוך ה-handler). באג קיים
+    // שתוקן: לפני התיקון כל תלמידה מחוברת יכלה לקרוא תוצאות של כל תלמידה אחרת דרך ה-endpoint הזה.
     [HttpGet("{studentId:int}/{lessonId:int}")]
     public async Task<IActionResult> Get(int studentId, int lessonId, CancellationToken ct)
     {
         if (!IsAllowedForStudent(studentId))
             return Forbid();
 
-        if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
-            await LessonAccess.GetOwnedOrThrowAsync(_lessonRepository, lessonId, OwnerScopeTeacherId, ct);
-
-        var result = await _mediator.Send(new GetLessonResultQuery(studentId, lessonId), ct);
+        var result = await _mediator.Send(
+            new GetLessonResultQuery(studentId, lessonId, TeacherIdForSharedRead), ct);
         return Ok(result);
     }
 
@@ -61,12 +53,14 @@ public class LessonResultController : ApiControllerBase
 
     [HttpPost("complete")]
     [Authorize(Roles = "Teacher,Admin")]
-    public async Task<IActionResult> Complete([FromBody] CompleteLessonRequestDto dto)
+    public async Task<IActionResult> Complete([FromBody] CompleteLessonRequestDto dto, CancellationToken ct)
     {
         // ⚠️ לא ממופה דרך AutoMapper בכוונה — CompleteLessonCommand הוא record עם פרמטרים positional
-        // חובה, שלא ממופה נכון מ-DTO דרך reflection. בנייה מפורשת.
-        var command = new CompleteLessonCommand(dto.StudentId, dto.LessonId, dto.FinalScore, dto.HasBonus);
-        var result = await _mediator.Send(command);
+        // חובה, שלא ממופה נכון מ-DTO דרך reflection. בנייה מפורשת — וכאן בדיוק חסר OwnerScopeTeacherId
+        // עד עכשיו, בזמן ש-Export ו-ExportPeriodReport באותו קונטרולר כן העבירו אותו.
+        var command = new CompleteLessonCommand(
+            dto.StudentId, dto.LessonId, dto.FinalScore, OwnerScopeTeacherId, dto.HasBonus);
+        var result = await _mediator.Send(command, ct);
         var response = _mapper.Map<LessonResultResponseDto>(result);
 
         return Ok(response);

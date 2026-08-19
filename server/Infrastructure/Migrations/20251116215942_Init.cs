@@ -126,7 +126,7 @@ namespace SmartGrader.Infrastructure.Migrations
                     AssignmentId = table.Column<int>(type: "INTEGER", nullable: false),
                     SourceCode = table.Column<string>(type: "TEXT", nullable: false),
                     Score = table.Column<double>(type: "REAL", nullable: false),
-                  //  CheckedByAI = table.Column<bool>(type: "INTEGER", nullable: false),
+                    CheckedByAI = table.Column<bool>(type: "INTEGER", nullable: false),
                     Comments = table.Column<string>(type: "TEXT", nullable: false),
                     SubmittedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },

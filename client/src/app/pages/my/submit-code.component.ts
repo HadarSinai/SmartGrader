@@ -364,8 +364,19 @@ export class SubmitCodeComponent implements OnInit {
       }));
     }
 
+    // ⚠️ עד לתיקון הזה זו הייתה יציאה שקטה: כפתור ההגשה פשוט לא עשה כלום, בלי הודעה ובלי שגיאה.
+    // המצב הזה נחסם עכשיו כבר בהתחברות וב-studentGuard, וזו שכבת ההגנה האחרונה.
     const studentId = this.auth.studentId();
-    if (studentId === null) return;
+    if (studentId === null) {
+      this.messageService.add({
+        severity: "error",
+        summary: "לא ניתן להגיש",
+        detail:
+          "החשבון שלך אינו מקושר לרשומת תלמידה במערכת. יש לפנות למורה כדי לקשר אותו.",
+        life: 8000,
+      });
+      return;
+    }
 
     this.submitting = true;
     this.submissionsService

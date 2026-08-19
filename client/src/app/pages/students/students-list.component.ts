@@ -196,7 +196,9 @@ export class StudentsListComponent implements OnInit {
 
   confirmDelete(student: StudentResponseDto): void {
     this.confirmationService.confirm({
-      message: `האם למחוק את "${student.fullName ?? ""}"? לא ניתן לשחזר פעולה זו.`,
+      // מחיקה של תלמידה שיש לה הגשות או ציונים נחסמת בשרת, עם הודעה שאומרת כמה — ולכן
+      // כאן רק מציינים שגם חשבון ההתחברות נמחק.
+      message: `האם למחוק את "${student.fullName ?? ""}"? חשבון ההתחברות שלה יימחק גם הוא. לא ניתן לשחזר פעולה זו.`,
       header: "אישור מחיקה",
       icon: "pi pi-exclamation-triangle",
       acceptLabel: "מחיקה",

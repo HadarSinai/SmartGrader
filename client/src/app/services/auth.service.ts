@@ -80,8 +80,10 @@ export class AuthService {
 
   /** Default landing route by role (teacher → dashboard, student → the student area). */
   homeRoute(): string[] {
-    if (this.isStudent() && this.studentId() !== null) {
-      return ["/my", "lessons"];
+    if (this.isStudent()) {
+      // ⚠️ A student with no studentId must not fall through to "/" — that route is
+      // teacherGuard-protected and redirects straight back here, which was an infinite loop.
+      return this.studentId() !== null ? ["/my", "lessons"] : ["/login"];
     }
     return ["/"];
   }

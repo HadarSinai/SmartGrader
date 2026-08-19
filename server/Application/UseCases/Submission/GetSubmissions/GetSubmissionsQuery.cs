@@ -1,13 +1,9 @@
-﻿using MediatR;
+using MediatR;
 using SmartGrader.Application.Dtos.Submissions;
-using SmartGrader.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartGrader.Application.UseCases.Submissions.GetSubmissions
 {
-    public record GetSubmissionsQuery(int StudentId) : IRequest<IReadOnlyList<SubmissionResponseDto>>;
+    // TeacherId — סינון לפי בעלות המורה על השיעור שמתחת לתרגיל. null = מנהל/ת או תלמידה
+    // שקוראת את ההגשות של עצמה. בלי הפרמטר הזה כל מורה קראה את ההגשות של תלמידות מורה אחרת.
+    public record GetSubmissionsQuery(int StudentId, int? TeacherId) : IRequest<IReadOnlyList<SubmissionResponseDto>>;
 }

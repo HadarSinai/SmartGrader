@@ -7,5 +7,10 @@ public interface ILessonResultRepository
     Task<IReadOnlyList<LessonResult>> GetByLessonIdAsync(int lessonId, CancellationToken ct = default);
     Task<IReadOnlyList<LessonResult>> GetByLessonIdsAsync(IReadOnlyList<int> lessonIds, CancellationToken ct = default);
     Task<IReadOnlyList<LessonResult>> GetByStudentIdAsync(int studentId, CancellationToken ct = default);
+
+    // ספירות לשמירה על ציונים סופיים לפני מחיקה (ר' DeleteLesson/DeleteStudent)
+    Task<int> CountByLessonIdAsync(int lessonId, CancellationToken ct = default);
+    Task<int> CountByStudentIdAsync(int studentId, CancellationToken ct = default);
+
     Task AddAsync(LessonResult entity, CancellationToken ct = default);
 }

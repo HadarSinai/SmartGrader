@@ -32,11 +32,11 @@ namespace SmartGrader.Api.Controllers
             _mapper = mapper;
         }
 
-        // תלמידה קוראת ל-endpoints המשותפים האלה (GetAll/GetById/Assignments) גם היא — לכן ה-TeacherId
+        // ⚠️ תלמידה קוראת ל-endpoints המשותפים האלה (GetAll/GetById/Assignments) גם היא — לכן ה-TeacherId
         // המועבר להם חייב להיות null עבורה, לא OwnerScopeTeacherId (שהיה שווה ל-CurrentUserId שלה,
-        // מזהה שאינו מורה בכלל, וממוטט כל שיעור ל-404).
-        private int? TeacherIdForSharedRead =>
-            (User.IsInRole("Teacher") || User.IsInRole("Admin")) ? OwnerScopeTeacherId : null;
+        // מזהה שאינו מורה בכלל, וממוטט כל שיעור ל-404). בדיוק בגלל זה חובה להעביר גם StudentId —
+        // בלעדיו אף בדיקה לא רצה עבורה וכל שיעור בבית הספר נקרא.
+        // TeacherIdForSharedRead / TryResolveSharedReadScope יושבים ב-ApiControllerBase.
 
         // 1️⃣ GET api/lessons — תלמידה מקבלת רק את שיעורי הכיתה שלה; מורה הכל + סינון אופציונלי
         [HttpGet]
@@ -44,20 +44,14 @@ namespace SmartGrader.Api.Controllers
             [FromQuery] int? classId,
             CancellationToken cancellationToken)
         {
-            int? studentId = null;
+            if (!TryResolveSharedReadScope(out var teacherId, out var studentId))
+                return Forbid();
 
-            if (!User.IsInRole("Teacher") && !User.IsInRole("Admin"))
-            {
-                var claim = User.FindFirst("studentId")?.Value;
-                if (claim is null || !int.TryParse(claim, out var ownId))
-                    return Forbid();
-
-                studentId = ownId;
+            if (studentId.HasValue)
                 classId = null; // תלמידה לא בוחרת כיתה — נגזר מה-claim בלבד
-            }
 
             IReadOnlyList<LessonResponseDto> result =
-                await _mediator.Send(new GetLessonsQuery(TeacherIdForSharedRead, classId, studentId), cancellationToken);
+                await _mediator.Send(new GetLessonsQuery(teacherId, classId, studentId), cancellationToken);
 
             return Ok(result);
         }
@@ -66,8 +60,11 @@ namespace SmartGrader.Api.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
+            if (!TryResolveSharedReadScope(out var teacherId, out var studentId))
+                return Forbid();
+
             LessonResponseDto lesson =
-                await _mediator.Send(new GetLessonByIdQuery(id, TeacherIdForSharedRead), cancellationToken);
+                await _mediator.Send(new GetLessonByIdQuery(id, teacherId, studentId), cancellationToken);
 
             return Ok(lesson);
         }
@@ -115,8 +112,11 @@ namespace SmartGrader.Api.Controllers
             int lessonId,
             CancellationToken cancellationToken)
         {
+            if (!TryResolveSharedReadScope(out var teacherId, out var studentId))
+                return Forbid();
+
             IReadOnlyList<AssignmentResponseDto> result =
-                await _mediator.Send(new GetAssignmentsQuery(lessonId, TeacherIdForSharedRead), cancellationToken);
+                await _mediator.Send(new GetAssignmentsQuery(lessonId, teacherId, studentId), cancellationToken);
 
             return Ok(result);
         }
@@ -128,9 +128,12 @@ namespace SmartGrader.Api.Controllers
             int assignmentId,
             CancellationToken cancellationToken)
         {
+            if (!TryResolveSharedReadScope(out var teacherId, out var studentId))
+                return Forbid();
+
             AssignmentResponseDto result =
                 await _mediator.Send(
-                    new GetAssignmentByIdQuery(lessonId, assignmentId, TeacherIdForSharedRead),
+                    new GetAssignmentByIdQuery(lessonId, assignmentId, teacherId, studentId),
                     cancellationToken);
 
             return Ok(result);

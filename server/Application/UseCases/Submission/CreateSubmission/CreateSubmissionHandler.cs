@@ -2,6 +2,7 @@
 using FluentValidation.Results;
 using Hangfire;
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Application.Services.BackgroundJobs;
@@ -16,6 +17,7 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
         private readonly ISubmissionRepository _submissionRepository;
         private readonly IStudentRepository _studentRepository;
         private readonly IAssignmentRepository _assignmentRepository;
+        private readonly ILessonRepository _lessonRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IBackgroundJobClient _jobClient;
@@ -24,6 +26,7 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
             ISubmissionRepository submissionRepository,
             IStudentRepository studentRepository,
             IAssignmentRepository assignmentRepository,
+            ILessonRepository lessonRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IBackgroundJobClient jobClient)
@@ -31,6 +34,7 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
             _submissionRepository = submissionRepository;
             _studentRepository = studentRepository;
             _assignmentRepository = assignmentRepository;
+            _lessonRepository = lessonRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _jobClient = jobClient;
@@ -54,6 +58,14 @@ namespace SmartGrader.Application.UseCases.Submissions.CreateSubmission
                 .GetByIdAsync(dto.AssignmentId, cancellationToken);
 
             if (assignment is null)
+                throw new NotFoundException(nameof(Assignment), dto.AssignmentId);
+
+            // ✔ בדיקה שהשיעור של התרגיל אכן משויך לכיתה של התלמידה. בלי זה "קיים תלמיד + קיים
+            // תרגיל" הספיק כדי להגיש לכל תרגיל במערכת. NotFound על התרגיל (ולא Forbid) כדי לא
+            // לאשר שהתרגיל קיים בכלל.
+            var lesson = await _lessonRepository.GetByIdAsync(assignment.LessonId, cancellationToken);
+
+            if (lesson is null || !LessonAccess.IsAssignedToClass(lesson, student.ClassId))
                 throw new NotFoundException(nameof(Assignment), dto.AssignmentId);
 
             // ✔ הגשה רב-קובצית: כאשר לתרגיל יש ExpectedFiles מוגדרים, מחייבים שהקבצים שהוגשו

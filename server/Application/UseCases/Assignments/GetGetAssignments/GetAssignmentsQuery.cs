@@ -1,9 +1,10 @@
-﻿using MediatR;
+using MediatR;
 using SmartGrader.Application.Dtos.Assignments;
-using SmartGrader.Application.Dtos.Lessons;
 
 namespace SmartGrader.Application.UseCases.Assignments.GetAssignments
 {
-    public record GetAssignmentsQuery(int LessonId, int? TeacherId)
+    // StudentId — ר' GetLessonByIdQuery: בלעדיו תלמידה קוראת את התרגילים (כולל ה-Tests
+    // והפלטים הצפויים) של כל שיעור בבית הספר.
+    public record GetAssignmentsQuery(int LessonId, int? TeacherId, int? StudentId = null)
         : IRequest<IReadOnlyList<AssignmentResponseDto>>;
 }

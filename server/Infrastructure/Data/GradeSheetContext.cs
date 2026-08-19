@@ -30,15 +30,29 @@ namespace SmartGrader.Infrastructure.Data
                 .WithOne(s => s.Student)
                 .HasForeignKey(s => s.StudentId);
 
+            // ⚠️ Restrict, לא Cascade: השרשרת Lesson → Assignment → Submission הייתה על ברירת המחדל
+            // של EF, כך שמחיקת שיעור אחת מוחקת בשקט את כל התרגילים, כל ההגשות (קוד, משוב, ציונים)
+            // וכל הציונים הסופיים — ועוקפת לגמרי את ההגנה שב-DeleteSubmissionHandler, שמסרבת למחוק
+            // הגשה שנבדקה. המחיקה המדורגת נחסמת ברמת ה-DB; המחיקה עצמה נעשית מפורשות ב-handlers,
+            // אחרי בדיקה שאין עבודת תלמידות מתחת.
             modelBuilder.Entity<Lesson>()
                 .HasMany(l => l.Assignments)
                 .WithOne(a => a.Lesson)
-                .HasForeignKey(a => a.LessonId);
+                .HasForeignKey(a => a.LessonId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Assignment>()
                 .HasMany(a => a.Submissions)
                 .WithOne(s => s.Assignment)
-                .HasForeignKey(s => s.AssignmentId);
+                .HasForeignKey(s => s.AssignmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // אותו נימוק: בלי זה מחיקת שיעור בלי תרגילים עדיין מוחקת את הציונים הסופיים שלו
+            modelBuilder.Entity<LessonResult>()
+                .HasOne(r => r.Lesson)
+                .WithMany()
+                .HasForeignKey(r => r.LessonId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Assignment>()
                 .Property(a => a.GradingMode)

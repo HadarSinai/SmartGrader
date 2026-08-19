@@ -1,9 +1,9 @@
-﻿using MediatR;
+using MediatR;
 using SmartGrader.Application.Dtos.Assignments;
-using SmartGrader.Application.Dtos.Lessons;
 
 namespace SmartGrader.Application.UseCases.Assignments.GetAssignmentById
 {
-    public record GetAssignmentByIdQuery(int LessonId, int AssignmentId, int? TeacherId)
+    // StudentId — ר' GetLessonByIdQuery.
+    public record GetAssignmentByIdQuery(int LessonId, int AssignmentId, int? TeacherId, int? StudentId = null)
         : IRequest<AssignmentResponseDto>;
 }
