@@ -32,7 +32,10 @@ namespace SmartGrader.Application.Common.Mapping
                         s.Student != null ? s.Student.FullName : null))
                 .ForMember(d => d.AssignmentName,
                     opt => opt.MapFrom(s =>
-                        s.Assignment != null ? s.Assignment.Title : null));
+                        s.Assignment != null ? s.Assignment.Title : null))
+                .ForMember(d => d.LessonId,
+                    opt => opt.MapFrom(s =>
+                        s.Assignment != null ? s.Assignment.LessonId : 0));
         }
 
         // ה-JSON הגולמי מגיע מ-OpenAiFeedbackService כבר במבנה AiFeedbackResult (במקרה ההצלחה)

@@ -136,7 +136,8 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                     <strong>פלט הקומפיילר:</strong>
                     <pre class="sg-code-box">{{ submission.compileError }}</pre>
                   </div>
-                  <span>{{ failureNote }}</span>
+                  <span>{{ compilationFailedNote }}</span>
+                  <ng-container *ngTemplateOutlet="fixAndResubmit"></ng-container>
                 </ng-container>
 
                 <!-- שגיאת בדיקה -->
@@ -150,7 +151,8 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                     <strong>פרטי השגיאה:</strong>
                     <pre class="sg-code-box">{{ submission.aiError }}</pre>
                   </div>
-                  <span>{{ failureNote }}</span>
+                  <span>{{ aiFailedNote }}</span>
+                  <ng-container *ngTemplateOutlet="fixAndResubmit"></ng-container>
                 </ng-container>
 
                 <!-- תקלת מערכת הבדיקה — לא קשורה לקוד של התלמיד -->
@@ -182,6 +184,18 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
         </p-card>
       </div>
     </section>
+
+    <!-- הכשל הוא בקוד של התלמידה, ולכן יש לה מה לתקן. השרת כבר מתיר עריכה במצבים האלה. -->
+    <ng-template #fixAndResubmit>
+      <div class="mt-2">
+        <p-button
+          label="תיקון והגשה מחדש"
+          icon="pi pi-pencil"
+          styleClass="sg-btn-primary"
+          [routerLink]="['/my', 'submissions', submissionId, 'edit']"
+        ></p-button>
+      </div>
+    </ng-template>
   `,
   styles: [
     `
@@ -198,11 +212,17 @@ export class MyFeedbackComponent implements OnInit, OnDestroy {
   lessonId: number | null = null;
   loading = false;
 
-  readonly failureNote = "אין צורך לעשות דבר — צוות ההוראה מטפל בהגשות שנכשלו.";
+  // ⚠️ אלה החליפו את "אין צורך לעשות דבר — צוות ההוראה מטפל בהגשות שנכשלו.": בשני המצבים
+  // האלה יש לתלמידה מה לתקן, והשרת תמיד אפשר לה להגיש מחדש — רק הכפתור היה חסר.
+  readonly compilationFailedNote =
+    "הקוד לא הצליח להתקמפל, ולכן לא נבדק. אפשר לתקן את השגיאה ולהגיש מחדש.";
+  readonly aiFailedNote =
+    "הבדיקה לא הושלמה. אפשר לתקן את הקוד ולהגיש מחדש.";
+  // תקלת תשתית — לא באשמת התלמידה ואין לה מה לתקן, ולכן אין כאן כפתור הגשה מחדש.
   readonly judgeUnavailableNote =
     "אירעה תקלה זמנית במערכת הבדיקה — הקוד שלך לא נבדק, וזו לא בעיה בקוד. צוות ההוראה מטפל בכך.";
 
-  private submissionId!: number;
+  submissionId!: number;
   private pollHandle: ReturnType<typeof setInterval> | null = null;
 
   get statusLabel(): string {

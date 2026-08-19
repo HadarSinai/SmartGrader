@@ -50,10 +50,12 @@ import { SubmissionsService } from "@services/submissions.service";
             <div class="px-4 pt-4 pb-2">
               <a class="sg-breadcrumb-link" [routerLink]="backLink">
                 <i class="pi pi-arrow-right" aria-hidden="true"></i>
-                חזרה לתרגילים
+                {{ backLabel }}
               </a>
               <div class="sg-title mt-2">
-                <div class="sg-h1">הגשת קוד</div>
+                <div class="sg-h1">
+                  {{ isEditMode ? "תיקון והגשה מחדש" : "הגשת קוד" }}
+                </div>
                 <div class="sg-h2" *ngIf="assignment">
                   {{ assignment.title }}
                   <span *ngIf="showMethodName">
@@ -72,6 +74,12 @@ import { SubmissionsService } from "@services/submissions.service";
                 severity="info"
                 styleClass="w-full mb-2"
                 [text]="submissionHint"
+              ></p-message>
+              <p-message
+                *ngIf="showNoPrintingNote"
+                severity="warn"
+                styleClass="w-full mb-2"
+                text="בתרגיל מסוג זה המערכת מדפיסה את הערך המוחזר — אל תדפיסי בעצמך."
               ></p-message>
               <textarea
                 pInputTextarea
@@ -181,7 +189,7 @@ import { SubmissionsService } from "@services/submissions.service";
               ></p-button>
               <p-button
                 type="submit"
-                label="הגשה"
+                [label]="isEditMode ? 'הגשה מחדש' : 'הגשה'"
                 icon="pi pi-upload"
                 styleClass="sg-btn-primary"
                 [loading]="submitting"
@@ -223,14 +231,42 @@ export class SubmitCodeComponent implements OnInit {
   assignmentId!: number;
   assignment: AssignmentResponseDto | null = null;
   submitting = false;
+
+  /**
+   * מסך אחד לשני המצבים: הגשה ראשונה (/my/lessons/:lessonId/assignments/:assignmentId/submit)
+   * ותיקון והגשה מחדש (/my/submissions/:submissionId/edit). העורך, הוולידציה וטיפול הקבצים
+   * זהים — רק המקור של הנתונים והקריאה בסוף שונים.
+   */
+  submissionId: number | null = null;
+
   private readonly loadedFiles = new Map<string, string>();
 
   readonly fullProgramPlaceholder =
     "using System;\n\nclass Program\n{\n    static void Main()\n    {\n        // כתבי כאן את התוכנית שלך: קריאת קלט עם Console.ReadLine()\n        // והדפסת התוצאה עם Console.WriteLine()\n    }\n}";
   readonly methodPlaceholder = "public int Sum(int a, int b)\n{\n    ...\n}";
 
+  get isEditMode(): boolean {
+    return this.submissionId !== null;
+  }
+
   get backLink(): (string | number)[] {
+    if (this.isEditMode) return ["/my", "submissions", this.submissionId!];
+    if (!this.lessonId) return ["/my", "lessons"];
     return ["/my", "lessons", this.lessonId, "assignments"];
+  }
+
+  get backLabel(): string {
+    if (this.isEditMode) return "חזרה לפידבק";
+    if (!this.lessonId) return "חזרה לשיעורים שלי";
+    return "חזרה לתרגילים";
+  }
+
+  /**
+   * במצב "מתודה בודדת" העטיפה מדפיסה בעצמה את הערך המוחזר. הדפסה נוספת של התלמידה מוסיפה
+   * שורה ל-stdout ומפילה את הבדיקה אף שהלוגיקה נכונה — ולכן זה נאמר לה מראש.
+   */
+  get showNoPrintingNote(): boolean {
+    return this.gradingMode === "Method";
   }
 
   /** כל ההנחיות למטה נגזרות מ-gradingMode, כך שהתלמיד תמיד יודע איזו צורת קוד מצופה ממנו. */
@@ -297,14 +333,50 @@ export class SubmitCodeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.form = this.fb.group({
+      sourceCode: ["", Validators.required],
+    });
+
+    const submissionIdParam = this.route.snapshot.paramMap.get("submissionId");
+    if (submissionIdParam !== null) {
+      this.submissionId = Number(submissionIdParam);
+      this.loadExistingSubmission();
+      return;
+    }
+
     this.lessonId = Number(this.route.snapshot.paramMap.get("lessonId"));
     this.assignmentId = Number(
       this.route.snapshot.paramMap.get("assignmentId"),
     );
+    this.loadAssignment();
+  }
 
-    this.form = this.fb.group({
-      sourceCode: ["", Validators.required],
+  /** טוען את ההגשה הקיימת לתוך אותו טופס, כדי שהתלמידה תתקן את הקוד שלה ולא תכתוב מחדש. */
+  private loadExistingSubmission(): void {
+    const studentId = this.auth.studentId();
+    if (studentId === null) return;
+
+    this.submissionsService.getById(studentId, this.submissionId!).subscribe({
+      next: (submission: SubmissionResponseDto) => {
+        this.assignmentId = submission.assignmentId;
+        this.lessonId = submission.lessonId;
+        this.form.patchValue({ sourceCode: submission.sourceCode ?? "" });
+
+        for (const file of submission.sourceFiles ?? []) {
+          this.loadedFiles.set(file.fileName, file.content);
+        }
+
+        this.loadAssignment();
+      },
+      error: () => {
+        // Toast shown by ApiErrorInterceptor
+      },
     });
+  }
+
+  private loadAssignment(): void {
+    // בלי lessonId אין endpoint לתרגיל בודד — הטופס עדיין עובד, רק בלי ההנחיות שנגזרות ממנו
+    if (!this.lessonId || !this.assignmentId) return;
 
     this.assignmentsService
       .getById(this.lessonId, this.assignmentId)
@@ -379,27 +451,36 @@ export class SubmitCodeComponent implements OnInit {
     }
 
     this.submitting = true;
-    this.submissionsService
-      .create(studentId, {
-        assignmentId: this.assignmentId,
-        sourceCode: this.isMultiFile ? "" : this.form.value.sourceCode,
-        files,
-      })
-      .subscribe({
-        next: (submission: SubmissionResponseDto) => {
-          this.messageService.add({
-            severity: "success",
-            summary: "בוצע",
-            detail: "הקוד נשלח לבדיקה",
-          });
-          this.router.navigate(["/my", "submissions", submission.id], {
-            queryParams: { lessonId: this.lessonId },
-          });
-        },
-        error: () => {
-          this.submitting = false;
-        },
-      });
+    const sourceCode = this.isMultiFile ? "" : this.form.value.sourceCode;
+
+    const request$ = this.isEditMode
+      ? this.submissionsService.update(studentId, this.submissionId!, {
+          sourceCode,
+          files,
+        })
+      : this.submissionsService.create(studentId, {
+          assignmentId: this.assignmentId,
+          sourceCode,
+          files,
+        });
+
+    request$.subscribe({
+      next: (submission: SubmissionResponseDto) => {
+        this.messageService.add({
+          severity: "success",
+          summary: "בוצע",
+          detail: this.isEditMode
+            ? "הקוד המתוקן נשלח לבדיקה"
+            : "הקוד נשלח לבדיקה",
+        });
+        this.router.navigate(["/my", "submissions", submission.id], {
+          queryParams: { lessonId: this.lessonId || null },
+        });
+      },
+      error: () => {
+        this.submitting = false;
+      },
+    });
   }
 
   onCancel(): void {

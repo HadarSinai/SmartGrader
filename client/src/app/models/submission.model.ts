@@ -63,6 +63,8 @@ export interface SubmissionResponseDto {
   id: number;
   studentId: number;
   assignmentId: number;
+  /** השיעור שמתחת לתרגיל — מגיע מהשרת, אין צורך לגרור אותו ב-queryParams. */
+  lessonId: number;
   sourceCode: string | null;
   sourceFiles: SubmissionFileDto[];
   score: number | null;
@@ -84,4 +86,6 @@ export interface CreateSubmissionRequestDto {
 
 export interface UpdateSubmissionRequestDto {
   sourceCode: string | null;
+  /** null בהגשה חד-קובצית. בתרגיל רב-קובצי חובה לשלוח את כל הקבצים הצפויים. */
+  files: SubmissionFileDto[] | null;
 }

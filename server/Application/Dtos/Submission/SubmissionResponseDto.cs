@@ -6,6 +6,10 @@
         public int StudentId { get; set; }
         public int AssignmentId { get; set; }
 
+        // השיעור שמתחת לתרגיל. בלעדיו הלקוח חייב לגרור lessonId ב-queryParam ממסך למסך —
+        // ובכל מסלול שלא עובר דרך רשימת התרגילים (למשל "הציונים שלי") הוא פשוט חסר.
+        public int LessonId { get; set; }
+
         public string SourceCode { get; set; } = string.Empty;
         public List<SubmissionFileDto> SourceFiles { get; set; } = new();
 

@@ -305,6 +305,8 @@ export class SubmissionFormComponent implements OnInit {
     if (this.isEditMode) {
       const request: UpdateSubmissionRequestDto = {
         sourceCode: formValue.sourceCode,
+        // מסך המורה עורך קוד יחיד בלבד; null משאיר את קבצי ההגשה הקיימים כפי שהם
+        files: null,
       };
 
       this.submissionsService

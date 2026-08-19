@@ -167,6 +167,12 @@ export const routes: Routes = [
         component: SubmitCodeComponent,
       },
       { path: "submissions/:submissionId", component: MyFeedbackComponent },
+      // תיקון והגשה מחדש אחרי כשל — אותו עורך בדיוק, במצב עריכה. השרת כבר מתיר את זה
+      // (UpdateSubmissionHandler: CompilationFailed / JudgeUnavailable / AiFailed בלבד).
+      {
+        path: "submissions/:submissionId/edit",
+        component: SubmitCodeComponent,
+      },
       { path: "grades", component: MyGradesComponent },
     ],
   },

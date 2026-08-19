@@ -55,8 +55,31 @@ namespace SmartGrader.Application.UseCases.Submissions.UpdateSubmission
                 throw new BusinessRuleException(
                     "לא ניתן לערוך הגשה זו — עריכה אפשרית רק להגשה שנכשלה (שגיאת קומפילציה, תקלת מערכת או שגיאת בדיקה)");
 
+            // 🎯 הגשה חוזרת לתרגיל רב-קובצי חייבת לכלול את כל הקבצים הצפויים — אותה בדיקה
+            // כמו ב-CreateSubmissionHandler, אחרת הגשה חוזרת חלקית יוצרת הגשה שאי אפשר לבדוק
+            var expectedFiles = submission.Assignment?.ExpectedFiles ?? new();
+            if (expectedFiles.Count > 0)
+            {
+                var submittedNames = (request.Dto.Files ?? new())
+                    .Select(f => f.FileName)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var missing = expectedFiles
+                    .Select(f => f.FileName)
+                    .Where(name => !submittedNames.Contains(name))
+                    .ToList();
+
+                if (missing.Count > 0)
+                    throw new BusinessRuleException(
+                        $"חסרים קבצים בהגשה: {string.Join(", ", missing)}");
+            }
+
             // 🎯 עדכון הקוד, איפוס הסטטוס ל-PendingAi ותור בדיקה מחדש
-            submission.UpdateSourceCode(request.Dto.SourceCode);
+            var sourceFiles = request.Dto.Files?
+                .Select(f => new SubmissionFile { FileName = f.FileName, Content = f.Content })
+                .ToList();
+
+            submission.UpdateSourceCode(request.Dto.SourceCode, sourceFiles);
             submission.MarkPendingAi();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
