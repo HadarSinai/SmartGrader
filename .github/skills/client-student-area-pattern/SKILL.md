@@ -35,9 +35,14 @@ Existing screens (reference implementations, all under `client/src/app/pages/my/
    ```
 2. **View-only lists** — no multi-select checkboxes, no ⋯ overflow menu, no create/edit/delete
    buttons. The only row actions are drill-down navigation or a CTA ("הגשת קוד" / "צפייה בפידבק").
-3. **No resubmit** — failure states (`CompilationFailed`/`AiFailed`) are view-only with the
-   explanatory sentence "אין צורך לעשות דבר — צוות ההוראה מטפל בהגשות שנכשלו." Only the teacher
-   edits submissions (server enforces: `PUT` is Teacher-only).
+3. **Resubmit only where the student has something to fix** — `CompilationFailed` and `AiFailed`
+   show a "תיקון והגשה מחדש" button routing to `/my/submissions/:submissionId/edit`, which reuses
+   `SubmitCodeComponent` in edit mode. `JudgeUnavailable` does **not**: an infrastructure failure is
+   not hers and there is nothing in her code to change, so it keeps the "צוות ההוראה מטפל בכך"
+   note. The server permits exactly those three states (`UpdateSubmissionHandler`) and `PUT
+   /api/students/{studentId}/submissions/{submissionId}` is guarded by `IsAllowedForStudent` — it is
+   **not** Teacher-only. A `Done` submission is never editable: there is exactly one submission row
+   per `(StudentId, AssignmentId)`, enforced by a unique index.
 4. **Teacher routes stay teacher-only** — `/students/:studentId/submissions*` and
    `.../lessons/:lessonId/result` carry `canActivate: [teacherGuard]`; the student experience
    lives only under `/my`.
@@ -70,9 +75,11 @@ Existing screens (reference implementations, all under `client/src/app/pages/my/
    with `setInterval`; stop on terminal status AND in `ngOnDestroy`; swallow transient errors
    silently (keep polling). Copy the `syncPolling`/`refreshSilently`/`stopPolling` trio from
    [my-feedback.component.ts](../../../client/src/app/pages/my/my-feedback.component.ts).
-6. **Passing context between /my screens** — the submission DTO has no `lessonId`; pass it as a
-   `queryParams: { lessonId }` on navigation (there is NO single-assignment endpoint the client
-   can call — `assignmentsService.getById(id)` single-arg overload points to a dead URL).
+6. **Passing context between /my screens** — `SubmissionResponseDto` now carries `lessonId`, so read
+   it from the DTO rather than dragging `queryParams: { lessonId }` from screen to screen (routes
+   that never pass through the assignments list, e.g. "הציונים שלי", simply did not have it). Note
+   there is still NO single-assignment endpoint the client can call without a lesson id —
+   `assignmentsService.getById(id)` single-arg overload points to a dead URL.
 7. **Code display/input** — always LTR: `sg-code-box` (`<pre>`) for read-only,
    `dir="ltr"` + monospace class for the textarea. Required-field validation follows the
    `methodName` inline pattern (`p-error` + `touched`).
@@ -82,7 +89,13 @@ Existing screens (reference implementations, all under `client/src/app/pages/my/
 ## Common Pitfalls
 
 - Reading `studentId` from `route.paramMap` — breaks the security model; always token claims.
-- Adding teacher affordances (edit/delete/checkboxes) to a student list — the area is view-only.
+- Adding teacher affordances (edit/delete/checkboxes) to a student *list* — the lists stay view-only;
+  the one write a student performs is submitting, and resubmitting after a failure she can fix.
+- Offering "תיקון והגשה מחדש" on `JudgeUnavailable` or on a graded submission — the server rejects
+  both, so the button would only produce an error toast.
+- Rendering test-case details a student is not allowed to see — the server already redacts them; see
+  [backend-role-based-field-redaction](../backend-role-based-field-redaction/SKILL.md). Rows arrive
+  with `isHidden: true` and must render without an expand toggle.
 - Treating lesson-result 404 as an error — it's the normal "not completed yet" state.
 - Forgetting `clearInterval` in `ngOnDestroy` — the poll keeps hitting the API after navigation.
 - Inventing new status labels/colors — reuse `STATUS_LABELS_HE` + semantic `--status-*` tokens.
