@@ -4,10 +4,11 @@ import { ActivatedRoute, Router } from "@angular/router";
 import { forkJoin, of } from "rxjs";
 import { catchError, map } from "rxjs/operators";
 
-import { MessageService } from "primeng/api";
+import { ConfirmationService, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
 import { CheckboxModule } from "primeng/checkbox";
+import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { DataViewModule } from "primeng/dataview";
 import { DialogModule } from "primeng/dialog";
 import { DropdownModule } from "primeng/dropdown";
@@ -21,6 +22,7 @@ import { FormsModule } from "@angular/forms";
 import {
   CompleteLessonRequestDto,
   LessonResultResponseDto,
+  LessonScoreSuggestionDto,
 } from "@models/lesson-result.model";
 import { StudentResponseDto } from "@models/student.model";
 import { LessonResultsService } from "@services/lesson-results.service";
@@ -49,11 +51,13 @@ interface LessonResultRowVm {
     TagModule,
     TooltipModule,
     DialogModule,
+    ConfirmDialogModule,
     InputNumberModule,
     CheckboxModule,
     DropdownModule,
     InputTextModule,
   ],
+  providers: [ConfirmationService],
   template: `
     <section class="sg-page">
       <div class="pt-3 pb-5">
@@ -199,6 +203,18 @@ interface LessonResultRowVm {
                       [attr.aria-label]="'סיום שיעור עבור ' + row.studentName"
                       (onClick)="openFinalize(row)"
                     ></p-button>
+                    <!-- ⚠️ עד עכשיו ציון סופי שגוי לא היה ניתן לתיקון בשום דרך.
+                         הפתיחה גם משחררת את ההגשות של אותה תלמידה בשיעור. -->
+                    <p-button
+                      *ngIf="row.isComplete"
+                      label="פתיחה מחדש"
+                      icon="pi pi-lock-open"
+                      [text]="true"
+                      [attr.aria-label]="
+                        'פתיחת השיעור מחדש עבור ' + row.studentName
+                      "
+                      (onClick)="confirmReopen(row)"
+                    ></p-button>
                   </td>
                 </tr>
               </ng-template>
@@ -279,6 +295,16 @@ interface LessonResultRowVm {
                         "
                         (onClick)="openFinalize(item)"
                       ></p-button>
+                      <p-button
+                        *ngIf="item.isComplete"
+                        label="פתיחה מחדש"
+                        icon="pi pi-lock-open"
+                        [outlined]="true"
+                        [attr.aria-label]="
+                          'פתיחת השיעור מחדש עבור ' + item.studentName
+                        "
+                        (onClick)="confirmReopen(item)"
+                      ></p-button>
                     </div>
                   </div>
                 </div>
@@ -293,7 +319,7 @@ interface LessonResultRowVm {
         header="סיום שיעור"
         [(visible)]="finalizeDialogOpen"
         [modal]="true"
-        [style]="{ width: '24rem' }"
+        [style]="{ width: '30rem' }"
         [draggable]="false"
         [resizable]="false"
       >
@@ -302,6 +328,53 @@ interface LessonResultRowVm {
             קביעת ציון סופי עבור
             <strong>{{ finalizeRow.studentName }}</strong>
           </div>
+
+          <div
+            *ngIf="suggestionLoading"
+            class="flex align-items-center gap-2 text-color-secondary"
+          >
+            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+            טוענת את ציוני התרגילים...
+          </div>
+
+          <!-- 🔴 המספרים האלה כבר היו במערכת ומעולם לא הוצגו כאן: המורה חישבה ממוצע
+               ביד לכל תלמידה. הציון נשאר הצעה הניתנת לעריכה — היא עדיין מחליטה. -->
+          <div *ngIf="!suggestionLoading && suggestion" class="sg-suggestion">
+            <div
+              class="sg-suggestion__row"
+              *ngFor="let item of suggestion.assignmentScores"
+            >
+              <span class="sg-suggestion__name">
+                {{ item.title || "תרגיל" }}
+                <span class="sg-bonus-chip" *ngIf="item.isBonus">בונוס</span>
+              </span>
+              <span class="sg-suggestion__score" *ngIf="item.score !== null">
+                {{ item.score }}
+              </span>
+              <span class="sg-suggestion__missing" *ngIf="item.score === null">
+                {{ item.status }}
+              </span>
+            </div>
+
+            <div class="sg-suggestion__total">
+              <span>ממוצע</span>
+              <span>{{
+                suggestion.suggestedScore !== null
+                  ? suggestion.suggestedScore
+                  : "—"
+              }}</span>
+            </div>
+
+            <!-- ⚠️ ממוצע שמדלג על תרגיל בשקט נראה נכון ואינו נכון -->
+            <small class="sg-hint" *ngIf="suggestion.ungradedCount > 0">
+              {{ suggestion.ungradedCount }} תרגילים ללא ציון לא נכללו בממוצע,
+              שחושב על {{ suggestion.gradedCount }} תרגילים.
+            </small>
+            <small class="sg-hint" *ngIf="suggestion.gradedCount === 0">
+              אף תרגיל לא נבדק, ולכן אין ממוצע להציע — אפשר להזין ציון ידנית.
+            </small>
+          </div>
+
           <div class="flex align-items-center gap-2">
             <p-checkbox
               inputId="hasBonus"
@@ -323,6 +396,9 @@ interface LessonResultRowVm {
               [showButtons]="true"
               styleClass="w-full"
             ></p-inputNumber>
+            <small class="sg-hint block mt-1">
+              הערך ממולא מראש מהממוצע וניתן לשינוי — הציון הסופי נקבע על ידך.
+            </small>
           </div>
         </div>
         <ng-template pTemplate="footer">
@@ -341,9 +417,57 @@ interface LessonResultRowVm {
           ></p-button>
         </ng-template>
       </p-dialog>
+
+      <p-confirmDialog></p-confirmDialog>
     </section>
   `,
-  styles: [],
+  styles: [
+    `
+      .sg-suggestion {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        padding: var(--space-3);
+        border: 1px solid var(--app-border);
+        border-radius: var(--radius-md);
+        background: var(--app-surface-2);
+      }
+
+      .sg-suggestion__row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-2);
+      }
+
+      .sg-suggestion__name {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+
+      .sg-suggestion__score {
+        font-weight: 700;
+      }
+
+      /* תרגיל שאינו נכנס לממוצע — מוצג מעומעם ובטקסט, לא כמספר */
+      .sg-suggestion__missing {
+        font-size: var(--text-sm);
+        color: var(--app-muted);
+      }
+
+      .sg-suggestion__total {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-2);
+        margin-top: var(--space-2);
+        padding-top: var(--space-2);
+        border-top: 1px solid var(--app-border);
+        font-weight: 800;
+      }
+    `,
+  ],
 })
 export class LessonResultsListComponent implements OnInit {
   private readonly lessonResultsService = inject(LessonResultsService);
@@ -351,6 +475,7 @@ export class LessonResultsListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   lessonId!: number;
   rows: LessonResultRowVm[] = [];
@@ -391,6 +516,8 @@ export class LessonResultsListComponent implements OnInit {
   finalScore: number | null = null;
   hasBonus = false;
   finalizeSaving = false;
+  suggestion: LessonScoreSuggestionDto | null = null;
+  suggestionLoading = false;
 
   get maxScore(): number {
     return this.hasBonus ? 150 : 100;
@@ -406,11 +533,66 @@ export class LessonResultsListComponent implements OnInit {
     }
   }
 
+  /**
+   * ⚠️ הפתיחה טוענת את הציונים שכבר חושבו. עד כה הדיאלוג נפתח עם null והמורה חישבה
+   * ממוצע ביד, לכל תלמידה, בזמן שכל המספרים כבר היו במערכת.
+   */
   openFinalize(row: LessonResultRowVm): void {
     this.finalizeRow = row;
     this.finalScore = null;
     this.hasBonus = false;
+    this.suggestion = null;
+    this.suggestionLoading = true;
     this.finalizeDialogOpen = true;
+
+    this.lessonResultsService
+      .getScoreSuggestion(row.studentId, this.lessonId)
+      .subscribe({
+        next: (suggestion: LessonScoreSuggestionDto) => {
+          this.suggestion = suggestion;
+          this.suggestionLoading = false;
+          // הבונוס נקבע לפי מה שיש בשיעור בפועל, ולא לפי מה שהמורה תזכור לסמן —
+          // הוא זה שקובע אם מותר לעבור 100.
+          this.hasBonus = suggestion.hasBonus;
+          this.finalScore = suggestion.suggestedScore;
+        },
+        error: () => {
+          // ההצעה היא נוחות, לא תנאי: כשלון בטעינתה משאיר הזנה ידנית מלאה, בדיוק
+          // כמו שהיה עד היום. ההודעה מגיעה מה-interceptor.
+          this.suggestionLoading = false;
+        },
+      });
+  }
+
+  confirmReopen(row: LessonResultRowVm): void {
+    this.confirmationService.confirm({
+      message: `לפתוח מחדש את הציון הסופי של ${row.studentName}? הציון הנוכחי (${row.finalScore ?? "—"}) יימחק, וההגשות של התלמידה בשיעור הזה ייפתחו שוב.`,
+      header: "פתיחת שיעור מחדש",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "פתיחה מחדש",
+      rejectLabel: "ביטול",
+      accept: () => this.reopen(row),
+    });
+  }
+
+  private reopen(row: LessonResultRowVm): void {
+    this.lessonResultsService.reopen(row.studentId, this.lessonId).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: "success",
+          summary: "בוצע",
+          detail: "השיעור נפתח מחדש",
+        });
+        this.loadResults();
+      },
+      error: () => {
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "פתיחת השיעור מחדש נכשלה",
+        });
+      },
+    });
   }
 
   saveFinalize(): void {

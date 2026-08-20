@@ -1,5 +1,6 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnDestroy, OnInit, inject } from "@angular/core";
+import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import {
   STATUS_LABELS_HE,
@@ -9,6 +10,9 @@ import { SubmissionsService } from "@services/submissions.service";
 import { MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
+import { DialogModule } from "primeng/dialog";
+import { InputNumberModule } from "primeng/inputnumber";
+import { InputTextareaModule } from "primeng/inputtextarea";
 import { TagModule } from "primeng/tag";
 import { SubmissionFeedbackPanelComponent } from "@components/submission-feedback-panel/submission-feedback-panel.component";
 
@@ -17,8 +21,12 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     CardModule,
     ButtonModule,
+    DialogModule,
+    InputNumberModule,
+    InputTextareaModule,
     TagModule,
     SubmissionFeedbackPanelComponent,
   ],
@@ -46,6 +54,22 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
               </div>
 
               <div class="flex align-items-center gap-2 flex-wrap">
+                <!-- ⚠️ כפתור ולא קוד משותף: קוד עובר בין תלמידות ומנטרל את הכלל בשקט.
+                     ההגנה כאן היא ההזדהות הקיימת, וכל אישור נרשם ביומן ביקורת. -->
+                <p-button
+                  *ngIf="submission && !submission.canResubmit"
+                  label="אישור הגשה נוספת"
+                  icon="pi pi-unlock"
+                  [outlined]="true"
+                  (onClick)="openGrantExtraAttempt()"
+                ></p-button>
+                <p-button
+                  *ngIf="canOverrideScore"
+                  label="דריסת ציון"
+                  icon="pi pi-sliders-h"
+                  [outlined]="true"
+                  (onClick)="openOverrideScore()"
+                ></p-button>
                 <p-button
                   label="עריכה"
                   icon="pi pi-pencil"
@@ -101,8 +125,70 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                   class="text-color-secondary text-sm"
                   *ngIf="submission.score === null"
                 >
-                  עדיין לא נבדק
+                  {{
+                    submission.status === "RequirementsNotMet"
+                      ? "לא ניתן ציון — דרישה חוסמת לא התקיימה"
+                      : "עדיין לא נבדק"
+                  }}
                 </div>
+                <!-- ציון שנדרס נראה זהה לציון מחושב, ולכן הסיבה מוצגת לצידו תמיד -->
+                <div
+                  class="text-color-secondary text-sm"
+                  *ngIf="submission.scoreOverrideReason"
+                >
+                  <i class="pi pi-sliders-h" aria-hidden="true"></i>
+                  ציון שנקבע ידנית: {{ submission.scoreOverrideReason }}
+                </div>
+                <div
+                  class="text-color-secondary text-sm"
+                  *ngIf="submission.hasUnusedExtraAttempt"
+                >
+                  <i class="pi pi-unlock" aria-hidden="true"></i>
+                  אושרה הגשה נוספת<ng-container
+                    *ngIf="submission.extraAttemptReason"
+                    >: {{ submission.extraAttemptReason }}</ng-container
+                  >
+                </div>
+              </div>
+
+              <!-- ציר הניסיונות. ⚠️ רק האחרון נחשב כציון — עד שנוסף הארכיון, הגשה חוזרת
+                   דרסה את הקודמת במקום והמידע נעלם. -->
+              <div class="col-12" *ngIf="submission.attempts?.length">
+                <div class="text-xs font-bold text-color-secondary mb-2">
+                  ניסיונות
+                </div>
+                <ol class="sg-attempts">
+                  <li class="sg-attempts__item sg-attempts__item--current">
+                    <span class="sg-attempts__no"
+                      >ניסיון {{ submission.attemptNumber }}</span
+                    >
+                    <span class="sg-attempts__score">{{
+                      submission.score ?? "—"
+                    }}</span>
+                    <span class="sg-attempts__meta">
+                      {{ submission.submittedAt | date: "dd.MM.yy HH:mm" }} ·
+                      נוכחי, זה הציון שנחשב
+                    </span>
+                  </li>
+                  <li
+                    class="sg-attempts__item"
+                    *ngFor="let attempt of submission.attempts"
+                  >
+                    <span class="sg-attempts__no"
+                      >ניסיון {{ attempt.attemptNumber }}</span
+                    >
+                    <span class="sg-attempts__score">{{
+                      attempt.score ?? "—"
+                    }}</span>
+                    <span class="sg-attempts__meta">
+                      {{ attempt.submittedAt | date: "dd.MM.yy HH:mm" }} ·
+                      {{ statusLabels[attempt.status] || attempt.status }}
+                      <ng-container *ngIf="attempt.isCollapsed"
+                        >· הפרטים המלאים נגזמו</ng-container
+                      >
+                    </span>
+                  </li>
+                </ol>
               </div>
 
               <!-- Unified status area -->
@@ -156,6 +242,12 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                         icon="pi pi-exclamation-circle"
                       />
                       <p-tag
+                        *ngSwitchCase="'RequirementsNotMet'"
+                        severity="danger"
+                        [value]="statusLabels['RequirementsNotMet']"
+                        icon="pi pi-ban"
+                      />
+                      <p-tag
                         *ngSwitchDefault
                         [value]="submission.status || 'לא ידוע'"
                         severity="secondary"
@@ -201,8 +293,13 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                     <pre>{{ submission.aiError }}</pre>
                   </div>
 
+                  <!-- ⚠️ גם ב-RequirementsNotMet: שם אין תוצאות בדיקות (Judge0 לא רץ),
+                       אבל טבלת הדרישות היא כל ההסבר לְמה שקרה. -->
                   <app-submission-feedback-panel
-                    *ngIf="submission.status === 'Done'"
+                    *ngIf="
+                      submission.status === 'Done' ||
+                      submission.status === 'RequirementsNotMet'
+                    "
                     [submission]="submission"
                   ></app-submission-feedback-panel>
 
@@ -240,10 +337,153 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
           </div>
         </p-card>
       </div>
+
+      <!-- אישור הגשה נוספת. ⚠️ הסיבה היא שדה חובה — היא מה שמחליף את "לראות מי
+           השתמשה בקוד המשותף", ובלעדיה ליומן הביקורת אין ערך. -->
+      <p-dialog
+        header="אישור הגשה נוספת"
+        [(visible)]="grantDialogOpen"
+        [modal]="true"
+        [style]="{ width: '28rem' }"
+        [draggable]="false"
+        [resizable]="false"
+      >
+        <div class="flex flex-column gap-3">
+          <div>
+            האישור גובר על סף הציון של התרגיל ומאפשר לתלמידה להגיש פעם נוספת. הוא
+            חד-פעמי ונצרך בהגשה הבאה.
+          </div>
+          <div>
+            <label class="sg-label" for="grantReason">סיבה *</label>
+            <textarea
+              pInputTextarea
+              class="w-full"
+              id="grantReason"
+              rows="3"
+              [(ngModel)]="grantReason"
+              placeholder="לדוגמה: תקלה בהגשה בשיעור"
+            ></textarea>
+            <small class="p-error block" *ngIf="grantAttempted && !grantReason.trim()">
+              יש לציין סיבה — היא נשמרת ביומן הביקורת.
+            </small>
+          </div>
+        </div>
+        <ng-template pTemplate="footer">
+          <p-button
+            label="ביטול"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="grantDialogOpen = false"
+          ></p-button>
+          <p-button
+            label="אישור"
+            styleClass="sg-btn-primary"
+            [loading]="grantSaving"
+            (onClick)="saveGrantExtraAttempt()"
+          ></p-button>
+        </ng-template>
+      </p-dialog>
+
+      <!-- דריסת ציון — רשת ביטחון, לא חלק מהמסלול הרגיל -->
+      <p-dialog
+        header="דריסת ציון"
+        [(visible)]="overrideDialogOpen"
+        [modal]="true"
+        [style]="{ width: '28rem' }"
+        [draggable]="false"
+        [resizable]="false"
+      >
+        <div class="flex flex-column gap-3">
+          <div>
+            הציון שיוזן יחליף את הציון המחושב, והסיבה תישמר לצידו ותוצג במסך הזה.
+          </div>
+          <div>
+            <label class="sg-label" for="overrideScore">ציון *</label>
+            <p-inputNumber
+              inputId="overrideScore"
+              [(ngModel)]="overrideScore"
+              [min]="0"
+              [showButtons]="true"
+              styleClass="w-full"
+            ></p-inputNumber>
+          </div>
+          <div>
+            <label class="sg-label" for="overrideReason">סיבה *</label>
+            <textarea
+              pInputTextarea
+              class="w-full"
+              id="overrideReason"
+              rows="3"
+              [(ngModel)]="overrideReason"
+              placeholder="לדוגמה: הפלט הצפוי בבדיקה 2 היה שגוי"
+            ></textarea>
+            <small
+              class="p-error block"
+              *ngIf="overrideAttempted && !overrideReason.trim()"
+            >
+              יש לציין סיבה — היא נשמרת ביומן הביקורת.
+            </small>
+          </div>
+        </div>
+        <ng-template pTemplate="footer">
+          <p-button
+            label="ביטול"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="overrideDialogOpen = false"
+          ></p-button>
+          <p-button
+            label="שמירה"
+            styleClass="sg-btn-primary"
+            [loading]="overrideSaving"
+            [disabled]="overrideScore === null"
+            (onClick)="saveOverrideScore()"
+          ></p-button>
+        </ng-template>
+      </p-dialog>
     </section>
   `,
   styles: [
     `
+      .sg-attempts {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+      }
+
+      .sg-attempts__item {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        background: var(--app-surface-2);
+      }
+
+      .sg-attempts__item--current {
+        border: 1px solid var(--accent);
+      }
+
+      .sg-attempts__no {
+        font-weight: 700;
+        min-width: 5rem;
+      }
+
+      .sg-attempts__score {
+        font-weight: 800;
+        color: var(--accent);
+        min-width: 2.5rem;
+      }
+
+      .sg-attempts__meta {
+        font-size: var(--text-sm);
+        color: var(--app-muted);
+      }
+
       .sg-status-box pre {
         font-family: "Courier New", Courier, monospace;
         font-size: 0.875rem;
@@ -270,6 +510,93 @@ export class SubmissionDetailComponent implements OnInit, OnDestroy {
   studentId!: number;
   submissionId!: number;
   readonly statusLabels = STATUS_LABELS_HE;
+
+  // ── דריסות המורה ──────────────────────────────────────────────────────
+  grantDialogOpen = false;
+  grantReason = "";
+  grantSaving = false;
+  grantAttempted = false;
+
+  overrideDialogOpen = false;
+  overrideScore: number | null = null;
+  overrideReason = "";
+  overrideSaving = false;
+  overrideAttempted = false;
+
+  /** אין מה לדרוס בזמן שההגשה עדיין בבדיקה — הציון שייכתב יידרס מיד אחר כך. */
+  get canOverrideScore(): boolean {
+    const status = this.submission?.status;
+    return !!status && status !== "PendingAi" && status !== "ProcessingAi";
+  }
+
+  openGrantExtraAttempt(): void {
+    this.grantReason = "";
+    this.grantAttempted = false;
+    this.grantDialogOpen = true;
+  }
+
+  saveGrantExtraAttempt(): void {
+    this.grantAttempted = true;
+    if (!this.grantReason.trim()) return;
+
+    this.grantSaving = true;
+    this.submissionsService
+      .grantExtraAttempt(this.studentId, this.submissionId, {
+        reason: this.grantReason.trim(),
+      })
+      .subscribe({
+        next: (updated: SubmissionResponseDto) => {
+          this.submission = updated;
+          this.grantSaving = false;
+          this.grantDialogOpen = false;
+          this.messageService.add({
+            severity: "success",
+            summary: "בוצע",
+            detail: "האישור נשמר. התלמידה יכולה להגיש פעם נוספת.",
+          });
+        },
+        error: () => {
+          // ApiErrorInterceptor כבר מציג את הודעת השרת (למשל שיעור שהסתיים, שנפתח
+          // מחדש דרך "פתיחה מחדש" ולא דרך אישור הגשה) — אין כאן טוסט כפול.
+          this.grantSaving = false;
+        },
+      });
+  }
+
+  openOverrideScore(): void {
+    this.overrideScore = this.submission?.score ?? null;
+    this.overrideReason = "";
+    this.overrideAttempted = false;
+    this.overrideDialogOpen = true;
+  }
+
+  saveOverrideScore(): void {
+    this.overrideAttempted = true;
+    if (this.overrideScore === null || !this.overrideReason.trim()) return;
+
+    this.overrideSaving = true;
+    this.submissionsService
+      .overrideScore(this.studentId, this.submissionId, {
+        score: this.overrideScore,
+        reason: this.overrideReason.trim(),
+      })
+      .subscribe({
+        next: (updated: SubmissionResponseDto) => {
+          this.submission = updated;
+          this.overrideSaving = false;
+          this.overrideDialogOpen = false;
+          this.messageService.add({
+            severity: "success",
+            summary: "בוצע",
+            detail: "הציון עודכן",
+          });
+        },
+        error: () => {
+          // התקרה תלויה בתרגיל (בונוס), ולכן היא נבדקת בשרת וההודעה מגיעה משם.
+          this.overrideSaving = false;
+        },
+      });
+  }
 
   ngOnInit(): void {
     const studentIdParam = this.route.snapshot.paramMap.get("studentId");

@@ -75,6 +75,30 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
               <div class="sg-big-score">
                 {{ submission.score !== null ? submission.score : "—" }}
               </div>
+              <!-- ⚠️ "אין ציון" ולא "0": דרישה חוסמת שלא התקיימה היא דחייה, לא ציון נמוך -->
+              <div
+                class="sg-hint"
+                *ngIf="submission.status === 'RequirementsNotMet'"
+              >
+                לא ניתן ציון — התרגיל לא נבדק מול מקרי הבדיקה.
+              </div>
+              <div class="sg-hint" *ngIf="submission.attemptNumber > 1">
+                ניסיון {{ submission.attemptNumber }}. רק הניסיון האחרון נחשב.
+              </div>
+            </div>
+
+            <!-- אישור המורה גובר על סף הציון. נאמר לתלמידה במפורש, אחרת כפתור שנפתח
+                 בלי הסבר נראה כמו תקלה -->
+            <div class="col-12" *ngIf="submission.hasUnusedExtraAttempt">
+              <div class="sg-extra-attempt">
+                <i class="pi pi-unlock" aria-hidden="true"></i>
+                <span>
+                  המורה אישרה לך הגשה נוספת<ng-container
+                    *ngIf="submission.extraAttemptReason"
+                    >: {{ submission.extraAttemptReason }}</ng-container
+                  >
+                </span>
+              </div>
             </div>
 
             <!-- Unified status area -->
@@ -123,6 +147,31 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                   <app-submission-feedback-panel
                     [submission]="submission"
                   ></app-submission-feedback-panel>
+
+                  <!-- הגשה שנבדקה ועדיין פתוחה — כלומר הציון מתחת לסף התרגיל, או שהמורה
+                       אישרה ניסיון נוסף. ⚠️ הכלל מגיע מהשרת (canResubmit) ולא מחושב כאן:
+                       הוא מערב את סף הציון של התרגיל ואת נעילת השיעור. -->
+                  <ng-container *ngIf="submission.canResubmit">
+                    <span>{{ improvableNote }}</span>
+                    <ng-container
+                      *ngTemplateOutlet="fixAndResubmit"
+                    ></ng-container>
+                  </ng-container>
+                </ng-container>
+
+                <!-- דרישה חוסמת שלא התקיימה. Judge0 לא רץ בכלל, ולכן אין כאן תוצאות
+                     בדיקות — רק טבלת הדרישות וההסבר. -->
+                <ng-container *ngSwitchCase="'RequirementsNotMet'">
+                  <p-tag
+                    severity="danger"
+                    icon="pi pi-ban"
+                    [value]="statusLabel"
+                  ></p-tag>
+                  <span>{{ requirementsNotMetNote }}</span>
+                  <app-submission-feedback-panel
+                    [submission]="submission"
+                  ></app-submission-feedback-panel>
+                  <ng-container *ngTemplateOutlet="fixAndResubmit"></ng-container>
                 </ng-container>
 
                 <!-- שגיאת קומפילציה -->
@@ -204,6 +253,17 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
         font-weight: 800;
         color: var(--accent);
       }
+
+      .sg-extra-attempt {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        background: var(--status-info-bg);
+        color: var(--status-info-ink);
+        font-size: var(--text-sm);
+      }
     `,
   ],
 })
@@ -218,6 +278,12 @@ export class MyFeedbackComponent implements OnInit, OnDestroy {
     "הקוד לא הצליח להתקמפל, ולכן לא נבדק. אפשר לתקן את השגיאה ולהגיש מחדש.";
   readonly aiFailedNote =
     "הבדיקה לא הושלמה. אפשר לתקן את הקוד ולהגיש מחדש.";
+  // ⚠️ הניסוח הזה הוא הלב: זו דחייה ולא ציון נמוך. "אם התרגיל דרש רקורסיה וכתבת לולאה —
+  // זה כאילו לא עשית". פנייה בלשון נקבה, בית ספר לבנות.
+  readonly requirementsNotMetNote =
+    "התרגיל דרש דרך פתרון מסוימת, והקוד שלך לא עמד בה — ולכן הוא לא נבדק מול מקרי הבדיקה ולא ניתן ציון. הפרטים בטבלה למטה. תקני והגישי שוב.";
+  readonly improvableNote =
+    "הציון עדיין מתחת לסף של התרגיל, ולכן ההגשה פתוחה: אפשר לתקן ולהגיש שוב, בלי הגבלת ניסיונות. הציון של הניסיון האחרון הוא שנחשב.";
   // תקלת תשתית — לא באשמת התלמידה ואין לה מה לתקן, ולכן אין כאן כפתור הגשה מחדש.
   readonly judgeUnavailableNote =
     "אירעה תקלה זמנית במערכת הבדיקה — הקוד שלך לא נבדק, וזו לא בעיה בקוד. צוות ההוראה מטפל בכך.";

@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import {
   CompleteLessonRequestDto,
   LessonResultResponseDto,
+  LessonScoreSuggestionDto,
   StudentGradesSummaryDto,
 } from "@models/lesson-result.model";
 import { Observable } from "rxjs";
@@ -27,6 +28,34 @@ export class LessonResultsService {
     return this.api.http.post<LessonResultResponseDto>(
       this.api.url("/api/lesson-results/complete"),
       request,
+    );
+  }
+
+  /**
+   * הציון שכל תרגיל קיבל, והממוצע כהצעה לדיאלוג "סיום שיעור".
+   * ⚠️ מורה/מנהל בלבד — התלמידה אינה אמורה לראות את הציון הסופי לפני שנקבע.
+   */
+  getScoreSuggestion(
+    studentId: number,
+    lessonId: number,
+  ): Observable<LessonScoreSuggestionDto> {
+    return this.api.http.get<LessonScoreSuggestionDto>(
+      this.api.url(`/api/lesson-results/${studentId}/${lessonId}/suggestion`),
+    );
+  }
+
+  /**
+   * פתיחה מחדש של ציון סופי שכבר נקבע.
+   * ⚠️ עד כה ציון סופי שגוי לא היה ניתן לתיקון בשום דרך — CompleteWith זרק "Already completed".
+   * הפתיחה גם משחררת את ההגשות של אותה תלמידה באותו שיעור.
+   */
+  reopen(
+    studentId: number,
+    lessonId: number,
+  ): Observable<LessonResultResponseDto> {
+    return this.api.http.post<LessonResultResponseDto>(
+      this.api.url(`/api/lesson-results/${studentId}/${lessonId}/reopen`),
+      {},
     );
   }
 

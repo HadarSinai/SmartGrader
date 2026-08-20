@@ -149,6 +149,10 @@ export class SubmissionsListComponent implements OnInit {
   statusSeverity(
     status?: string | null,
   ): "success" | "info" | "warning" | "danger" {
+    // ⚠️ מפורש ולא לפי תת-מחרוזת: "RequirementsNotMet" אינו מכיל fail/error, והתאמת
+    // התת-מחרוזות הייתה מציגה דחייה כתגית מידע ניטרלית.
+    if (status === "RequirementsNotMet") return "danger";
+
     const s = (status ?? "").toLowerCase();
     if (s.includes("pass") || s.includes("success") || s.includes("done"))
       return "success";
@@ -159,6 +163,9 @@ export class SubmissionsListComponent implements OnInit {
   }
 
   statusIcon(status?: string | null): string {
+    // דחייה על דרישה חוסמת — לא תקלה טכנית, ולכן אייקון אחר
+    if (status === "RequirementsNotMet") return "pi pi-ban";
+
     switch (this.statusSeverity(status)) {
       case "success":
         return "pi pi-check-circle";

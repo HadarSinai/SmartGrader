@@ -1,6 +1,8 @@
 import { Injectable } from "@angular/core";
 import {
   CreateSubmissionRequestDto,
+  GrantExtraAttemptRequestDto,
+  OverrideScoreRequestDto,
   SubmissionResponseDto,
   UpdateSubmissionRequestDto,
 } from "@models/submission.model";
@@ -57,6 +59,39 @@ export class SubmissionsService {
   ): Observable<SubmissionResponseDto> {
     return this.api.http.put<SubmissionResponseDto>(
       this.api.url(`/api/students/${studentId}/submissions/${submissionId}`),
+      request,
+    );
+  }
+
+  // ── דריסות המורה ──────────────────────────────────────────────────────
+  //
+  // ⚠️ מורה/מנהל בלבד, ובעלוּת על השיעור נאכפת בשרת. שתי הפעולות נרשמות ביומן ביקורת
+  // (מי / מתי / למי / למה) — זה מה שמחליף "לראות מי השתמשה בקוד המשותף".
+
+  /** אישור הגשה נוספת מעל סף הציון. חד-פעמי, נצרך בהגשה הבאה. */
+  grantExtraAttempt(
+    studentId: number,
+    submissionId: number,
+    request: GrantExtraAttemptRequestDto,
+  ): Observable<SubmissionResponseDto> {
+    return this.api.http.post<SubmissionResponseDto>(
+      this.api.url(
+        `/api/students/${studentId}/submissions/${submissionId}/extra-attempt`,
+      ),
+      request,
+    );
+  }
+
+  /** דריסת הציון בידי המורה — רשת ביטחון, לא חלק מהמסלול הרגיל. */
+  overrideScore(
+    studentId: number,
+    submissionId: number,
+    request: OverrideScoreRequestDto,
+  ): Observable<SubmissionResponseDto> {
+    return this.api.http.put<SubmissionResponseDto>(
+      this.api.url(
+        `/api/students/${studentId}/submissions/${submissionId}/score`,
+      ),
       request,
     );
   }

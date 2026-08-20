@@ -12,6 +12,75 @@ cuts roughly half the input tokens while making it impossible for the model to l
 **Requires [plan-gradingSecurityHardening](plan-gradingSecurityHardening.prompt.md)** — it establishes
 `TestCase.IsSample` and the one-submission-per-assignment rule that this prompt builds on.
 
+## מצב מימוש (עודכן 20/08/2026)
+
+צד השרת (שלבים 3–6 + המיגרציה) רץ בסשן נפרד. **ההרצה השנייה היא צד קליינט בלבד** —
+שלב 7, ובנוסף פערי הקליינט שנותרו פתוחים משלב 5. שלב 8 (סקילים) בהרצה נפרדת.
+
+| שלב | מצב |
+|---|---|
+| 1 — מודל הדרישות (ישויות, `Assignment`, `Submission`) | ✅ |
+| 1 — מיגרציה `AddStructuralRules` + הגדרת EF ל-`SubmissionAttempt` | ✅ |
+| 2 — `ScoreCalculator` (שער ליבה, רובריקה, מקרה "הכול שערים") | ✅ |
+| 2 — DTOs וּולידציית רובריקה בצד שרת | ✅ |
+| 3 — מנתח Roslyn | ✅ |
+| 4 — צנרת `AiWorker` | ✅ |
+| 5 — הגשה חוזרת, היסטוריה, אישור מורה, ממוצע בסיום שיעור (צד שרת) | ✅ |
+| 5 — צד קליינט: ציר ניסיונות, אישור הגשה נוספת, דריסת ציון, פתיחה מחדש, הצעת ציון סופי | ✅ |
+| 6 — שכתוב הפרומפט (שלושה תרחישים, בלי מספרים) | ✅ |
+| 7 — קליינט (טופס התרגיל + פאנל המשוב) | ✅ |
+| 8 — שני הסקילים | ⬜ הרצה נפרדת |
+
+**החלטות שהתקבלו בהרצת הקליינט:**
+
+- **קטע הדרישות בטופס פתוח תמיד**, ולא מקופל. התוכנית סתרה את עצמה: שלב 7 ביקש קיפול
+  ושלב 2 סימן 🔴 שקיפול מסתיר את כלי הניקוד המרכזי של הקורס. הוכרע לטובת שלב 2.
+- **נקודות הבדיקות מחושבות אוטומטית** (`תקרה − סכום הדרישות המנוקדות`) וניתנות לעריכה
+  ידנית. ⚠️ מרגע שהמורה הקלידה בשדה, החישוב האוטומטי נעצר ואינו דורס אותה — וכך גם
+  בפתיחת תרגיל קיים לעריכה, שבו הרובריקה השמורה היא החלטה ולא הצעה. ההמלצה לפיצול
+  לפי מספר הטסטים (80/20 · 50/50 · 0/100) מוצגת **כטקסט בלבד** ואינה מזיזה מספרים.
+- **`RetryThreshold` נחשף כשדה מספרי** בטופס, עם ברירת מחדל 85.
+- ולידציית הטופס היא שיקוף מדויק של `AssignmentGradeability` (כולל עיגול חצי-לזוגי של
+  הבונוס, כמו `Math.Round` של .NET) — כדי שלא ייווצר 400 שהמורה אינה יכולה להסביר.
+- "תיקון והגשה מחדש" נשען על `canResubmit` מהשרת, **פרט ל-`JudgeUnavailable`** שנשאר
+  בלי כפתור: תקלת תשתית אינה באשמת התלמידה ואין לה מה לתקן.
+
+**החלטות שהתקבלו בהרצה ושינו את התוכנית:**
+
+- 🔴 **בונוס: הרובריקה מסתכמת ב-`MaxScore`, לא ב-100.** התוכנית הניחה 100 קבוע. בפועל
+  `IsBonus`/`BonusValue` כבר היו על התרגיל — ולא נקראו בשום חישוב ציון. ההחלטה:
+
+  | | תקרה = סכום הרובריקה |
+  |---|---|
+  | תרגיל רגיל | **100** |
+  | תרגיל בונוס | **100 + `BonusValue`** — המורה מזינה כמה נקודות מקבלים עליו |
+
+  כלל אחד לזכור: *הרובריקה מסתכמת בתקרה*. `Assignment.MaxScore` נגזר מ-`IsBonus`/`BonusValue`
+  ואינו עמודה נפרדת — שני מקורות אמת לאותו מספר נפרדים ברגע שהמורה עורכת את הבונוס
+  ושוכחת לעדכן את השני. `ScoreCalculator` חותך בתקרה, וּולידציית הטופס דורשת סכום מדויק.
+  ⚠️ הטופס בקליינט (שלב 7) חייב להציג "מתוך {MaxScore}" ולא "מתוך 100" — אחרת תרגיל בונוס
+  ייראה שבור.
+
+- **התנאי השלישי לנעילה ("הוגשה לפני שהמנוע עלה") — בוטל.** ה-DB הוא נתוני פיתוח והוחלט
+  למחוק אותו, ולכן אין היסטוריה להגן עליה. שני התנאים האחרים (`LessonResult.IsComplete`,
+  `SchoolClass.IsArchived`) בתוקף. ⚠️ אם המערכת תעלה יום אחד על DB עם היסטוריה אמיתית —
+  יש להחזיר את התנאי לפני הפריסה.
+- **"עריכת תרגיל שכבר יש לו הגשות" (אזהרה + בדיקה מחדש + סימון גרסה) — לא בהיקף.**
+
+**חורים ידועים שנמדדו בפועל במימוש** (43 בדיקות רצו מול המנתח ומול `ScoreCalculator`):
+
+- `var isSorted = true;` **אינו** מזוהה כמשתנה בוליאני — אין מודל סמנטי, רק תחביר.
+  דרישת `BoolVariable` מחייבת הצהרה מפורשת.
+- מימוש ממשק (`class A : IComparable`) נראה בתחביר כמו ירושה, ולכן מקיים `MustUse Inheritance`.
+- `Linq` מזוהה לפי תחביר שאילתה ו-`using System.Linq` בלבד; שרשור `.Where().Select()` נראה
+  כקריאת מתודה רגילה ואינו נספר.
+- `if / else if / else` נספר כ-**2** `if` — וזו הספירה הנכונה לדרישת "לכל היותר 3 if".
+- קוד עם שגיאת תחביר **אינו מפעיל את השער החוסם**: הוא ממשיך ל-Judge0 כדי שהתלמידה תקבל
+  את שגיאת הקומפילציה האמיתית ולא "התרגיל דרש רקורסיה".
+- בהגשה רב-קובצית מספרי השורות מתייחסים לטקסט הקבצים המחובר, לא לקובץ בודד.
+
+---
+
 ## User decisions (already confirmed)
 
 The teacher's framing, which drives the whole design:
@@ -76,7 +145,7 @@ Five questions the teacher answers. The last two are new.
 
 ---
 
-## Step 1 — Requirement model
+## ✅ Step 1 — Requirement model
 
 **Skill:** `backend-mediatr-query-handler-pattern`
 
@@ -137,7 +206,12 @@ Migration: `dotnet ef migrations add AddStructuralRules`.
 
 ---
 
-## Step 2 — Grade composition: a 100-point rubric
+## ✅ Step 2 — Grade composition: a 100-point rubric
+
+> `ScoreCalculator` + `AssignmentGradeability` מומשו ואומתו מול כל הדוגמאות המספריות שבשלב הזה.
+> 🔴 **הסכום הוא `MaxScore` ולא 100 קבוע** — ר' החלטת הבונוס למעלה.
+> ⬜ נותר לשלב 7: האזהרה הרכה מתחת ל-4 מקרי בדיקה, ההצעה לפיצול הניקוד לפי צורת התרגיל,
+> וסימון דרישת `MustUse` שאין לה `MustNotUse` מקביל — כולן הנחיות בטופס, לא לוגיקת שרת.
 
 Teachers already think in points, so the form mirrors an exam rubric rather than abstract percentages:
 
@@ -370,7 +444,11 @@ actually used the class rather than hardcoding `Console.WriteLine("דנה: 95")`
 
 ---
 
-## Step 3 — Roslyn analyzer
+## ✅ Step 3 — Roslyn analyzer
+
+> מומש ב-`RoslynCodeAnalysisService`. חבילת `Microsoft.CodeAnalysis.CSharp` מוצמדת ל-**4.5.0**
+> ולא לגרסה חדשה יותר: `EntityFrameworkCore.Design` מצמיד את `Microsoft.CodeAnalysis.Common`
+> ל-4.5.0 בדיוק, וכל גרסה אחרת נכשלת ב-NU1107.
 
 - `server/Application/Services/CodeAnalysis/ICodeAnalysisService.cs` —
   `Analyze(sourceCode, rules) → IReadOnlyList<StructuralRuleResult>`
@@ -428,7 +506,7 @@ modern syntax explicitly when it appears in the compiler output.
 
 ---
 
-## Step 4 — Pipeline
+## ✅ Step 4 — Pipeline
 
 ```
 1. Roslyn checks the requirements       ← instant · local · free
@@ -462,7 +540,19 @@ Checking requirements before execution also means a non-conforming submission co
 
 ---
 
-## Step 5 — Retry, history, and teacher override
+## ✅ Step 5 — Retry, history, and teacher override
+
+> צד שרת מומש במלואו. נקודות שכדאי לדעת:
+>
+> - **התנאי השלישי לנעילה לא מומש** (ר' `SubmissionLock` וההחלטה למעלה).
+> - נקודות קצה חדשות:
+>   `POST /api/students/{studentId}/submissions/{submissionId}/extra-attempt`,
+>   `PUT  /api/students/{studentId}/submissions/{submissionId}/score`,
+>   `GET  /api/lesson-results/{studentId}/{lessonId}/suggestion`,
+>   `POST /api/lesson-results/{studentId}/{lessonId}/reopen`.
+> - **אישור המורה אינו עוקף נעילת שיעור** — לשם כך יש `reopen`. אחרת ציון סופי שכבר נמסר
+>   היה משתנה מתחת לתלמידה.
+> - "בדיקה מחדש של כל ההגשות" בעריכת תרגיל — **לא בהיקף** (ר' למעלה).
 
 **Skills:** `backend-controller-endpoint-pattern`, `backend-mediatr-query-handler-pattern`,
 `client-list-table-pattern`
@@ -576,7 +666,7 @@ case the code comment at `CompleteLessonHandler:27` already anticipates (*"AiFai
 
 ---
 
-## Step 6 — Rewrite the OpenAI prompt
+## ✅ Step 6 — Rewrite the OpenAI prompt
 
 ### What the AI is actually for
 
@@ -650,7 +740,13 @@ Expected saving: **~50% on input**, more on output.
 
 ---
 
-## Step 7 — Client
+## ✅ Step 7 — Client
+
+> מומש. ארבעת אריחי ה-AI הוסרו והוחלפו בשלושה אריחים דטרמיניסטיים (בדיקות · דרישות ·
+> סה"כ) מתוך `submission.scoreBreakdown`, ולצידם טבלת דרישות ומצב `RequirementsNotMet`.
+>
+> נותר מחוץ להיקף ביודעין (ר' "לא בהיקף" למעלה): אזהרה בעריכת תרגיל שכבר יש לו הגשות
+> ו"בדיקה מחדש של כל ההגשות" — אין להן צד שרת.
 
 **Skills:** `client-flow-fix-implementation-pattern`, `client-student-area-pattern`,
 `client-design-token-rollout-pattern`
@@ -687,7 +783,7 @@ exists.
 
 ---
 
-## Step 8 — Extract a new skill from the working code
+## ⬜ Step 8 — Extract a new skill from the working code
 
 **Skill:** `create-skill`
 

@@ -358,6 +358,7 @@ export class MyGradesComponent implements OnInit {
         return "info";
       case "CompilationFailed":
       case "AiFailed":
+      case "RequirementsNotMet":
         return "danger";
       case "JudgeUnavailable":
         return "warning";
@@ -376,6 +377,9 @@ export class MyGradesComponent implements OnInit {
         return "pi pi-times-circle";
       case "AiFailed":
         return "pi pi-exclamation-triangle";
+      // דחייה על דרישה חוסמת — לא תקלה טכנית, ולכן אייקון אחר
+      case "RequirementsNotMet":
+        return "pi pi-ban";
       case "JudgeUnavailable":
         return "pi pi-exclamation-circle";
       default:

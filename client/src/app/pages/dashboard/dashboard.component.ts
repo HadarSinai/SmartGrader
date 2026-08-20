@@ -259,6 +259,10 @@ export class DashboardComponent implements OnInit {
     status: string | null,
   ): "success" | "info" | "warning" | "danger" | "secondary" | "contrast" {
     if (!status) return "secondary";
+    // ⚠️ מפורש: "RequirementsNotMet" אינו מכיל fail/error, והתאמת התת-מחרוזות
+    // הייתה מציגה דחייה כתגית מידע ניטרלית.
+    if (status === "RequirementsNotMet") return "danger";
+
     const statusLower = status.toLowerCase();
     if (statusLower.includes("pass") || statusLower.includes("success"))
       return "success";

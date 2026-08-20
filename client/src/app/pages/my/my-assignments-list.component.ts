@@ -275,6 +275,16 @@ export class MyAssignmentsListComponent implements OnInit {
           statusSeverity: "danger",
           statusIcon: "pi pi-exclamation-triangle",
         };
+      // דרישה חוסמת שלא התקיימה — דחייה, לא ציון נמוך. אייקון נפרד מכשל טכני:
+      // כאן אין תקלה, יש פתרון שלא עשה את מה שהתרגיל ביקש.
+      case "RequirementsNotMet":
+        return {
+          assignment,
+          submission,
+          statusLabel: label,
+          statusSeverity: "danger",
+          statusIcon: "pi pi-ban",
+        };
       // תקלת תשתית — ענבר ולא אדום: לא אשמת התלמיד
       case "JudgeUnavailable":
         return {

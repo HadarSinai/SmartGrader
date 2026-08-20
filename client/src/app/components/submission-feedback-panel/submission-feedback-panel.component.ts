@@ -1,65 +1,115 @@
 import { CommonModule } from "@angular/common";
 import { Component, Input } from "@angular/core";
 
-import { PanelModule } from "primeng/panel";
 import { TableModule } from "primeng/table";
 import { TabViewModule } from "primeng/tabview";
 import { TagModule } from "primeng/tag";
 
+import { RULE_SEVERITY_LABELS_HE, RuleSeverity } from "@models/assignment.model";
 import {
+  StructuralRuleResultDto,
   SubmissionResponseDto,
   TestCaseResultDto,
 } from "@models/submission.model";
 
-// מרכז את כל תצוגת המשוב המובנה (ציונים, קטגוריות, טסטים) במקום אחד, כדי שהלוגיקה
-// לא תוכפל בין מסך הסטודנט (my-feedback) למסך המורה (submission-detail).
+// מרכז את כל תצוגת המשוב המובנה (פירוק הציון, דרישות, קטגוריות, טסטים) במקום אחד, כדי
+// שהלוגיקה לא תוכפל בין מסך הסטודנט (my-feedback) למסך המורה (submission-detail).
+//
+// 🔴 מה השתנה כאן: ארבעת אריחי הציון שה-AI ניקד בעצמו הוסרו. המודל אינו מחזיר מספרים
+// יותר — את הציון קובעים Roslyn, מריץ הקוד ו-ScoreCalculator, והמודל תורם רק את ההסבר
+// בעברית. לכן כל מספר שמוצג כאן ניתן לשחזור, ואפשר להתווכח איתו מול הקוד.
 @Component({
   selector: "app-submission-feedback-panel",
   standalone: true,
-  imports: [CommonModule, PanelModule, TableModule, TabViewModule, TagModule],
+  imports: [CommonModule, TableModule, TabViewModule, TagModule],
   template: `
-    <div *ngIf="submission?.feedback as feedback" class="sg-feedback-panel">
-      <!-- גיבוי: המשוב לא פורש בהצלחה (הגשה ישנה או תשובת AI לא תקינה) -->
-      <div *ngIf="!feedback.parseSucceeded" class="sg-note-box">
-        {{ feedback.rawResponse || "לא התקבל משוב." }}
-      </div>
-
-      <ng-container *ngIf="feedback.parseSucceeded">
-        <!-- פירוט ציונים -->
-        <div class="sg-score-grid" *ngIf="feedback.scores as scores">
-          <div class="sg-score-tile">
-            <div class="sg-score-tile__label">ציון טסטים</div>
-            <div class="sg-score-tile__value">
-              {{ scores.testScore ?? "—" }}
-            </div>
-          </div>
-          <div class="sg-score-tile">
-            <div class="sg-score-tile__label">איכות קוד</div>
-            <div class="sg-score-tile__value">
-              {{ scores.codeQualityScore ?? "—" }}
-            </div>
-          </div>
-          <div class="sg-score-tile">
-            <div class="sg-score-tile__label">יעילות</div>
-            <div class="sg-score-tile__value">
-              {{ scores.efficiencyScore ?? "—" }}
-            </div>
-          </div>
-          <div class="sg-score-tile sg-score-tile--final">
-            <div class="sg-score-tile__label">ציון סופי (AI)</div>
-            <div class="sg-score-tile__value">
-              {{ scores.finalScore ?? "—" }}
-            </div>
+    <div class="sg-feedback-panel">
+      <!-- ══ פירוק הציון ══════════════════════════════════════════════════
+           כל מספר כאן הוא תוצאה של חישוב דטרמיניסטי. זה מה שהחליף את ארבעת אריחי
+           ה-AI, שהיו הערכה של המודל ולא הציון שנרשם בפועל. -->
+      <div class="sg-score-grid" *ngIf="submission?.scoreBreakdown as breakdown">
+        <div class="sg-score-tile">
+          <div class="sg-score-tile__label">בדיקות</div>
+          <div class="sg-score-tile__value">{{ breakdown.testPoints }}</div>
+          <div class="sg-score-tile__sub">
+            מתוך {{ breakdown.testsAllocation }}
           </div>
         </div>
+        <div class="sg-score-tile">
+          <div class="sg-score-tile__label">דרישות</div>
+          <div class="sg-score-tile__value">{{ breakdown.rulePoints }}</div>
+          <div class="sg-score-tile__sub">
+            מתוך {{ breakdown.rulesAllocation }}
+          </div>
+        </div>
+        <div class="sg-score-tile sg-score-tile--final">
+          <div class="sg-score-tile__label">סה"כ</div>
+          <div class="sg-score-tile__value">{{ breakdown.total }}</div>
+        </div>
+      </div>
 
-        <!-- מבהיר את הפער בין הציון שנרשם להגשה (טסטים בלבד) להערכת ה-AI שמוצגת מעליו,
-             כדי שציון 0 לצד "איכות קוד 80" לא ייראה כמו תקלה -->
-        <p class="sg-score-note" *ngIf="submission?.feedback?.scores">
-          הציון שנרשם להגשה מחושב מתוצאות הבדיקות בלבד. האריחים שלמעלה הם הערכת ה־AI
-          ואינם משנים אותו.
-        </p>
+      <!-- ⚠️ בלי המשפט הזה ציון 0 על בדיקות שרובן עברו נראה כמו תקלה במערכת -->
+      <p
+        class="sg-score-note"
+        *ngIf="submission?.scoreBreakdown as breakdown"
+      >
+        <ng-container *ngIf="!breakdown.allCorePassed && breakdown.totalTests > 0">
+          מקרה בדיקה מרכזי נכשל, ולכן נקודות הבדיקות מתאפסות: הפתרון לא עשה את הדבר
+          המרכזי שהתרגיל ביקש. מקרי הקצה שעברו אינם מזכים בנקודות בפני עצמם.
+        </ng-container>
+        <ng-container *ngIf="breakdown.allCorePassed && breakdown.totalTests > 0">
+          עברו {{ breakdown.passedTests }} מקרי בדיקה מתוך
+          {{ breakdown.totalTests }}, ונקודות הבדיקות חושבו ביחס הזה.
+        </ng-container>
+        <ng-container *ngIf="breakdown.totalTests === 0">
+          לתרגיל הזה אין מקרי בדיקה — הציון כולו על הדרישות המבניות.
+        </ng-container>
+      </p>
 
+      <!-- ══ דרישות התרגיל ═════════════════════════════════════════════════
+           ⚠️ אין כאן מה להסתיר מהתלמידה, בניגוד למקרי הבדיקה: הדרישה נכתבה בניסוח
+           המטלה מלכתחילה, והידיעה שהיא לא התקיימה היא בדיוק מה שהיא צריכה כדי לתקן. -->
+      <div *ngIf="submission?.structuralResults?.length" class="sg-requirements">
+        <div class="sg-label">דרישות התרגיל</div>
+        <p-table
+          [value]="submission!.structuralResults"
+          [rowHover]="true"
+          styleClass="sg-table"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th>הדרישה</th>
+              <th style="width: 7rem">סוג</th>
+              <th>מה נמצא בקוד</th>
+              <th style="width: 6rem">תוצאה</th>
+              <th style="width: 6rem">ניקוד</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-rule>
+            <tr [class.sg-requirement--blocked]="isBlockingFailure(rule)">
+              <td class="font-semibold">{{ rule.requirement }}</td>
+              <td>{{ severityLabel(rule.severity) }}</td>
+              <td>{{ rule.finding }}</td>
+              <td>
+                <p-tag
+                  [severity]="rule.passed ? 'success' : 'danger'"
+                  [value]="rule.passed ? 'התקיימה' : 'לא התקיימה'"
+                  [icon]="rule.passed ? 'pi pi-check' : 'pi pi-times'"
+                ></p-tag>
+              </td>
+              <td>{{ rulePointsLabel(rule) }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <ng-container *ngIf="submission?.feedback as feedback">
+        <!-- גיבוי: המשוב לא פורש בהצלחה (הגשה ישנה או תשובת AI לא תקינה) -->
+        <div *ngIf="!feedback.parseSucceeded" class="sg-note-box">
+          {{ feedback.rawResponse || "לא התקבל משוב." }}
+        </div>
+
+        <ng-container *ngIf="feedback.parseSucceeded">
         <!-- קטגוריות משוב -->
         <!-- מונה בכותרת כל טאב: בלעדיו צריך לפתוח את כל חמשת הטאבים כדי לגלות היכן
              בכלל יש הערות, ורובם בדרך כלל ריקים -->
@@ -90,17 +140,7 @@ import {
             </ul>
           </p-tabPanel>
         </p-tabView>
-
-        <!-- פתרון מלא (אופציונלי) -->
-        <p-panel
-          *ngIf="feedback.optionalFullSolution"
-          header="הצעה לפתרון מלא"
-          [toggleable]="true"
-          [collapsed]="true"
-          styleClass="sg-solution-panel"
-        >
-          <pre class="sg-code-box">{{ feedback.optionalFullSolution }}</pre>
-        </p-panel>
+        </ng-container>
       </ng-container>
     </div>
 
@@ -129,10 +169,11 @@ import {
         <div class="sg-test-bar__fill" [style.width.%]="passedPercent"></div>
       </div>
 
-      <!-- מטלה עם בדיקה אחת נותנת ציון בינארי (0 או 100) בלי שום דירוג ביניים.
-           ההערה מסמנת זאת למורה במקום להשאיר את זה מפתיע במסך התלמידה -->
+      <!-- מטלה עם בדיקה אחת נותנת ניקוד בינארי על הבדיקות בלי שום דירוג ביניים.
+           ⚠️ "נקודות הבדיקות" ולא "הציון": מאז שיש רובריקה, הדרישות המנוקדות ממשיכות
+           לתת נקודות גם כשהבדיקה היחידה נכשלה. -->
       <div *ngIf="totalCount === 1" class="sg-single-test-note">
-        למטלה זו הוגדרה בדיקה אחת בלבד, ולכן הציון יכול להיות רק 0 או 100.
+        למטלה זו הוגדרה בדיקה אחת בלבד, ולכן נקודות הבדיקות הן הכול או כלום.
       </div>
       <!-- ⚠️ המפתח הוא אינדקס השורה ולא test.input: שורות מוסתרות מגיעות עם קלט ריק,
            ומפתח משותף היה מרחיב ומכווץ את כולן יחד. -->
@@ -248,6 +289,22 @@ import {
         font-size: var(--text-xl);
         font-weight: 800;
         color: var(--accent);
+      }
+
+      .sg-score-tile__sub {
+        font-size: var(--text-sm);
+        color: var(--app-muted);
+      }
+
+      .sg-requirements {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+
+      /* דרישה חוסמת שנכשלה היא הסיבה שאין ציון — היא לא עוד שורה בטבלה */
+      tr.sg-requirement--blocked > td {
+        background: var(--status-error-bg);
       }
 
       .sg-score-note {
@@ -373,6 +430,24 @@ export class SubmissionFeedbackPanelComponent {
   @Input() submission: SubmissionResponseDto | null = null;
 
   expandedRows: Record<number, boolean> = {};
+
+  severityLabel(severity: RuleSeverity): string {
+    return RULE_SEVERITY_LABELS_HE[severity] ?? severity;
+  }
+
+  /** הדרישה שבגללה אין ציון כלל — מסומנת ולא מוצגת כשורה שווה בין שורות. */
+  isBlockingFailure(rule: StructuralRuleResultDto): boolean {
+    return rule.severity === "Blocking" && !rule.passed;
+  }
+
+  /**
+   * ניקוד הדרישה. ⚠️ בינארי בכוונה: דרישה היא תנאי ולא מדידה — אין ניקוד חלקי על
+   * "לכל היותר 3 if" כשנכתבו 4.
+   */
+  rulePointsLabel(rule: StructuralRuleResultDto): string {
+    if (rule.severity !== "Scored") return "—";
+    return `${rule.passed ? rule.points : 0} מתוך ${rule.points}`;
+  }
 
   ngOnChanges(): void {
     // הרחבה כברירת מחדל רק לטסטים שנכשלו — עוברים ניתנים להרחבה לפי דרישה.
