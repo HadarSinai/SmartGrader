@@ -65,6 +65,24 @@ namespace SmartGrader.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ReferenceSolutionJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RetryThreshold")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(85);
+
+                    b.Property<string>("StructuralRulesJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TestsAllocation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(100);
+
                     b.Property<string>("TestsJson")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -273,7 +291,21 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.Property<int>("AssignmentId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("AttemptNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
                     b.Property<string>("CompileError")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ExtraAttemptGrantedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ExtraAttemptGrantedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ExtraAttemptReason")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FeedbackJson")
@@ -282,8 +314,26 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.Property<DateTime?>("GradedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("HasUnusedExtraAttempt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastSubmittedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<double?>("Score")
                         .HasColumnType("REAL");
+
+                    b.Property<string>("ScoreBreakdownJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ScoreOverriddenAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ScoreOverriddenByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ScoreOverrideReason")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SourceCode")
                         .IsRequired()
@@ -295,6 +345,10 @@ namespace SmartGrader.Infrastructure.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("StructuralResultsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("StudentId")
                         .HasColumnType("INTEGER");
@@ -314,6 +368,69 @@ namespace SmartGrader.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Submissions");
+                });
+
+            modelBuilder.Entity("SmartGrader.Domain.Entities.SubmissionAttempt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AiError")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CompileError")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FeedbackJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("GradedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCollapsed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("Score")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("ScoreBreakdownJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceCode")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceFilesJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StructuralResultsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SubmissionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TestResultsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubmissionId", "AttemptNumber")
+                        .IsUnique();
+
+                    b.ToTable("SubmissionAttempts");
                 });
 
             modelBuilder.Entity("SmartGrader.Domain.Entities.User", b =>
@@ -461,6 +578,17 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("SmartGrader.Domain.Entities.SubmissionAttempt", b =>
+                {
+                    b.HasOne("SmartGrader.Domain.Entities.Submission", "Submission")
+                        .WithMany("Attempts")
+                        .HasForeignKey("SubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Submission");
+                });
+
             modelBuilder.Entity("SmartGrader.Domain.Entities.Assignment", b =>
                 {
                     b.Navigation("Submissions");
@@ -486,6 +614,11 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.Navigation("LessonResults");
 
                     b.Navigation("Submissions");
+                });
+
+            modelBuilder.Entity("SmartGrader.Domain.Entities.Submission", b =>
+                {
+                    b.Navigation("Attempts");
                 });
 #pragma warning restore 612, 618
         }

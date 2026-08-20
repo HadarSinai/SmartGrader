@@ -39,6 +39,16 @@ namespace SmartGrader.Application.UseCases.Assignments.CreateAssignment
             // הערה: AutoMapper כבר ממפה את Dto.Tests -> Assignment.Tests (ומעדכן TestsJson),
             // לכן אין להוסיף כאן את המקרים שוב ידנית - זה גרם לכפילות.
 
+            // הפתרון לדוגמה דווקא כן נכתב ידנית — SetReferenceSolution זורק שורות בלי תוכן,
+            // ומיפוי ישיר היה עוקף את הסינון. ר' ההערה ב-AssignmentProfile.
+            assignment.SetReferenceSolution(
+                _mapper.Map<List<ReferenceSolutionFile>>(request.Dto.ReferenceSolution ?? new()));
+
+            // הדרישות המבניות נכתבות דרך ה-setter מאותו נימוק כמו הפתרון לדוגמה:
+            // StructuralRulesJson מסומן Ignore במיפוי, ורק SetStructuralRules כותב אליו.
+            assignment.SetStructuralRules(
+                _mapper.Map<List<StructuralRule>>(request.Dto.StructuralRules ?? new()));
+
             await _assignmentRepository.AddAsync(assignment, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

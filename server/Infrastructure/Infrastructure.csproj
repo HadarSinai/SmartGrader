@@ -10,6 +10,11 @@
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
     <PackageReference Include="Hangfire.Core" Version="1.8.23" />
     <PackageReference Include="Hangfire.Storage.SQLite" Version="0.4.3" />
+    <!-- מנתח התחביר של C# — הבודק הדטרמיניסטי של הדרישות המבניות (RoslynCodeAnalysisService).
+         ⚠️ 4.5.0 ולא גרסה חדשה יותר: EntityFrameworkCore.Design מושך
+         Microsoft.CodeAnalysis.CSharp.Workspaces שמצמיד את Microsoft.CodeAnalysis.Common
+         ל-4.5.0 *בדיוק*, וכל גרסה אחרת כאן נכשלת ב-NU1107. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.5.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.21" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.21">
       <PrivateAssets>all</PrivateAssets>

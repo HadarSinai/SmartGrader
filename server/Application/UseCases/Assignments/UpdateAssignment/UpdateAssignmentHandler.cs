@@ -51,6 +51,13 @@ namespace SmartGrader.Application.UseCases.Assignments.UpdateAssignment
 
             assignment.SetTests(_mapper.Map<List<TestCase>>(request.Dto.Tests ?? new()));
             assignment.SetExpectedFiles(_mapper.Map<List<ExpectedFile>>(request.Dto.ExpectedFiles ?? new()));
+            assignment.SetReferenceSolution(
+                _mapper.Map<List<ReferenceSolutionFile>>(request.Dto.ReferenceSolution ?? new()));
+            assignment.SetStructuralRules(
+                _mapper.Map<List<StructuralRule>>(request.Dto.StructuralRules ?? new()));
+
+            assignment.TestsAllocation = request.Dto.TestsAllocation;
+            assignment.RetryThreshold = request.Dto.RetryThreshold;
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

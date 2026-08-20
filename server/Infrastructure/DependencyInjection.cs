@@ -5,10 +5,12 @@ using Hangfire;
 using Hangfire.Storage.SQLite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SmartGrader.Application.Services.CodeAnalysis;
 using SmartGrader.Application.Services.CodeRunner;
 using SmartGrader.Application.Services.Feedback;
 using SmartGrader.Application.Common.Interfaces;
 using SmartGrader.Domain.Abstractions;
+using SmartGrader.Infrastructure.Services.CodeAnalysis;
 using SmartGrader.Infrastructure.Services.CodeRunner;
 using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
@@ -38,11 +40,21 @@ namespace SmartGrader.Infrastructure
             services.AddScoped<ISchoolClassRepository, SchoolClassRepository>();
             services.AddScoped<ICourseRepository, CourseRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
-            //  services.AddSingleton<ICompilerService, RoslynCompilerService>();
+
+            // בדיקת הדרישות המבניות — מקומית, מיידית וללא עלות. רצה לפני Judge0, כך שהגשה
+            // שלא עומדת בדרישה חוסמת אינה צורכת מכסת הרצה בכלל.
+            services.AddScoped<ICodeAnalysisService, RoslynCodeAnalysisService>();
 
             services.AddHttpClient<IFeedbackService, OpenAiFeedbackService>(c =>
             {
                 c.Timeout = TimeSpan.FromSeconds(20);
+            });
+
+            // ⚠️ timeout קצר יותר מהמשוב בכוונה: המשוב הוא עבודת רקע שאיש לא ממתין לה,
+            // ואילו כאן המורה עומדת מול המסך ואחרי ההצעות עוד מחכה לה סבב הרצות ב-Judge0.
+            services.AddHttpClient<ITestCaseSuggestionService, OpenAiTestCaseSuggestionService>(c =>
+            {
+                c.Timeout = TimeSpan.FromSeconds(15);
             });
 
             services.Configure<OpenAiOptions>(configuration.GetSection("OpenAi"));

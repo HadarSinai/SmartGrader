@@ -142,7 +142,8 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Passed: false,
                     Error: "No response from Judge0",
                     IsSample: test.IsSample,
-                    StatusDescription: "No response from Judge0"));
+                    StatusDescription: "No response from Judge0",
+                    IsCore: test.IsCore));
                 continue;
             }
 
@@ -178,7 +179,8 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Passed: false,
                     Error: "Time Limit Exceeded",
                     IsSample: test.IsSample,
-                    StatusDescription: result.Status?.Description ?? "Time Limit Exceeded"));
+                    StatusDescription: result.Status?.Description ?? "Time Limit Exceeded",
+                    IsCore: test.IsCore));
                 continue;
             }
 
@@ -198,7 +200,8 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Passed: isCorrect,
                     Error: null,
                     IsSample: test.IsSample,
-                    StatusDescription: isCorrect ? "Accepted" : "Wrong Answer"));
+                    StatusDescription: isCorrect ? "Accepted" : "Wrong Answer",
+                    IsCore: test.IsCore));
             }
             else
             {
@@ -211,7 +214,8 @@ public sealed class Judge0CodeRunner : ICodeRunnerService
                     Passed: false,
                     Error: stderr ?? compileOutput,
                     IsSample: test.IsSample,
-                    StatusDescription: result.Status?.Description));
+                    StatusDescription: result.Status?.Description,
+                    IsCore: test.IsCore));
             }
         }
 
@@ -383,24 +387,102 @@ public class Program
 
         // MergeFiles מרים usings של כל הקבצים לראש (כולל אלה שנוסיף כאן) — מונע CS1529
         // כשקובץ שני מתחיל ב-using אחרי שה-class-ים של הקובץ הראשון כבר נפתחו.
+        //
+        // ⚠️ אין כאן System.Text.Json בכוונה — ר' JsonArgsHelper.
         var mergedFiles = MergeFiles(
-            new[] { "using System;\nusing System.Globalization;\nusing System.Linq;\nusing System.Text.Json;" }
+            new[] { "using System;\nusing System.Collections.Generic;\nusing System.Globalization;\nusing System.Linq;\nusing System.Text;" }
                 .Concat(sourceFiles.Select(f => f.Content)));
 
         return $@"
 {mergedFiles}
+{JsonArgsHelper}
 public class Program
 {{
     public static void Main(string[] args)
     {{
 {InvariantCultureSetup}
         var stdin = Console.ReadLine() ?? ""[]"";
-        var argsJson = JsonDocument.Parse(stdin).RootElement;
+        var argsJson = SmartGraderJsonArgs.Parse(stdin);
         var result = {entryClassName}.{methodName}({BuildJsonArgs(parameters)});
         Console.WriteLine(result);
     }}
 }}";
     }
+
+    /// <summary>
+    /// מפרק את מערך ה-JSON שבשדה ""קלט"" למחרוזות, בלי <c>System.Text.Json</c>.
+    /// <para>
+    /// ⚠️ <b>למה לא JsonDocument.</b> Judge0 CE מקמפל C# עם Mono (language_id 51), וה-BCL שלו
+    /// הוא מדור .NET Framework — <c>System.Text.Json</c> הגיע רק ב-.NET Core 3.0 ואינו קיים שם.
+    /// הזרקת <c>using System.Text.Json;</c> הפילה את קוד העטיפה ב-<c>CS0234</c> עוד לפני
+    /// שהקוד של התלמידה רץ, כלומר <b>כל הגשה במצב MultiFileMethod חזרה כשגיאת קומפילציה</b>
+    /// בלי קשר לנכונות הקוד. אותה משפחה כמו ה-<c>Console.ReadLine()!</c> ב-BuildWrappedSource:
+    /// קוד עטיפה שנכתב לפי .NET מודרני ורץ על Mono.
+    /// </para>
+    /// <para>
+    /// מפרסר מערך שטוח של סקלרים — בדיוק מה שמתודה מקבלת כארגומנטים. מחרוזת מוחזרת בלי
+    /// המרכאות ואחרי פריקת escape; מספר או בוליאני מוחזרים כטקסט וממירים אותם ב-BuildJsonArgs
+    /// לפי טיפוס הפרמטר, עם <c>InvariantCulture</c> כדי ששבר עשרוני לא יישבר על locale.
+    /// </para>
+    /// </summary>
+    private const string JsonArgsHelper = @"
+static class SmartGraderJsonArgs
+{
+    public static string[] Parse(string json)
+    {
+        var items = new List<string>();
+        if (json == null) return new string[0];
+
+        var s = json.Trim();
+        if (s.Length >= 2 && s[0] == '[' && s[s.Length - 1] == ']')
+            s = s.Substring(1, s.Length - 2);
+        if (s.Trim().Length == 0) return new string[0];
+
+        var sb = new StringBuilder();
+        var inString = false;
+        var depth = 0;
+
+        for (var i = 0; i < s.Length; i++)
+        {
+            var c = s[i];
+
+            if (inString)
+            {
+                if (c == '\\' && i + 1 < s.Length)
+                {
+                    i++;
+                    var e = s[i];
+                    if (e == 'n') sb.Append('\n');
+                    else if (e == 't') sb.Append('\t');
+                    else if (e == 'r') sb.Append('\r');
+                    else if (e == 'b') sb.Append('\b');
+                    else if (e == 'f') sb.Append('\f');
+                    else if (e == 'u' && i + 4 < s.Length)
+                    {
+                        sb.Append((char)Convert.ToInt32(s.Substring(i + 1, 4), 16));
+                        i += 4;
+                    }
+                    else sb.Append(e);
+                    continue;
+                }
+                if (c == '""') { inString = false; continue; }
+                sb.Append(c);
+                continue;
+            }
+
+            if (c == '""') { inString = true; continue; }
+            if (c == '[' || c == '{') { depth++; sb.Append(c); continue; }
+            if (c == ']' || c == '}') { depth--; sb.Append(c); continue; }
+            if (c == ',' && depth == 0) { items.Add(sb.ToString().Trim()); sb.Length = 0; continue; }
+
+            sb.Append(c);
+        }
+
+        items.Add(sb.ToString().Trim());
+        return items.ToArray();
+    }
+}
+";
 
     // ── מיזוג קבצים עם הרמת using לראש (משותף ל-FullProgram וגם למסלול הרב-קובצי הישן) ──
 
@@ -445,6 +527,11 @@ public class Program
         return null;
     }
 
+    /// <summary>
+    /// ⚠️ <c>argsJson</c> הוא <c>string[]</c> מ-<c>SmartGraderJsonArgs.Parse</c>, לא
+    /// <c>JsonElement</c> — ההמרה לטיפוס הפרמטר נעשית כאן ולא ב-Json API שאינו קיים ב-Mono.
+    /// <c>InvariantCulture</c> מפורש בכל מספר, מאותה סיבה כמו ב-<see cref="InvariantCultureSetup"/>.
+    /// </summary>
     private static string BuildJsonArgs(IReadOnlyList<(string Type, string Name)> parameters)
     {
         var args = new List<string>();
@@ -452,12 +539,12 @@ public class Program
         {
             string arg = parameters[i].Type.ToLowerInvariant() switch
             {
-                "int" or "int32"    => $"argsJson[{i}].GetInt32()",
-                "long" or "int64"   => $"argsJson[{i}].GetInt64()",
-                "double"            => $"argsJson[{i}].GetDouble()",
-                "float"             => $"(float)argsJson[{i}].GetDouble()",
-                "bool" or "boolean" => $"argsJson[{i}].GetBoolean()",
-                _                   => $"argsJson[{i}].GetString()"
+                "int" or "int32"    => $"int.Parse(argsJson[{i}], CultureInfo.InvariantCulture)",
+                "long" or "int64"   => $"long.Parse(argsJson[{i}], CultureInfo.InvariantCulture)",
+                "double"            => $"double.Parse(argsJson[{i}], CultureInfo.InvariantCulture)",
+                "float"             => $"float.Parse(argsJson[{i}], CultureInfo.InvariantCulture)",
+                "bool" or "boolean" => $"bool.Parse(argsJson[{i}])",
+                _                   => $"argsJson[{i}]"
             };
             args.Add(arg);
         }

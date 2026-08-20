@@ -121,7 +121,13 @@ namespace SmartGrader.Infrastructure.Repositories
 
             return await query
                 .Include(s => s.Student)
+                    // הכיתה נדרשת לבדיקת הנעילה: הגשה בכיתה שנמצאת בארכיון (שנת לימודים
+                    // שהתגלגלה) סגורה להגשה חוזרת גם כשהציון נמוך מהסף.
+                    .ThenInclude(s => s.Class)
                 .Include(s => s.Assignment)
+                // ההיסטוריה נטענת יחד: המסך מציג "ניסיון 1: 40 · ניסיון 2: 78", וטעינה
+                // עצלה כאן הייתה שאילתה נוספת לכל הגשה.
+                .Include(s => s.Attempts)
                 .FirstOrDefaultAsync(ct);
         }
 

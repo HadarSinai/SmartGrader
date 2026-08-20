@@ -31,6 +31,26 @@
             CalculatedAt = DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// פותחת מחדש ציון סופי שכבר נסגר.
+        /// <para>
+        /// ⚠️ <c>CompleteWith</c> זורק "Already completed", ולכן <b>ציון סופי שגוי לא היה
+        /// ניתן לתיקון בשום דרך</b> — לא דרך ה-API ולא דרך המסך. זו רשת הביטחון היחידה
+        /// לטעות של מורה, והיא גם מה שמשחרר את ההגשות של אותה תלמידה בשיעור להגשה חוזרת.
+        /// </para>
+        /// </summary>
+        public void Reopen()
+        {
+            if (!IsComplete)
+                throw new InvalidOperationException("Lesson result is not completed.");
+
+            IsComplete = false;
+            CalculatedAt = DateTime.UtcNow;
+
+            // הציון עצמו נשאר: הוא ההצעה שממנה המורה תתקן, ומחיקתו הייתה מאלצת אותה
+            // לחשב הכול מחדש רק כדי לשנות ספרה אחת.
+        }
+
         public Student Student { get; set; } = null!;
         public Lesson Lesson { get; set; } = null!;
 

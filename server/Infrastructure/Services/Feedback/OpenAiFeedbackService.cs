@@ -3,18 +3,54 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using System.Linq;
-using SmartGrader.Application.Services.CodeRunner;
+using SmartGrader.Application.Services.CodeAnalysis;
 using SmartGrader.Application.Services.Feedback;
 using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Infrastructure.Services.Feedback
 {
+    /// <summary>
+    /// המשוב המילולי מ-OpenAI. ר' <see cref="IFeedbackService"/> לחלוקת התפקידים —
+    /// כאן נכתבות רק מילים, אף פעם לא מספרים.
+    /// </summary>
     public class OpenAiFeedbackService : IFeedbackService
     {
         private const string Url = "https://api.openai.com/v1/chat/completions";
-        private const int MaxFailedTestsInPrompt = 5;
-        private const int MaxPassedTestsInPrompt = 3;
+
+        /// <summary>
+        /// תקרת פלט. הפרומפט הקודם רץ בלי תקרה בכלל, וגם בלי השדה
+        /// <c>optional_full_solution</c> שנמחק — הוא היה הפלט היקר ביותר, והוא מסר לתלמידה
+        /// את הפתרון המלא.
+        /// </summary>
+        private const int MaxOutputTokens = 600;
+
+        /// <summary>
+        /// טמפרטורה נמוכה: גם מייצבת את הניסוח בין הרצות של אותו קוד, וגם מצמצמת נטייה
+        /// להמציא ממצאים שלא נמסרו.
+        /// </summary>
+        private const double Temperature = 0.2;
+
+        /// <summary>גזימת המקור. בלי חסם, קובץ שהודבק כולו נשלח כמו שהוא בכל ניסיון.</summary>
+        private const int MaxSourceChars = 4000;
+
+        private const int MaxSampleTestsInPrompt = 4;
+
+        /// <summary>
+        /// 🔴 <b>לשון נקבה היא דרישה קשיחה.</b> ברירת המחדל של מודל שפה בעברית היא לשון זכר,
+        /// ולכן ההוראה חייבת להיות מפורשת. בית ספר לבנות.
+        /// </summary>
+        private const string SystemPreamble =
+@"You are a C# teacher writing feedback for a 9th-grade student in Israel.
+Write all text in Hebrew, addressing the student in the FEMININE form
+(את, שלך, כתבת, נסי) — this is a girls' school. Warm but direct.
+State only the facts given below. Never invent errors or results.
+Never state or guess a grade, a score or a number of points.
+Return strict JSON only, in this shape (the values are TYPE placeholders, not defaults):
+{ ""good"":[<string>], ""issues"":{""correctness"":[<string>], ""readability"":[<string>], ""performance"":[<string>]},
+  ""minimal_changes"":[<string>] }
+""good"" must always contain at least one genuine positive observation.
+""minimal_changes"" are the smallest concrete edits that fix the problem — never the full solution.";
+
         private readonly HttpClient _httpClient;
         private readonly OpenAiOptions _options;
 
@@ -24,67 +60,173 @@ namespace SmartGrader.Infrastructure.Services.Feedback
             _options = options.Value;
         }
 
-        public async Task<AiFeedbackResult> GetFeedbackAsync(
+        // ── תרחיש 1: שגיאת קומפילציה ──────────────────────────────────────────
+
+        public Task<AiFeedbackResult> GetCompileErrorFeedbackAsync(
+            string assignmentDescription,
+            string sourceCode,
+            string compilerMessage,
+            CancellationToken ct)
+        {
+            // ⚠️ המהדר הוא Mono (Judge0, language_id 51) והוא ישן בהרבה מהמהדר שמנתח את הקוד
+            // בשרת. תלמידה יכולה לכתוב switch expression — Roslyn מזהה אותו, "חובה switch"
+            // מתקיים, ו-Mono מסרב להדר. בלי ההוראה הזו המודל מסביר שגיאה שאין לה שם, והתלמידה
+            // מוחה בצדק "אבל השתמשתי ב-switch!".
+            var scenario =
+$@"The student's code failed to COMPILE. No tests were run.
+
+The compiler is Mono (an older C# compiler, roughly C# 5-era). If the error is caused by
+modern C# syntax that Mono does not support (switch expressions, string interpolation with
+$, records, pattern matching, target-typed new, System.Text.Json), say so EXPLICITLY by name
+and offer the older equivalent — otherwise the student cannot understand why correct code
+was rejected.
+
+Compiler output:
+{compilerMessage}
+
+Code:
+{Truncate(sourceCode)}";
+
+            return SendAsync(
+                assignmentDescription,
+                scenario,
+                fallback: () => AiFeedbackResult.Deterministic(new[]
+                {
+                    "❌ הקוד לא עבר הידור.",
+                    compilerMessage
+                }),
+                ct);
+        }
+
+        // ── תרחיש 2: דרישה חוסמת שלא התקיימה ──────────────────────────────────
+
+        public Task<AiFeedbackResult> GetRequirementFeedbackAsync(
+            string assignmentDescription,
+            string sourceCode,
+            IReadOnlyList<StructuralRuleResult> failedRules,
+            CancellationToken ct)
+        {
+            var findings = failedRules.Select(StructuralRuleDescriber.DescribeFailure).ToList();
+
+            // אין כאן ולו שורת נתוני טסט אחת: Judge0 לא רץ במסלול הזה, ואין מה למסור.
+            var scenario =
+$@"The student did not meet a MANDATORY structural requirement of the assignment, so the
+solution was not run at all and receives NO grade. This is not a low grade — it is a
+""do it again the way it was asked"" situation. Be encouraging: if the logic is sound, say so,
+then explain how to convert it to the required construct.
+
+These deterministic findings come from a C# syntax analyser and are the only facts you have:
+{string.Join("\n", findings)}
+
+Code:
+{Truncate(sourceCode)}";
+
+            return SendAsync(
+                assignmentDescription,
+                scenario,
+                fallback: () => AiFeedbackResult.Deterministic(findings),
+                ct);
+        }
+
+        // ── תרחיש 3: המסלול הרגיל ─────────────────────────────────────────────
+
+        public Task<AiFeedbackResult> GetGradingFeedbackAsync(
             string assignmentDescription,
             string sourceCode,
             int passedTests,
             int totalTests,
             IReadOnlyList<TestCaseResult> testDetails,
+            IReadOnlyList<StructuralRuleResult> ruleResults,
             CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(_options.ApiKey))
-                return RawFallback("שגיאה: חסר OpenAi:ApiKey בקונפיגורציה.");
-
-            if (string.IsNullOrWhiteSpace(_options.Model))
-                return RawFallback("שגיאה: חסר OpenAi:Model בקונפיגורציה.");
-
-            if (totalTests < 0 || passedTests < 0 || passedTests > totalTests)
-                return RawFallback("שגיאה: נתוני הטסטים לא תקינים (passed/total).");
-
-            // הערה: התבנית מתארת טיפוסים (<number>) ולא ערכים לדוגמה. גרסה קודמת כתבה כאן
-            // אפסים ממשיים, והמודל העתיק אותם כלשונם — כל תלמיד קיבל איכות קוד 0 ויעילות 0.
-            var developerPrompt =
-@"You are a C# teacher reviewing a student's solution. The reader is the student.
-Language: Hebrew (write ALL strings in Hebrew, gender-neutral phrasing).
-Rules:
-- Do NOT invent results or errors. The test results below are the only facts about what ran.
-- Be concise but include ALL real issues.
-- ""good"" must always contain at least one genuine positive observation, even when every test
-  failed (a correct loop, sensible naming, right use of a language feature). Never return it empty.
-- ""minimal_changes"": the smallest concrete edits that make the code pass. Not vague advice.
-- ""optional_full_solution"": only when the minimal changes cannot convey the fix on their own.
-
-Return STRICT JSON only. The values below are TYPE placeholders, not default values:
-{ ""good"":[<string>], ""issues"":{""correctness"":[<string>], ""readability"":[<string>], ""performance"":[<string>]},
-  ""minimal_changes"":[<string>], ""optional_full_solution"":<string|null>,
-  ""scores"":{""test_score"":<number|null>, ""code_quality_score"":<number>, ""efficiency_score"":<number>, ""final_score"":<number>} }
-
-Scoring — every score is on a 0-100 scale, and the three component scores are INDEPENDENT:
-- test_score: total>0 ? (passed/total)*100 : null. Compute it from the numbers given, do not guess.
-- code_quality_score: naming, structure and readability ONLY. Code that fails every test can still
-  score 80 here if it is written well. Never copy test_score into this field.
-  Anchors: 90+ clean and idiomatic, 70 readable with minor issues, 50 works but messy, 30 hard to follow.
-- efficiency_score: algorithmic complexity and wasted work ONLY. Same independence rule.
-  Anchors: 90+ optimal for the task, 70 reasonable, 50 needlessly heavy, 30 badly inefficient.
-- final_score = 0.7*test_score + 0.2*code_quality_score + 0.1*efficiency_score, rounded to a whole
-  number. When test_score is null, set final_score to null as well rather than inventing one.";
-
-            var testsSummary = BuildTestsSummary(testDetails);
-
-            var userContent =
-$@"Task: {assignmentDescription}
-Tests: {passedTests} passed out of {totalTests}
-{testsSummary}
+            var scenario =
+$@"The student's code compiled and ran.
+Tests: {passedTests} passed out of {totalTests}.
+{BuildSampleTestsSection(testDetails)}{BuildRulesSection(ruleResults)}
 Code:
-{sourceCode}";
+{Truncate(sourceCode)}";
+
+            return SendAsync(
+                assignmentDescription,
+                scenario,
+                fallback: () => AiFeedbackResult.Deterministic(
+                    new[] { $"עברו {passedTests} מתוך {totalTests} מקרי בדיקה." }
+                        .Concat(ruleResults
+                            .Where(r => !r.Passed && r.Rule.Severity != RuleSeverity.Advisory)
+                            .Select(StructuralRuleDescriber.DescribeFailure))),
+                ct);
+        }
+
+        /// <summary>
+        /// 🔴 <b>רק מקרי דוגמה נמסרים למודל.</b> מקרה מוסתר נמסר כעובדה בלבד ("נכשל"), בלי
+        /// הקלט ובלי הפלט הצפוי — מודל שקיבל אותם יצטט אותם חזרה במשוב, וכל ההסתרה נשברת.
+        /// זה מספיק כדי לאתר את הבאג כמעט תמיד, וגם עולה פחות טוקנים.
+        /// </summary>
+        private static string BuildSampleTestsSection(IReadOnlyList<TestCaseResult> testDetails)
+        {
+            if (testDetails.Count == 0)
+                return "";
+
+            var sb = new StringBuilder();
+            var samples = testDetails.Where(t => t.IsSample).Take(MaxSampleTestsInPrompt).ToList();
+
+            if (samples.Count > 0)
+            {
+                sb.AppendLine("Sample tests (the student can see these — you may quote them):");
+                foreach (var (test, i) in samples.Select((t, i) => (t, i)))
+                    sb.AppendLine(
+                        $"  {i + 1}. Input: {test.Input} | Expected: {test.Expected} | " +
+                        $"Actual: {test.Actual} | {(test.Passed ? "PASSED" : "FAILED")}" +
+                        (string.IsNullOrWhiteSpace(test.Error) ? "" : $" | Error: {test.Error}"));
+            }
+
+            var hiddenFailed = testDetails.Count(t => !t.IsSample && !t.Passed);
+            if (hiddenFailed > 0)
+                sb.AppendLine(
+                    $"{hiddenFailed} HIDDEN test(s) failed. You are NOT given their input or expected " +
+                    "output. Never state, guess or hint at an expected value for them — describe the " +
+                    "KIND of case the student may have missed instead (e.g. zero, negatives, empty input).");
+
+            return sb.ToString();
+        }
+
+        private static string BuildRulesSection(IReadOnlyList<StructuralRuleResult> ruleResults)
+        {
+            if (ruleResults.Count == 0)
+                return "";
+
+            var sb = new StringBuilder("Structural requirements (checked by a syntax analyser, not by you):\n");
+
+            foreach (var result in ruleResults)
+                sb.AppendLine(
+                    $"  - {StructuralRuleDescriber.Describe(result.Rule)} — " +
+                    $"{(result.Passed ? "MET" : "NOT MET")}: {StructuralRuleDescriber.DescribeFinding(result)}");
+
+            return sb.ToString();
+        }
+
+        // ── שליחה משותפת ──────────────────────────────────────────────────────
+
+        private async Task<AiFeedbackResult> SendAsync(
+            string assignmentDescription,
+            string scenario,
+            Func<AiFeedbackResult> fallback,
+            CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(_options.ApiKey) || string.IsNullOrWhiteSpace(_options.Model))
+                return fallback();
 
             var requestBody = new
             {
                 model = _options.Model,
+                max_tokens = MaxOutputTokens,
+                temperature = Temperature,
+                // מצב JSON: פחות פתיח מילולי לפני האובייקט, ולכן גם פחות כשלי פירוש.
+                response_format = new { type = "json_object" },
                 messages = new object[]
                 {
-                    new { role = "developer", content = developerPrompt },
-                    new { role = "user", content = userContent }
+                    new { role = "system", content = SystemPreamble },
+                    new { role = "user", content = $"Task: {assignmentDescription}\n\n{scenario}" }
                 }
             };
 
@@ -93,7 +235,7 @@ Code:
             // Retry על עומס זמני בלבד (429/503) עם backoff
             const int maxAttempts = 3;
 
-            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 ct.ThrowIfCancellationRequested();
 
@@ -118,91 +260,59 @@ Code:
                     }
                     catch (JsonException)
                     {
-                        return RawFallback(responseJson);
+                        return fallback();
                     }
 
-                    return ParseFeedback(content);
+                    return ParseFeedback(content, fallback);
                 }
 
-                // Retry רק על עומס זמני
-                var code = (int)response.StatusCode;
-                var isRetryable = response.StatusCode == (HttpStatusCode)429 || response.StatusCode == HttpStatusCode.ServiceUnavailable;
+                var isRetryable = response.StatusCode is (HttpStatusCode)429 or HttpStatusCode.ServiceUnavailable;
 
                 if (isRetryable && attempt < maxAttempts)
                 {
-                    var delay = GetRetryDelay(response, attempt);
-                    await Task.Delay(delay, ct);
+                    await Task.Delay(GetRetryDelay(response, attempt), ct);
                     continue;
                 }
 
-                // שגיאה אחרת / נגמרו ניסיונות
-                return RawFallback($"שגיאת AI ({code}): {responseJson}");
+                return fallback();
             }
 
-            return RawFallback("שגיאה: OpenAI לא זמין כרגע. נסי שוב בעוד כמה רגעים.");
+            return fallback();
         }
 
-        // מעביר ל-AI גם את הטסטים שעברו ולא רק את הנכשלים: בלעדיהם למודל אין שום עובדה
-        // חיובית להיאחז בה, וטאב "מה טוב" יוצא ריק גם כשחלק מהמטלה כן עבד.
-        //
-        // ⚠️ מקרה בדיקה שאינו דוגמה נכנס לפרומפט בלי הקלט והפלט הצפוי שלו. המשוב של ה-AI מוצג
-        // לתלמידה כטקסט חופשי, כך שכל ערך שנכנס לכאן עלול לצאת אליה — זהו נתיב דלף זהה בפועל
-        // להחזרת ה-Tests ב-API, רק עקיף. הספירה (עברו/נכשלו) נשמרת, וזה מספיק כדי לבסס את המשוב.
-        private static string BuildTestsSummary(IReadOnlyList<TestCaseResult> testDetails)
-        {
-            if (testDetails.Count == 0)
-                return "";
-
-            var sb = new StringBuilder("Test results (grounding facts — do not invent others):\n");
-
-            var passed = testDetails.Where(t => t.Passed).Take(MaxPassedTestsInPrompt).ToList();
-            if (passed.Count > 0)
-            {
-                sb.AppendLine("Passed:");
-                foreach (var (t, i) in passed.Select((t, i) => (t, i)))
-                    sb.AppendLine(t.IsSample
-                        ? $"  {i + 1}. Input: {t.Input} | Expected: {t.Expected}"
-                        : $"  {i + 1}. (hidden test — do not mention or guess its input/expected output)");
-            }
-
-            var failed = testDetails.Where(t => !t.Passed).Take(MaxFailedTestsInPrompt).ToList();
-            if (failed.Count > 0)
-            {
-                sb.AppendLine("Failed:");
-                foreach (var (t, i) in failed.Select((t, i) => (t, i)))
-                    sb.AppendLine(t.IsSample
-                        ? $"  {i + 1}. Input: {t.Input} | Expected: {t.Expected} | Actual: {t.Actual}" +
-                          (string.IsNullOrWhiteSpace(t.Error) ? "" : $" | Error: {t.Error}")
-                        : $"  {i + 1}. (hidden test — failed; do not mention or guess its input/expected output)");
-            }
-
-            return sb.ToString();
-        }
-
-        // מנסה לפרש את תשובת ה-AI כ-JSON מובנה. בכשל — לא זורק, אלא מחזיר תוצאה עם
-        // ParseSucceeded=false ותוכן גולמי לגיבוי, בהתאם לאופי החוסן הקיים (היום כל מחרוזת מתקבלת).
-        private static AiFeedbackResult ParseFeedback(string content)
+        /// <summary>
+        /// מפרש את תשובת המודל. בכשל אינו זורק אלא חוזר לממצא הדטרמיניסטי — העובדות כבר
+        /// נקבעו, וכשל בניסוח אסור שישאיר את התלמידה עם סטטוס חשוף בלי הסבר.
+        /// </summary>
+        private static AiFeedbackResult ParseFeedback(string content, Func<AiFeedbackResult> fallback)
         {
             try
             {
                 var parsed = JsonSerializer.Deserialize<AiFeedbackResult>(content);
-                if (parsed is null)
-                    return RawFallback(content);
-
-                return parsed with { ParseSucceeded = true };
+                return parsed is null
+                    ? fallback()
+                    : parsed with { ParseSucceeded = true };
             }
             catch (JsonException)
             {
-                return RawFallback(content);
+                // הטקסט הגולמי עדיף על הממצא היבש כשהוא בכל זאת הגיע — הוא בעברית ומסביר.
+                return new AiFeedbackResult(Good: null, Issues: null, MinimalChanges: null)
+                {
+                    ParseSucceeded = false,
+                    RawResponse = content
+                };
             }
         }
 
-        private static AiFeedbackResult RawFallback(string rawText) =>
-            new(Good: null, Issues: null, MinimalChanges: null, OptionalFullSolution: null, Scores: null)
-            {
-                ParseSucceeded = false,
-                RawResponse = rawText,
-            };
+        private static string Truncate(string? sourceCode)
+        {
+            if (string.IsNullOrEmpty(sourceCode))
+                return "(no code)";
+
+            return sourceCode.Length <= MaxSourceChars
+                ? sourceCode
+                : sourceCode[..MaxSourceChars] + "\n… (הקוד נחתך כאן)";
+        }
 
         private static TimeSpan GetRetryDelay(HttpResponseMessage response, int attempt)
         {
@@ -211,13 +321,11 @@ Code:
                 int.TryParse(values.FirstOrDefault(), out var retryAfterSeconds) &&
                 retryAfterSeconds > 0)
             {
-                // גבול קטן כדי לא להמתין יותר מדי
                 return TimeSpan.FromSeconds(Math.Min(retryAfterSeconds, 20));
             }
 
             // backoff: 2s, 4s, 8s
-            var seconds = Math.Pow(2, attempt);
-            return TimeSpan.FromSeconds(Math.Min(seconds, 10));
+            return TimeSpan.FromSeconds(Math.Min(Math.Pow(2, attempt), 10));
         }
     }
 }

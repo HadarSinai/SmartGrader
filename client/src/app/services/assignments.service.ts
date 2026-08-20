@@ -2,7 +2,11 @@ import { Injectable } from "@angular/core";
 import {
   AssignmentResponseDto,
   CreateAssignmentRequestDto,
+  SuggestTestCasesRequestDto,
+  SuggestTestCasesResultDto,
   UpdateAssignmentRequestDto,
+  VerifyTestCasesRequestDto,
+  VerifyTestCasesResultDto,
 } from "@models/assignment.model";
 import { Observable } from "rxjs";
 import { ApiClient } from "../core/http/api-client";
@@ -102,6 +106,35 @@ export class AssignmentsService {
     }
     return this.api.http.delete<void>(
       this.api.url(`/api/lessons/assignments/${a}`),
+    );
+  }
+
+  // --------------------
+  // כלי כתיבת מקרי בדיקה
+  // --------------------
+  //
+  // שני אלה שולחים את תוכן *הטופס* ולא מזהה תרגיל: המורה משתמשת בהם בזמן הכתיבה,
+  // לפעמים לפני שהתרגיל נשמר בכלל. לכן הם תלויים רק ב-lessonId.
+
+  /** מריץ את הפתרון לדוגמה מול מקרי הבדיקה שבטופס. לא שומר דבר. */
+  verifyTests(
+    lessonId: number,
+    request: VerifyTestCasesRequestDto,
+  ): Observable<VerifyTestCasesResultDto> {
+    return this.api.http.post<VerifyTestCasesResultDto>(
+      this.api.url(`/api/lessons/${lessonId}/assignments/verify-tests`),
+      request,
+    );
+  }
+
+  /** מבקש הצעות מה-AI. השרת מריץ כל הצעה מול הפתרון לדוגמה לפני שהיא חוזרת לכאן. */
+  suggestTests(
+    lessonId: number,
+    request: SuggestTestCasesRequestDto,
+  ): Observable<SuggestTestCasesResultDto> {
+    return this.api.http.post<SuggestTestCasesResultDto>(
+      this.api.url(`/api/lessons/${lessonId}/assignments/suggest-tests`),
+      request,
     );
   }
 

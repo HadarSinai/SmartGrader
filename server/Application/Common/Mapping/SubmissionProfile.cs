@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AutoMapper;
 using SmartGrader.Application.Dtos.Submissions;
+using SmartGrader.Application.Services.CodeAnalysis;
 using SmartGrader.Domain.Entities;
 
 namespace SmartGrader.Application.Common.Mapping
@@ -13,6 +14,24 @@ namespace SmartGrader.Application.Common.Mapping
             CreateMap<TestCaseResult, TestCaseResultDto>()
                 .ForMember(d => d.IsHidden, opt => opt.Ignore());
             CreateMap<SubmissionFile, SubmissionFileDto>();
+            CreateMap<ScoreBreakdown, ScoreBreakdownDto>();
+
+            CreateMap<SubmissionAttempt, SubmissionAttemptDto>()
+                .ForMember(d => d.Status, opt => opt.MapFrom(a => a.Status.ToString()));
+
+            // הניסוח העברי נבנה כאן פעם אחת ולא בקליינט: אותו טקסט בדיוק נשלח גם לפרומפט
+            // ומשמש גם כמשוב הדטרמיניסטי כשהמודל אינו זמין — ר' StructuralRuleDescriber.
+            CreateMap<StructuralRuleResult, StructuralRuleResultDto>()
+                .ForMember(d => d.Requirement,
+                    opt => opt.MapFrom(r => StructuralRuleDescriber.Describe(r.Rule)))
+                .ForMember(d => d.Finding,
+                    opt => opt.MapFrom(r => StructuralRuleDescriber.DescribeFinding(r)))
+                .ForMember(d => d.Severity,
+                    opt => opt.MapFrom(r => r.Rule.Severity.ToString()))
+                .ForMember(d => d.Points,
+                    opt => opt.MapFrom(r => r.Rule.Severity == RuleSeverity.Scored ? r.Rule.Points : 0))
+                .ForMember(d => d.ExpectedCount,
+                    opt => opt.MapFrom(r => r.Rule.ExpectedCount));
 
             CreateMap<Submission, SubmissionResponseDto>()
                 .ForMember(d => d.SourceFiles,
@@ -25,6 +44,20 @@ namespace SmartGrader.Application.Common.Mapping
                     opt => opt.MapFrom(s => s.CompileError))
                 .ForMember(d => d.TestResults,
                     opt => opt.MapFrom(s => s.TestResults))
+                .ForMember(d => d.StructuralResults,
+                    opt => opt.MapFrom(s => s.StructuralResults))
+                // מהחדש לישן — הציר נקרא מלמעלה למטה במסך.
+                .ForMember(d => d.Attempts,
+                    opt => opt.MapFrom(s => s.Attempts.OrderByDescending(a => a.AttemptNumber)))
+                .ForMember(d => d.ScoreBreakdown,
+                    opt => opt.MapFrom(s => s.ScoreBreakdown))
+                // הכלל מערב את סף הציון של התרגיל, ולכן הוא נגזר כאן ולא בקליינט. נעילת
+                // השיעור לתלמידה אינה ידועה בשלב המיפוי — ההגשה עצמה עדיין תסרב ב-MarkPendingAi.
+                .ForMember(d => d.CanResubmit,
+                    opt => opt.MapFrom(s => s.CanResubmit(
+                        s.Assignment != null
+                            ? s.Assignment.RetryThreshold
+                            : Assignment.DefaultRetryThreshold)))
                 .ForMember(d => d.Feedback,
                     opt => opt.MapFrom(s => ParseFeedback(s.FeedbackJson)))
                 .ForMember(d => d.StudentName,
@@ -59,8 +92,6 @@ namespace SmartGrader.Application.Common.Mapping
                     Good = ReadStringList(root, "good"),
                     Issues = ReadIssues(root),
                     MinimalChanges = ReadStringList(root, "minimal_changes"),
-                    OptionalFullSolution = ReadNullableString(root, "optional_full_solution"),
-                    Scores = ReadScores(root),
                     ParseSucceeded = true,
                 };
             }
@@ -88,20 +119,6 @@ namespace SmartGrader.Application.Common.Mapping
                 .ToList();
         }
 
-        private static string? ReadNullableString(JsonElement root, string propertyName)
-        {
-            return root.TryGetProperty(propertyName, out var el) && el.ValueKind == JsonValueKind.String
-                ? el.GetString()
-                : null;
-        }
-
-        private static double? ReadNullableDouble(JsonElement root, string propertyName)
-        {
-            return root.TryGetProperty(propertyName, out var el) && el.ValueKind == JsonValueKind.Number
-                ? el.GetDouble()
-                : null;
-        }
-
         private static AiFeedbackIssuesDto ReadIssues(JsonElement root)
         {
             if (!root.TryGetProperty("issues", out var el) || el.ValueKind != JsonValueKind.Object)
@@ -112,20 +129,6 @@ namespace SmartGrader.Application.Common.Mapping
                 Correctness = ReadStringList(el, "correctness"),
                 Readability = ReadStringList(el, "readability"),
                 Performance = ReadStringList(el, "performance"),
-            };
-        }
-
-        private static AiFeedbackScoresDto ReadScores(JsonElement root)
-        {
-            if (!root.TryGetProperty("scores", out var el) || el.ValueKind != JsonValueKind.Object)
-                return new AiFeedbackScoresDto();
-
-            return new AiFeedbackScoresDto
-            {
-                TestScore = ReadNullableDouble(el, "test_score"),
-                CodeQualityScore = ReadNullableDouble(el, "code_quality_score"),
-                EfficiencyScore = ReadNullableDouble(el, "efficiency_score"),
-                FinalScore = ReadNullableDouble(el, "final_score"),
             };
         }
     }

@@ -4,7 +4,8 @@ using SmartGrader.Application.Dtos.Submissions;
 namespace SmartGrader.Application.Common.Authorization
 {
     /// <summary>
-    /// הסתרת תשובות מקרי הבדיקה מתלמידה — <b>בשרת בלבד</b>.
+    /// הסתרת התשובה לתרגיל מתלמידה — <b>בשרת בלבד</b>. שני נתיבים: מקרי בדיקה מוסתרים,
+    /// והפתרון לדוגמה של המורה.
     /// <para>
     /// מקרה בדיקה שאינו דוגמה (<c>IsSample == false</c>) מכיל את התשובה לתרגיל. הסתרה בתבנית
     /// Angular היא חסרת ערך: ה-payload כבר הגיע לדפדפן ונקרא ב-DevTools בשלמותו. לכן הסינון
@@ -19,22 +20,32 @@ namespace SmartGrader.Application.Common.Authorization
     public static class TestVisibility
     {
         /// <summary>
-        /// משאיר לתלמידה רק את מקרי הדוגמה. מורה/מנהלת מקבלת את הרשימה המלאה.
+        /// משאיר לתלמידה רק את מקרי הדוגמה, ומרוקן את הפתרון לדוגמה.
+        /// מורה/מנהלת מקבלת את התרגיל המלא.
+        /// <para>
+        /// שתי ההסתרות באותה פונקציה בכוונה: שתיהן מסתירות את התשובה לתרגיל, והפרדתן לשתי
+        /// קריאות נפרדות פירושה שכל endpoint עתידי יצטרך לזכור להוסיף שתיים — וישכח את השנייה.
+        /// </para>
         /// </summary>
-        public static AssignmentResponseDto RedactTests(AssignmentResponseDto dto, bool isStudentCaller)
+        public static AssignmentResponseDto Redact(AssignmentResponseDto dto, bool isStudentCaller)
         {
-            if (isStudentCaller)
-                dto.Tests = dto.Tests.Where(t => t.IsSample).ToList();
+            if (!isStudentCaller)
+                return dto;
+
+            dto.Tests = dto.Tests.Where(t => t.IsSample).ToList();
+
+            // ⚠️ הפתרון לדוגמה הוא התשובה המלאה — לא "רוב התשובה", לא "רמז". מרוקן, לא מסונן.
+            dto.ReferenceSolution = new List<ReferenceSolutionFileDto>();
 
             return dto;
         }
 
-        public static IReadOnlyList<AssignmentResponseDto> RedactTests(
+        public static IReadOnlyList<AssignmentResponseDto> Redact(
             IReadOnlyList<AssignmentResponseDto> dtos, bool isStudentCaller)
         {
             if (isStudentCaller)
                 foreach (var dto in dtos)
-                    RedactTests(dto, isStudentCaller);
+                    Redact(dto, isStudentCaller);
 
             return dtos;
         }

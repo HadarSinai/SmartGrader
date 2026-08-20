@@ -40,9 +40,9 @@ namespace SmartGrader.Application.UseCases.Assignments.GetAssignmentById
             if (assignment is null || assignment.LessonId != request.LessonId)
                 throw new NotFoundException(nameof(Assignment), request.AssignmentId);
 
-            // ⚠️ מקרי בדיקה שאינם דוגמה מכילים את התשובה לתרגיל — נחתכים כאן, בשרת, לפני
-            // שה-DTO עוזב את ה-handler. ר' TestVisibility.
-            return TestVisibility.RedactTests(
+            // ⚠️ מקרי בדיקה שאינם דוגמה, והפתרון לדוגמה של המורה, מכילים את התשובה לתרגיל —
+            // נחתכים כאן, בשרת, לפני שה-DTO עוזב את ה-handler. ר' TestVisibility.
+            return TestVisibility.Redact(
                 _mapper.Map<AssignmentResponseDto>(assignment),
                 request.IsStudentCaller);
         }

@@ -9,7 +9,9 @@ using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 using SmartGrader.Application.UseCases.LessonResults.ExportGradesPeriodReport;
 using SmartGrader.Application.UseCases.LessonResults.ExportLessonResults;
 using SmartGrader.Application.UseCases.LessonResults.GetLessonResult;
+using SmartGrader.Application.UseCases.LessonResults.GetLessonScoreSuggestion;
 using SmartGrader.Application.UseCases.LessonResults.GetStudentGradesSummary;
+using SmartGrader.Application.UseCases.LessonResults.ReopenLesson;
 
 namespace SmartGrader.Api.Controllers;
 
@@ -49,6 +51,28 @@ public class LessonResultController : ApiControllerBase
             bytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"lesson-{lessonId}-results.xlsx");
+    }
+
+    // ההצעה לציון הסופי: מה כל תרגיל קיבל, וממוצע מוכן לעריכה.
+    // 🔴 בלי זה המורה מחשבת ממוצע ביד לכל תלמידה בזמן שכל המספרים כבר במערכת.
+    [HttpGet("{studentId:int}/{lessonId:int}/suggestion")]
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> GetScoreSuggestion(int studentId, int lessonId, CancellationToken ct)
+    {
+        var result = await _mediator.Send(
+            new GetLessonScoreSuggestionQuery(studentId, lessonId, OwnerScopeTeacherId), ct);
+        return Ok(result);
+    }
+
+    // פתיחה מחדש של ציון סופי. ⚠️ עד כה CompleteWith זרק "Already completed" וציון סופי
+    // שגוי לא היה ניתן לתיקון בשום דרך. הפתיחה גם משחררת את ההגשות של אותה תלמידה בשיעור.
+    [HttpPost("{studentId:int}/{lessonId:int}/reopen")]
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> Reopen(int studentId, int lessonId, CancellationToken ct)
+    {
+        var result = await _mediator.Send(
+            new ReopenLessonCommand(studentId, lessonId, OwnerScopeTeacherId), ct);
+        return Ok(_mapper.Map<LessonResultResponseDto>(result));
     }
 
     [HttpPost("complete")]

@@ -16,6 +16,8 @@ using SmartGrader.Application.UseCases.Submissions.CreateSubmission;
 using SmartGrader.Application.UseCases.Submissions.DeleteSubmission;
 using SmartGrader.Application.UseCases.Submissions.GetSubmissionById;
 using SmartGrader.Application.UseCases.Submissions.GetSubmissions;
+using SmartGrader.Application.UseCases.Submissions.GrantExtraAttempt;
+using SmartGrader.Application.UseCases.Submissions.OverrideScore;
 using SmartGrader.Application.UseCases.Submissions.UpdateSubmission;
 
 namespace SmartGrader.Api.Controllers
@@ -207,6 +209,49 @@ namespace SmartGrader.Api.Controllers
             SubmissionResponseDto updated =
                 await _mediator.Send(
                     new UpdateSubmissionCommand(studentId, submissionId, dto, TeacherIdForSharedRead),
+                    cancellationToken);
+
+            return Ok(updated);
+        }
+
+        // POST: api/students/{studentId}/submissions/{submissionId}/extra-attempt
+        //
+        // אישור המורה לתלמידה להגיש שוב, מעל סף הציון.
+        // ⚠️ כפתור ולא קוד משותף: קוד עובר בין תלמידות ומנטרל את הכלל בשקט. ההגנה כאן היא
+        // ההזדהות הקיימת — Teacher,Admin בלבד — ואין צורך בשכבת סיסמה נוספת. TeacherUserId
+        // נלקח מה-claims ולא מגוף הבקשה, אחרת יומן הביקורת הוא דיווח עצמי.
+        [HttpPost("{studentId:int}/submissions/{submissionId:int}/extra-attempt")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> GrantExtraAttempt(
+            int studentId,
+            int submissionId,
+            [FromBody] GrantExtraAttemptRequestDto dto,
+            CancellationToken cancellationToken)
+        {
+            SubmissionResponseDto updated =
+                await _mediator.Send(
+                    new GrantExtraAttemptCommand(
+                        submissionId, OwnerScopeTeacherId, CurrentUserId, dto.Reason),
+                    cancellationToken);
+
+            return Ok(updated);
+        }
+
+        // PUT: api/students/{studentId}/submissions/{submissionId}/score
+        //
+        // דריסת ציון בידי המורה — רשת ביטחון, לא חלק מהמסלול הרגיל.
+        [HttpPut("{studentId:int}/submissions/{submissionId:int}/score")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> OverrideSubmissionScore(
+            int studentId,
+            int submissionId,
+            [FromBody] OverrideScoreRequestDto dto,
+            CancellationToken cancellationToken)
+        {
+            SubmissionResponseDto updated =
+                await _mediator.Send(
+                    new OverrideScoreCommand(
+                        submissionId, OwnerScopeTeacherId, CurrentUserId, dto.Score, dto.Reason),
                     cancellationToken);
 
             return Ok(updated);

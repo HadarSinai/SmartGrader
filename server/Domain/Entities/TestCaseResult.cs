@@ -12,6 +12,10 @@ namespace SmartGrader.Domain.Entities
         bool IsSample = false,
         // תיאור הסטטוס מ-Judge0 ("Wrong Answer" מול "Runtime Error (SIGSEGV)"). בלעדיו תשובה
         // שגויה וקריסה נראו זהות לגמרי במסך — שתיהן סתם "נכשל".
-        string? StatusDescription = null
+        string? StatusDescription = null,
+        // נשמר על התוצאה מאותו נימוק כמו IsSample: ScoreCalculator שואל "האם כל מקרי הליבה
+        // עברו", ואם הסיווג היה נקרא מהתרגיל בזמן החישוב, עריכת מקרי הבדיקה אחרי בדיקה
+        // הייתה משנה למפרע ציון שכבר ניתן. ברירת המחדל true תואמת ל-TestCase.IsCore.
+        bool IsCore = true
     );
 }

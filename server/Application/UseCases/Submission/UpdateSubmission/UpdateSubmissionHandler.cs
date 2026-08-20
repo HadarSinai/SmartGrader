@@ -1,6 +1,7 @@
 using AutoMapper;
 using Hangfire;
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Application.Services.BackgroundJobs;
@@ -13,17 +14,20 @@ namespace SmartGrader.Application.UseCases.Submissions.UpdateSubmission
         : IRequestHandler<UpdateSubmissionCommand, SubmissionResponseDto>
     {
         private readonly ISubmissionRepository _repository;
+        private readonly ILessonResultRepository _lessonResults;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IBackgroundJobClient _jobClient;
 
         public UpdateSubmissionHandler(
             ISubmissionRepository repository,
+            ILessonResultRepository lessonResults,
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IBackgroundJobClient jobClient)
         {
             _repository = repository;
+            _lessonResults = lessonResults;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _jobClient = jobClient;
@@ -48,12 +52,30 @@ namespace SmartGrader.Application.UseCases.Submissions.UpdateSubmission
                     "Submission does not belong to this student.",
                     request.SubmissionId);
 
-            // 🎯 עריכה מותרת רק להגשה שנכשלה — לא להגשה שנבדקה או שנמצאת בבדיקה
-            if (submission.Status is not (SubmissionStatus.CompilationFailed
-                or SubmissionStatus.JudgeUnavailable
-                or SubmissionStatus.AiFailed))
+            var retryThreshold = submission.Assignment?.RetryThreshold
+                                 ?? Assignment.DefaultRetryThreshold;
+
+            // 🎯 מי רשאית להגיש שוב: כשל (קומפילציה / AI / תקלת מערכת / דרישה חוסמת) פתוח
+            // תמיד, והגשה שנבדקה בהצלחה פתוחה כל עוד הציון מתחת לסף — בלי הגבלת ניסיונות.
+            // ⚠️ הכלל עצמו חי ב-Submission.CanResubmit ונאכף שוב ב-MarkPendingAi. בדיקה
+            // שיושבת רק כאן נעקפת בשקט על ידי כל קורא חדש.
+            if (!submission.CanResubmit(retryThreshold))
                 throw new BusinessRuleException(
-                    "לא ניתן לערוך הגשה זו — עריכה אפשרית רק להגשה שנכשלה (שגיאת קומפילציה, תקלת מערכת או שגיאת בדיקה)");
+                    submission.Status == SubmissionStatus.Done
+                        ? $"לא ניתן להגיש שוב — הציון {submission.Score:0.#} עומד בסף {retryThreshold}. " +
+                          "המורה יכולה לאשר הגשה נוספת."
+                        : "לא ניתן לערוך הגשה זו — היא נמצאת כרגע בבדיקה.");
+
+            // 🎯 נעילה גוברת גם על אישור המורה: שיעור שסוכם לתלמידה או כיתה בארכיון
+            var isLocked = await SubmissionLock.IsLockedAsync(_lessonResults, submission, cancellationToken);
+            if (isLocked)
+                throw new BusinessRuleException(SubmissionLock.Message);
+
+            // 🎯 הגבלת קצב: בלי תקרת ניסיונות, while(true){} עולה cpu_time_limit × מספר
+            // הטסטים שניות וניתן לשלוח אותו שוב מיד. בולע גם לחיצה כפולה על "שליחה".
+            if (submission.IsRateLimited(DateTime.UtcNow))
+                throw new BusinessRuleException(
+                    $"נא להמתין {Submission.MinResubmitInterval.TotalMinutes:0} דקות בין הגשה להגשה.");
 
             // 🎯 הגשה חוזרת לתרגיל רב-קובצי חייבת לכלול את כל הקבצים הצפויים — אותה בדיקה
             // כמו ב-CreateSubmissionHandler, אחרת הגשה חוזרת חלקית יוצרת הגשה שאי אפשר לבדוק
@@ -80,7 +102,9 @@ namespace SmartGrader.Application.UseCases.Submissions.UpdateSubmission
                 .ToList();
 
             submission.UpdateSourceCode(request.Dto.SourceCode, sourceFiles);
-            submission.MarkPendingAi();
+
+            // מארכב את הניסיון הקודם ומאפס. הכלל נאכף כאן שוב, בדומיין — ר' MarkPendingAi.
+            submission.MarkPendingAi(retryThreshold, isLocked);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

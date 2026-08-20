@@ -10,6 +10,7 @@ namespace SmartGrader.Infrastructure.Data
         public DbSet<Lesson> Lessons { get; set; }
         public DbSet<Assignment> Assignments { get; set; }
         public DbSet<Submission> Submissions { get; set; }
+        public DbSet<SubmissionAttempt> SubmissionAttempts { get; set; }
         public DbSet<LessonResult> LessonResults { get; set; }
         public DbSet<Log> Logs { get; set; }
         public DbSet<User> Users { get; set; }
@@ -60,6 +61,41 @@ namespace SmartGrader.Infrastructure.Data
             modelBuilder.Entity<Submission>()
                 .HasIndex(s => new { s.StudentId, s.AssignmentId })
                 .IsUnique();
+
+            // היסטוריית הניסיונות. Cascade כאן ולא Restrict כמו בשאר שרשרת העבודה הבדוקה:
+            // ניסיון אינו רשומה עצמאית אלא תמונת מצב של ההגשה, ואין לו שום משמעות בלעדיה.
+            // מחיקת הגשה שנבדקה נחסמת ממילא ב-DeleteSubmissionHandler.
+            modelBuilder.Entity<SubmissionAttempt>(attempt =>
+            {
+                attempt.HasOne(a => a.Submission)
+                    .WithMany(s => s.Attempts)
+                    .HasForeignKey(a => a.SubmissionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                attempt.HasIndex(a => new { a.SubmissionId, a.AttemptNumber }).IsUnique();
+            });
+
+            // ברירות מחדל ברמת ה-DB, כדי ששורות שנוצרו לפני העמודות האלה לא ייקלטו כאפס:
+            // RetryThreshold=0 היה סוגר כל הגשה לנצח, ו-TestsAllocation=0 היה נראה כמו תרגיל
+            // מחלקות ונותן 100 לכל תלמידה דרך שער "הכול שערים" ב-ScoreCalculator.
+            //
+            // ⚠️ HasSentinel(-1) אינו קישוט: בלעדיו EF משמיט את העמודה מה-INSERT כשהערך שווה
+            // לברירת המחדל של CLR, ולכן TestsAllocation=0 — ערך חוקי לגמרי לתרגיל מחלקות —
+            // היה נכתב ל-DB כ-100.
+            modelBuilder.Entity<Assignment>()
+                .Property(a => a.TestsAllocation)
+                .HasDefaultValue(Assignment.TotalPoints)
+                .HasSentinel(-1);
+
+            modelBuilder.Entity<Assignment>()
+                .Property(a => a.RetryThreshold)
+                .HasDefaultValue(Assignment.DefaultRetryThreshold)
+                .HasSentinel(-1);
+
+            modelBuilder.Entity<Submission>()
+                .Property(s => s.AttemptNumber)
+                .HasDefaultValue(1)
+                .HasSentinel(-1);
 
             modelBuilder.Entity<Assignment>()
                 .Property(a => a.GradingMode)

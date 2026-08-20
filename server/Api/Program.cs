@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Security.Claims;
+using System.Text;
 using System.Threading.RateLimiting;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -79,6 +80,23 @@ builder.Services.AddRateLimiter(options =>
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // --- מדיניות "ai": פעולות בתשלום שמורה מפעילה בלחיצה ---
+    // ⚠️ חלוקה לפי *משתמש* ולא לפי IP, בשונה מ-"auth": כל המורות בבית ספר יושבות מאחורי
+    // אותו NAT, וחלוקה לפי IP הייתה נותנת להן מכסה משותפת אחת. כאן ההגנה היא מפני הוצאה
+    // כספית של אותה משתמשת (קליק כפול, כפתור תקוע), לא מפני תוקף אנונימי.
+    // QueueLimit = 0 בכוונה: להחזיר 429 מיד ולא להחזיק את המורה ממתינה מול מסך תקוע.
+    options.AddPolicy("ai", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                          ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
