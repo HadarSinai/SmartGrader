@@ -72,12 +72,18 @@ namespace SmartGrader.UnitTests.Handlers
 
         // ── מה חוסם סיכום ──
 
-        // הגשה שעדיין בבדיקה חוסמת — אחרת הציון הסופי נסגר על תרגיל שטרם נבדק
+        // הגשה שעדיין בבדיקה חוסמת — אחרת הציון הסופי נסגר על תרגיל שטרם נבדק.
+        //
+        // ⚠️ שימי לב לתרגיל הנבדק שלצידו, והוא אינו קישוט: בלעדיו יש בשיעור רק תרגיל אחד
+        // בלי ציון, ואז ה-handler נכשל ממילא על "אף תרגיל לא נבדק" — כלומר הבדיקה הייתה
+        // עוברת גם אילו בדיקת החסימה נמחקה כליל. כך זה התגלה בבדיקת השבירה המכוונת.
         [Fact]
         public async Task Handle_Throws_WhenASubmissionIsStillBeingGraded()
         {
-            GivenAssignments(new TestAssignment(1));
-            GivenSubmissions(new SubmissionBuilder(StudentId, 1).Build());
+            GivenAssignments(new TestAssignment(1), new TestAssignment(2));
+            GivenSubmissions(
+                new SubmissionBuilder(StudentId, 1).Graded(80).Build(),
+                new SubmissionBuilder(StudentId, 2).Build());
 
             var act = async () => await Handler().Handle(Command(), CancellationToken.None);
 
@@ -88,8 +94,10 @@ namespace SmartGrader.UnitTests.Handlers
         [Fact]
         public async Task Handle_Throws_WhenASubmissionFailedToCompile()
         {
-            GivenAssignments(new TestAssignment(1));
-            GivenSubmissions(new SubmissionBuilder(StudentId, 1).CompilationFailed().Build());
+            GivenAssignments(new TestAssignment(1), new TestAssignment(2));
+            GivenSubmissions(
+                new SubmissionBuilder(StudentId, 1).Graded(80).Build(),
+                new SubmissionBuilder(StudentId, 2).CompilationFailed().Build());
 
             var act = async () => await Handler().Handle(Command(), CancellationToken.None);
 
