@@ -30,7 +30,40 @@ jobs:
         run: dotnet restore server/Tests/SmartGrader.UnitTests/SmartGrader.UnitTests.csproj
 
       - name: Test
-        run: >
-          dotnet test server/Tests/SmartGrader.UnitTests/SmartGrader.UnitTests.csproj
-          --no-restore
-          --verbosity normal
+        run: |
+          set -o pipefail
+          dotnet test server/Tests/SmartGrader.UnitTests/SmartGrader.UnitTests.csproj \
+            --no-restore \
+            --logger "console;verbosity=normal" 2>&1 | tee test-output.txt
+
+      # ⚠️ הלוג הגולמי של Actions דורש הזדהות גם בריפו ציבורי, אבל *אנוטציות* ותקציר
+      # העבודה נגישים בלי טוקן. בלי השלב הזה הכשל מגיע החוצה כ-"exit code 1" בלבד,
+      # ואי אפשר לתקן אותו בלי לפתוח את הדפדפן ולהעתיק ידנית.
+      - name: Publish failures where they can be read without a token
+        if: failure()
+        run: |
+          {
+            echo "## כשלי בדיקות"
+            echo '```'
+            grep -E "error CS|^[[:space:]]*(Failed|Error Message|Expected|Actual|Assert)" test-output.txt \
+              | head -120 || tail -40 test-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          emitted=0
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            echo "::error::${line}"
+            emitted=$((emitted + 1))
+          done < <(grep -E "error CS|^[[:space:]]*Failed " test-output.txt | head -25)
+
+          # כשל בנייה או קריסה לפני שהבדיקות רצו — אין שורות "Failed", אז מוציאים את הזנב
+          if [ "$emitted" -eq 0 ]; then
+            while IFS= read -r line; do
+              [ -z "$line" ] && continue
+              echo "::error::${line}"
+            done < <(tail -20 test-output.txt)
+          fi
+
+          summary=$(grep -E "^(Passed!|Failed!)" test-output.txt | head -1 || true)
+          [ -n "$summary" ] && echo "::error::${summary}" || true
