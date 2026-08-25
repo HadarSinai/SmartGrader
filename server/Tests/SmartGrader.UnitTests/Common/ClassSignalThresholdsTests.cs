@@ -33,7 +33,12 @@ namespace SmartGrader.UnitTests.Common
             Defaults().IsMany(affected: 3, total: 7).Should().BeFalse();
         }
 
-        // אף הגשה — אין על מה להתריע, ואין חלוקה באפס
+        // אף הגשה — אין על מה להתריע, ואין חלוקה באפס.
+        //
+        // 🔴 הבדיקה הזו מתעדת כוונה אבל **אינה מגינה** על השומר `total > 0`: בבדיקת
+        // השבירה המכוונת מחקנו אותו והיא נשארה ירוקה. הסיבה היא ש-0.0/0 הוא NaN, וכל
+        // השוואה עם NaN מחזירה false — כלומר הפונקציה מחזירה false גם בלי השומר.
+        // אל תסמכי עליה כדי לתפוס מחיקה שלו.
         [Fact]
         public void IsMany_IsFalse_WhenNobodySubmitted()
         {
