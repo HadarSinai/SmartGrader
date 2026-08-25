@@ -34,24 +34,31 @@ jobs:
           set -o pipefail
           dotnet test server/Tests/SmartGrader.UnitTests/SmartGrader.UnitTests.csproj \
             --no-restore \
-            --logger "console;verbosity=normal" 2>&1 | tee test-output.txt
+            --logger "console;verbosity=normal" \
+            --logger "trx;LogFileName=results.trx" \
+            --results-directory "$GITHUB_WORKSPACE/test-results" 2>&1 | tee test-output.txt
 
       # ריצה ירוקה שאומרת רק "success" לא מספרת כמה בדיקות באמת רצו — ואם קובץ בדיקות
       # מפסיק להיטען, הירוק נראה זהה. השורה הזו מפרסמת את הספירה במקום שנקרא בלי טוקן.
       - name: Publish the pass count
         if: success()
         run: |
-          # בלי עוגן ^ ואחרי הסרת קודי צבע: שורת הסיכום עשויה להגיע עם רווח מוביל או
-          # עם ANSI, ועוגן נוקשה פשוט לא מצא אותה.
-          summary=$(sed 's/\x1b\[[0-9;]*m//g' test-output.txt \
-            | grep -aoE "(Passed!|Failed!).*Total: *[0-9]+" | tail -1 || true)
+          # נקרא מקובץ ה-trx ולא מטקסט הקונסולה: ניסוח שורת הסיכום משתנה בין גרסאות SDK
+          # ובין loggers, וההתאמה למחרוזת נכשלה פעמיים. ל-trx יש מבנה קבוע.
+          trx=$(find "$GITHUB_WORKSPACE/test-results" -name '*.trx' | head -1)
 
-          if [ -n "$summary" ]; then
-            echo "::notice::${summary}"
-            echo "## $summary" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$trx" ]; then
+            counters=$(grep -o '<Counters [^>]*>' "$trx" | head -1)
+            total=$(echo "$counters" | grep -o 'total="[0-9]*"' | grep -o '[0-9]*')
+            passed=$(echo "$counters" | grep -o 'passed="[0-9]*"' | grep -o '[0-9]*')
+            failed=$(echo "$counters" | grep -o 'failed="[0-9]*"' | grep -o '[0-9]*')
+            line="Passed: ${passed}/${total} · Failed: ${failed}"
+            echo "::notice::${line}"
+            echo "## $line" >> "$GITHUB_STEP_SUMMARY"
           else
             # ⚠️ ירוק בלי ספירה הוא בדיוק המצב שהשלב הזה קיים כדי לשלול
-            echo "::warning::הריצה עברה אך שורת הסיכום לא נמצאה — לא ידוע כמה בדיקות רצו"
+            echo "::warning::הריצה עברה אך לא נמצא קובץ trx — לא ידוע כמה בדיקות רצו"
+            echo "::notice::tail: $(tail -3 test-output.txt | tr '\n' ' ')"
           fi
 
       # ⚠️ הלוג הגולמי של Actions דורש הזדהות גם בריפו ציבורי, אבל *אנוטציות* ותקציר
