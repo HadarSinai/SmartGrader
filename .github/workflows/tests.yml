@@ -40,8 +40,10 @@ jobs:
 
       # ריצה ירוקה שאומרת רק "success" לא מספרת כמה בדיקות באמת רצו — ואם קובץ בדיקות
       # מפסיק להיטען, הירוק נראה זהה. השורה הזו מפרסמת את הספירה במקום שנקרא בלי טוקן.
+      # רץ גם על ריצה אדומה: "כמה נכשלו מתוך כמה" הוא בדיוק מה שצריך לדעת כשאדום,
+      # ו-if: success() הסתיר את הספירה בדיוק שם.
       - name: Publish the pass count
-        if: success()
+        if: always()
         run: |
           # נקרא מקובץ ה-trx ולא מטקסט הקונסולה: ניסוח שורת הסיכום משתנה בין גרסאות SDK
           # ובין loggers, וההתאמה למחרוזת נכשלה פעמיים. ל-trx יש מבנה קבוע.
@@ -56,40 +58,39 @@ jobs:
             echo "::notice::${line}"
             echo "## $line" >> "$GITHUB_STEP_SUMMARY"
           else
-            # ⚠️ ירוק בלי ספירה הוא בדיוק המצב שהשלב הזה קיים כדי לשלול
-            echo "::warning::הריצה עברה אך לא נמצא קובץ trx — לא ידוע כמה בדיקות רצו"
+            # ⚠️ ריצה בלי ספירה היא בדיוק המצב שהשלב הזה קיים כדי לשלול
+            echo "::warning::לא נמצא קובץ trx — לא ידוע כמה בדיקות רצו"
             echo "::notice::tail: $(tail -3 test-output.txt | tr '\n' ' ')"
           fi
 
       # ⚠️ הלוג הגולמי של Actions דורש הזדהות גם בריפו ציבורי, אבל *אנוטציות* ותקציר
       # העבודה נגישים בלי טוקן. בלי השלב הזה הכשל מגיע החוצה כ-"exit code 1" בלבד,
       # ואי אפשר לתקן אותו בלי לפתוח את הדפדפן ולהעתיק ידנית.
+      #
+      # ⚠️⚠️ GitHub מציג **10 אנוטציות מכל סוג בכל שלב** ומשליך את השאר בלי שום סימן.
+      # שורה-נפרדת-לכל-כשל נראתה תקינה עד שריצה עם 15 כשלים הראתה 10 — כלומר בדיוק
+      # אותה תבנית של "ירוק/אדום שנראה שלם ואינו". לכן כל הכשלים יוצאים באנוטציה
+      # **אחת** מרובת-שורות (‎%0A‎), שהתקרה לא נוגעת בה.
       - name: Publish failures where they can be read without a token
         if: failure()
         run: |
-          {
-            echo "## כשלי בדיקות"
-            echo '```'
-            grep -E "error CS|^[[:space:]]*(Failed|Error Message|Expected|Actual|Assert)" test-output.txt \
-              | head -120 || tail -40 test-output.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          clean=$(sed 's/\x1b\[[0-9;]*m//g' test-output.txt)
 
-          emitted=0
-          while IFS= read -r line; do
-            [ -z "$line" ] && continue
-            echo "::error::${line}"
-            emitted=$((emitted + 1))
-          done < <(grep -E "error CS|^[[:space:]]*Failed " test-output.txt | head -25)
+          fails=$(printf '%s\n' "$clean" | grep -aE "error CS|^[[:space:]]*Failed " || true)
 
           # כשל בנייה או קריסה לפני שהבדיקות רצו — אין שורות "Failed", אז מוציאים את הזנב
-          if [ "$emitted" -eq 0 ]; then
-            while IFS= read -r line; do
-              [ -z "$line" ] && continue
-              echo "::error::${line}"
-            done < <(tail -20 test-output.txt)
-          fi
+          [ -z "$fails" ] && fails=$(printf '%s\n' "$clean" | tail -20)
 
-          summary=$(sed 's/\x1b\[[0-9;]*m//g' test-output.txt \
-            | grep -aoE "(Passed!|Failed!).*Total: *[0-9]+" | tail -1 || true)
-          [ -n "$summary" ] && echo "::error::${summary}" || true
+          count=$(printf '%s\n' "$fails" | grep -c . || true)
+
+          # ‎%‎ חייב להיות מוחלף ראשון, אחרת הוא בורח גם את ה-%0A שאנחנו מוסיפים בעצמנו
+          encoded=$(printf '%s' "$fails" | sed -e 's/%/%25/g' -e 's/\r//g' | sed -z 's/\n/%0A/g')
+          echo "::error::${count} כשלים:%0A${encoded}"
+
+          {
+            echo "## כשלי בדיקות ($count)"
+            echo '```'
+            printf '%s\n' "$clean" \
+              | grep -aE "error CS|^[[:space:]]*(Failed|Error Message|Expected|Actual|Assert)" | head -200
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
