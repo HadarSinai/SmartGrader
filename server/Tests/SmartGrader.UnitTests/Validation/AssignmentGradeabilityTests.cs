@@ -123,13 +123,23 @@ namespace SmartGrader.UnitTests.Validation
                 .Should().BeFalse();
         }
 
-        // הקצאה מחוץ לתחום נפסלת בשני הקצוות
-        [Theory]
-        [InlineData(-1)]
-        [InlineData(101)]
-        public void HasValidRubric_RejectsAllocationOutsideTheCeiling(int testsAllocation)
+        // ⚠️ שתי הבדיקות הבאות מזינות דרישה שמשלימה את הסכום ל-100 בדיוק, ולכן רק השער
+        // על ההקצאה עצמה יכול לפסול. בלעדיהן בדיקת ההקצאה עברה גם כשהשער נמחק — בדיקת
+        // הסכום פסלה ממילא, וזה נתפס בבדיקת השבירה המכוונת.
+
+        // הקצאה שלילית נפסלת גם כשהסכום הכולל מסתדר
+        [Fact]
+        public void HasValidRubric_RejectsANegativeTestsAllocation()
         {
-            AssignmentGradeability.HasValidRubric(100, testsAllocation, new[] { Test() }, Array.Empty<StructuralRuleDto>())
+            AssignmentGradeability.HasValidRubric(100, -1, new[] { Test() }, new[] { Scored(101) })
+                .Should().BeFalse();
+        }
+
+        // וכך גם הקצאה מעל התקרה
+        [Fact]
+        public void HasValidRubric_RejectsAnAllocationAboveTheCeiling()
+        {
+            AssignmentGradeability.HasValidRubric(100, 101, new[] { Test() }, new[] { Scored(-1) })
                 .Should().BeFalse();
         }
 
