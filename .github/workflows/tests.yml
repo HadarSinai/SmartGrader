@@ -19,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
 
@@ -35,6 +35,17 @@ jobs:
           dotnet test server/Tests/SmartGrader.UnitTests/SmartGrader.UnitTests.csproj \
             --no-restore \
             --logger "console;verbosity=normal" 2>&1 | tee test-output.txt
+
+      # ריצה ירוקה שאומרת רק "success" לא מספרת כמה בדיקות באמת רצו — ואם קובץ בדיקות
+      # מפסיק להיטען, הירוק נראה זהה. השורה הזו מפרסמת את הספירה במקום שנקרא בלי טוקן.
+      - name: Publish the pass count
+        if: success()
+        run: |
+          summary=$(grep -E "^(Passed!|Failed!)" test-output.txt | head -1 || true)
+          if [ -n "$summary" ]; then
+            echo "::notice::${summary}"
+            echo "## $summary" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       # ⚠️ הלוג הגולמי של Actions דורש הזדהות גם בריפו ציבורי, אבל *אנוטציות* ותקציר
       # העבודה נגישים בלי טוקן. בלי השלב הזה הכשל מגיע החוצה כ-"exit code 1" בלבד,
