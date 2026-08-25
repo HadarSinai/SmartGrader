@@ -49,3 +49,21 @@ export const passwordStrengthValidator: ValidatorFn = (
   }
   return Object.keys(errors).length > 0 ? errors : null;
 };
+
+/**
+ * Cross-field validator: `password` and `confirmPassword` must match.
+ * Apply on the FormGroup, not on a control:
+ * `this.fb.group({...}, { validators: passwordsMatch })`.
+ *
+ * Returns null while either field is still empty, so the "אינן תואמות" message
+ * doesn't appear mid-typing — pair each field with Validators.required.
+ */
+export function passwordsMatch(
+  group: AbstractControl,
+): ValidationErrors | null {
+  const password = group.get("password")?.value;
+  const confirm = group.get("confirmPassword")?.value;
+  return password && confirm && password !== confirm
+    ? { passwordsMismatch: true }
+    : null;
+}

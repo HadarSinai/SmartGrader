@@ -82,8 +82,12 @@ public class LessonResultController : ApiControllerBase
         // ⚠️ לא ממופה דרך AutoMapper בכוונה — CompleteLessonCommand הוא record עם פרמטרים positional
         // חובה, שלא ממופה נכון מ-DTO דרך reflection. בנייה מפורשת — וכאן בדיוק חסר OwnerScopeTeacherId
         // עד עכשיו, בזמן ש-Export ו-ExportPeriodReport באותו קונטרולר כן העבירו אותו.
+        //
+        // ⚠️ CurrentUserId מה-claims ולא מגוף הבקשה — הוא נרשם כמי שדרסה את הציון, ודיווח
+        // עצמי אינו יומן ביקורת. אותו דפוס כמו OverrideScoreCommand ב-StudentsController.
         var command = new CompleteLessonCommand(
-            dto.StudentId, dto.LessonId, dto.FinalScore, OwnerScopeTeacherId, dto.HasBonus);
+            dto.StudentId, dto.LessonId, OwnerScopeTeacherId, CurrentUserId,
+            dto.FinalScore, dto.OverrideReason);
         var result = await _mediator.Send(command, ct);
         var response = _mapper.Map<LessonResultResponseDto>(result);
 

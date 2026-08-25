@@ -44,6 +44,9 @@ namespace SmartGrader.Infrastructure.Repositories
                 .FirstOrDefaultAsync(c => c.Name == name && c.TeacherId == teacherId, ct);
         }
 
+        public async Task<int> CountByTeacherIdAsync(int teacherId, CancellationToken ct = default)
+            => await _context.Courses.CountAsync(c => c.TeacherId == teacherId, ct);
+
         public async Task AddAsync(Course course, CancellationToken ct = default)
         {
             await _context.Courses.AddAsync(course, ct);

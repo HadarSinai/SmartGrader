@@ -1,30 +1,15 @@
 # SmartGrader – Copilot Instructions
 
-This is a full-stack educational grading system (monorepo).
+**כללי המאגר מתועדים במקום אחד בלבד: [CLAUDE.md](../CLAUDE.md) בשורש.**
 
-- `server/` — ASP.NET Core Web API (.NET 8), Clean Architecture + CQRS
-- `client/` — Angular 17 (standalone components), PrimeNG UI
+הקובץ הזה קיים כדי ש-Copilot ימשיך לטעון הוראות למאגר, ולא כדי להחזיק עותק שני שלהן.
 
-> Detailed rules per area:
->
-> - Backend rules → `.github/instructions/server.instructions.md` (applies to `server/**`)
-> - Frontend rules → `.github/instructions/client.instructions.md` (applies to `client/**`)
+> ⚠️ אין להעתיק לכאן תוכן. `CLAUDE.md` בשורש הוא מקור האמת, והוא כולל גם את מפת המסמכים
+> (`.github/prompts`, `.github/agents`, `.github/skills`) שהעותק כאן מעולם לא קיבל.
 
----
+כללים לפי אזור:
 
-## Repository Structure
-
-```
-root/
-├── server/          ← C# backend (SmartGrader.sln lives here)
-│   ├── Api/         ← Controllers, Middleware, BackgroundServices
-│   ├── Application/ ← Use cases (CQRS), DTOs, Services, Validators
-│   ├── Domain/      ← Entities, Abstractions (interfaces), no dependencies
-│   └── Infrastructure/ ← EF Core, Repositories, External services (OpenAI)
-└── client/          ← Angular frontend
-    └── src/app/
-        ├── core/    ← ApiClient, interceptors
-        ├── models/  ← TypeScript interfaces (DTOs)
-        ├── pages/   ← Feature components (lessons, students, assignments, submissions)
-        └── services/← One service per entity
-```
+- שרת → [server/CLAUDE.md](../server/CLAUDE.md) (וגם `.github/instructions/server.instructions.md`
+  עבור `applyTo: server/**`, שהוא מצביע לשם)
+- לקוח → [client/CLAUDE.md](../client/CLAUDE.md) (וגם `.github/instructions/client.instructions.md`
+  עבור `applyTo: client/**`, שהוא מצביע לשם)

@@ -49,7 +49,8 @@ namespace SmartGrader.Api.Controllers
             CancellationToken cancellationToken)
         {
             IReadOnlyList<StudentResponseDto> result =
-                await _mediator.Send(new GetStudentsQuery(includeArchived), cancellationToken);
+                await _mediator.Send(
+                    new GetStudentsQuery(includeArchived, OwnerScopeTeacherId), cancellationToken);
 
             return Ok(result);
         }
@@ -58,7 +59,8 @@ namespace SmartGrader.Api.Controllers
         [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> Export(CancellationToken cancellationToken)
         {
-            byte[] bytes = await _mediator.Send(new ExportStudentsQuery(), cancellationToken);
+            byte[] bytes = await _mediator.Send(
+                new ExportStudentsQuery(OwnerScopeTeacherId), cancellationToken);
             return File(
                 bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

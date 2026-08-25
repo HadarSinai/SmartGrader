@@ -68,6 +68,10 @@ import { NotificationsBellComponent } from "./notifications-bell.component";
               הגשות
             </a>
             @if (auth.isAdmin()) {
+              <a routerLink="/teachers" routerLinkActive="active">
+                <i class="pi pi-id-card" aria-hidden="true"></i>
+                מורות
+              </a>
               <a routerLink="/logs" routerLinkActive="active">
                 <i class="pi pi-history" aria-hidden="true"></i>
                 יומן מערכת
@@ -82,16 +86,39 @@ import { NotificationsBellComponent } from "./notifications-bell.component";
           <app-notifications-bell></app-notifications-bell>
         }
         <div class="flex align-items-center gap-2">
-          <p-avatar
-            [label]="avatarInitial()"
-            shape="circle"
-            [style]="{
-              'background-color': 'var(--accent)',
-              color: 'var(--accent-ink)',
-            }"
+          <!-- האווטר והשם הם הכניסה לחשבון האישי — המוסכמה המוכרת מכל אפליקציה.
+               כפתור ה-pi-user שלידם הוא אותו יעד בדיוק, גלוי לעין למי שלא מנחשת
+               שאפשר ללחוץ על השם. -->
+          <a
+            class="sg-topbar-identity"
+            routerLink="/profile"
+            routerLinkActive="active"
+            aria-label="החשבון שלי"
+            pTooltip="החשבון שלי"
+            tooltipPosition="bottom"
           >
-          </p-avatar>
-          <span class="sg-topbar-user">{{ auth.fullName() }}</span>
+            <p-avatar
+              [label]="avatarInitial()"
+              shape="circle"
+              [style]="{
+                'background-color': 'var(--accent)',
+                color: 'var(--accent-ink)',
+              }"
+            >
+            </p-avatar>
+            <span class="sg-topbar-user">{{ auth.fullName() }}</span>
+          </a>
+          <p-button
+            icon="pi pi-user"
+            [text]="true"
+            [rounded]="true"
+            severity="secondary"
+            ariaLabel="החשבון שלי"
+            pTooltip="החשבון שלי"
+            tooltipPosition="bottom"
+            routerLink="/profile"
+          >
+          </p-button>
           <p-button
             icon="pi pi-sign-out"
             [text]="true"
@@ -109,6 +136,20 @@ import { NotificationsBellComponent } from "./notifications-bell.component";
   `,
   styles: [
     `
+      .sg-topbar-identity {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        border-radius: var(--radius-md, 8px);
+        padding: 0.25rem;
+      }
+
+      .sg-topbar-identity:hover .sg-topbar-user,
+      .sg-topbar-identity.active .sg-topbar-user {
+        color: var(--accent, #8a6a54);
+      }
+
       .sg-topbar-user {
         font-weight: 600;
         color: var(--app-text-strong);

@@ -162,8 +162,20 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.Property<DateTime?>("CalculatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<double?>("ComputedScore")
+                        .HasColumnType("REAL");
+
                     b.Property<double?>("FinalScore")
                         .HasColumnType("REAL");
+
+                    b.Property<DateTime?>("FinalScoreOverriddenAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("FinalScoreOverriddenByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FinalScoreOverrideReason")
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsComplete")
                         .HasColumnType("INTEGER");
@@ -220,6 +232,38 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Logs");
+                });
+
+            modelBuilder.Entity("SmartGrader.Domain.Entities.PasswordResetToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetTokens");
                 });
 
             modelBuilder.Entity("SmartGrader.Domain.Entities.SchoolClass", b =>
@@ -442,8 +486,17 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Email")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("FailedLoginAttempts")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("FullName")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LockoutEndsAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHash")
@@ -459,6 +512,9 @@ namespace SmartGrader.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.HasIndex("Username")
                         .IsUnique();
@@ -539,6 +595,15 @@ namespace SmartGrader.Infrastructure.Migrations
                     b.Navigation("Lesson");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("SmartGrader.Domain.Entities.PasswordResetToken", b =>
+                {
+                    b.HasOne("SmartGrader.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SmartGrader.Domain.Entities.Student", b =>

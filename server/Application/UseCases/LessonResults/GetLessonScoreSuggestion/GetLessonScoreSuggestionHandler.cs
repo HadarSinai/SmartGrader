@@ -3,6 +3,7 @@ using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Dtos.LessonResults;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
+using SmartGrader.Domain.Services;
 
 namespace SmartGrader.Application.UseCases.LessonResults.GetLessonScoreSuggestion;
 
@@ -66,9 +67,10 @@ public class GetLessonScoreSuggestionHandler
             };
         }).ToList();
 
-        // ⚠️ תרגיל בלי ציון מדולג ולא נספר כאפס. ממוצע שמכניס 0 על תרגיל שעדיין בבדיקה
-        // מציג לתלמידה ציון נמוך שאין לו שום קשר למה שהיא עשתה. הדיאלוג אומר כמה דולגו.
-        var graded = rows.Where(r => r.Score.HasValue).ToList();
+        // ⚠️ המספרים עצמם מגיעים מ-LessonScoreCalculator, אותה פונקציה שסיכום השיעור
+        // משתמש בה. חישוב מקומי כאן — גם אם זהה היום — היה יוצר מצב שבו הדיאלוג מציג
+        // מספר אחד והשרת דוחה אותו כ"חריגה" הדורשת סיבה.
+        var summary = LessonScoreCalculator.Calculate(assignments, submissions);
 
         return new LessonScoreSuggestionDto
         {
@@ -76,12 +78,10 @@ public class GetLessonScoreSuggestionHandler
             LessonId = request.LessonId,
             StudentName = submissions.FirstOrDefault()?.Student?.FullName,
             AssignmentScores = rows,
-            SuggestedScore = graded.Count > 0
-                ? Math.Round(graded.Average(r => r.Score!.Value), 1)
-                : null,
-            GradedCount = graded.Count,
-            UngradedCount = rows.Count - graded.Count,
-            HasBonus = assignments.Any(a => a.IsBonus)
+            SuggestedScore = summary.ComputedScore,
+            GradedCount = summary.GradedCount,
+            UngradedCount = summary.UngradedCount,
+            HasBonus = summary.HasBonus
         };
     }
 

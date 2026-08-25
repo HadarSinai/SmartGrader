@@ -9,5 +9,8 @@ using System.Threading.Tasks;
 
 namespace SmartGrader.Application.UseCases.Students.GetStudents
 {
-    public record GetStudentsQuery(bool IncludeArchived = false) : IRequest<IReadOnlyList<StudentResponseDto>>;
+    // ⚠️ אין ברירת מחדל ל-TeacherId בכוונה — השמטתו היא שגיאת קומפילציה ולא דליפה שקטה,
+    // בדיוק כמו בשאר ה-Queries שנושאות בעלות. null = מנהל/ת.
+    public record GetStudentsQuery(bool IncludeArchived, int? TeacherId)
+        : IRequest<IReadOnlyList<StudentResponseDto>>;
 }

@@ -39,7 +39,7 @@ namespace SmartGrader.Infrastructure.Repositories
             return await query.ToListAsync(ct);
         }
         public async Task<IReadOnlyList<Student>> GetByClassIdsAsync(
-            IReadOnlyList<int> classIds, bool includeArchived, CancellationToken ct = default)
+            IReadOnlyList<int> classIds, bool includeArchived, bool includeCounts, CancellationToken ct = default)
         {
             if (classIds.Count == 0)
                 return Array.Empty<Student>();
@@ -48,6 +48,12 @@ namespace SmartGrader.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(s => s.Class)
                 .Where(s => classIds.Contains(s.ClassId));
+
+            // רק כשהקורא באמת סופר אותם — ר' ההערה על הפרמטר ב-IStudentRepository.
+            if (includeCounts)
+                query = query
+                    .Include(s => s.Submissions)
+                    .Include(s => s.LessonResults);
 
             if (!includeArchived)
                 query = query.Where(s => !s.Class.IsArchived);

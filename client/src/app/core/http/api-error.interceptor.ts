@@ -8,10 +8,17 @@ export const apiErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
-      // Auth pages show inline errors (per master-spec); 401 is handled by authInterceptor
-      const isAuthRequest =
-        req.url.includes("/api/auth/login") ||
-        req.url.includes("/api/auth/register-teacher");
+      // Auth pages show inline errors (per master-spec); 401 is handled by authInterceptor.
+      // register-teacher ירד מהרשימה יחד עם המסך שלו — הרשמה עצמית נסגרה.
+      //
+      // ⚠️ forgot-password/reset-password חייבות להיות כאן ולא רק מטעמי עיצוב: הן מסכים
+      // ציבוריים ללא toast גלובלי, וטוסט שגיאה על forgot-password היה מסגיר בדיוק את מה
+      // שהשרת נמנע מלומר — שהכתובת קיימת או לא קיימת.
+      const isAuthRequest = [
+        "/api/auth/login",
+        "/api/auth/forgot-password",
+        "/api/auth/reset-password",
+      ].some((path) => req.url.includes(path));
 
       // 404 on a lesson-result lookup is an expected "no result yet" state
       // (student area shows "בתהליך") — not an error worth a toast.

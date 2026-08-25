@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Application.Dtos.Student;
 using SmartGrader.Domain.Abstractions;
 using System.Collections.Generic;
@@ -13,11 +14,16 @@ namespace SmartGrader.Application.UseCases.Students.GetStudents
         : IRequestHandler<GetStudentsQuery, IReadOnlyList<StudentResponseDto>>
     {
         private readonly IStudentRepository _repository;
+        private readonly ILessonRepository _lessons;
         private readonly IMapper _mapper;
 
-        public GetStudentsHandler(IStudentRepository repository, IMapper mapper)
+        public GetStudentsHandler(
+            IStudentRepository repository,
+            ILessonRepository lessons,
+            IMapper mapper)
         {
             _repository = repository;
+            _lessons = lessons;
             _mapper = mapper;
         }
 
@@ -25,7 +31,15 @@ namespace SmartGrader.Application.UseCases.Students.GetStudents
             GetStudentsQuery request,
             CancellationToken cancellationToken)
         {
-            var students = await _repository.GetAllAsync(request.IncludeArchived, cancellationToken);
+            // ⚠️ לא GetAllAsync: היא מחזירה את כל תלמידות בית הספר לכל מורה מחוברת.
+            // ר' StudentScope.
+            var students = await StudentScope.GetVisibleAsync(
+                _repository,
+                _lessons,
+                request.TeacherId,
+                request.IncludeArchived,
+                includeCounts: true,
+                cancellationToken);
 
             return _mapper.Map<IReadOnlyList<StudentResponseDto>>(students);
         }

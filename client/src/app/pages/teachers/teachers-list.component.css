@@ -1,0 +1,10 @@
+/* Intentionally minimal.
+   Layout + shared styling is handled by PrimeFlex utilities and global sg-* styles in src/styles.css. */
+
+.sg-missing-email-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--status-warn, #a97c2f);
+  font-size: var(--text-sm, 0.875rem);
+}

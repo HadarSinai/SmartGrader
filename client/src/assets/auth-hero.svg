@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 540" width="720" height="540" role="img" aria-labelledby="heroTitle heroDesc">
+  <title id="heroTitle">SmartGrader</title>
+  <desc id="heroDesc">איור: דף תרגיל עם שורות קוד ותג בדיקה מאושר, בגוונים חמים</desc>
+
+  <style>
+    :root, svg {
+      --bg-1: #f7f3ec;
+      --bg-2: #ece3d6;
+      --surface: #fffdfa;
+      --surface-2: #efe8dd;
+      --border: #e0d7c9;
+      --ink: #3a3028;
+      --muted: #b8ac9c;
+      --accent: #8a6a54;
+      --accent-2: #b08a6f;
+      --accent-soft: #d9c3b0;
+      --ok: #6f8f5f;
+      --glow-op: 0.55;
+      --grain-op: 0.35;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root, svg {
+        --bg-1: #131c2e;
+        --bg-2: #0b1220;
+        --surface: #16203a;
+        --surface-2: #1e2a47;
+        --border: #2b3a5c;
+        --ink: #f1f5f9;
+        --muted: #55658a;
+        --accent: #c99a78;
+        --accent-2: #e0b592;
+        --accent-soft: #6b5343;
+        --ok: #86b06f;
+        --glow-op: 0.42;
+        --grain-op: 0.22;
+      }
+    }
+    .bg      { fill: var(--bg-1); }
+    .surface { fill: var(--surface); }
+    .surf2   { fill: var(--surface-2); }
+    .border  { stroke: var(--border); }
+    .muted   { fill: var(--muted); }
+    .accent  { fill: var(--accent); }
+    .accentS { stroke: var(--accent); }
+    .soft    { fill: var(--accent-soft); }
+    .ink     { fill: var(--ink); }
+  </style>
+
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="var(--bg-1)"/>
+      <stop offset="100%" stop-color="var(--bg-2)"/>
+    </linearGradient>
+
+    <radialGradient id="glow" cx="50%" cy="45%" r="55%">
+      <stop offset="0%"   stop-color="var(--accent-2)" stop-opacity="var(--glow-op)"/>
+      <stop offset="60%"  stop-color="var(--accent-2)" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="var(--accent-2)" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="badgeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="var(--accent-2)"/>
+      <stop offset="100%" stop-color="var(--accent)"/>
+    </linearGradient>
+
+    <linearGradient id="sheen" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#3a3028" flood-opacity="0.16"/>
+    </filter>
+    <filter id="softer" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#3a3028" flood-opacity="0.14"/>
+    </filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="7"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+
+    <clipPath id="sheetClip">
+      <rect x="0" y="0" width="286" height="336" rx="22"/>
+    </clipPath>
+  </defs>
+
+  <!-- רקע -->
+  <rect width="720" height="540" fill="url(#bgGrad)"/>
+  <circle cx="360" cy="250" r="300" fill="url(#glow)"/>
+
+  <!-- קשתות דקורטיביות -->
+  <g fill="none" stroke="var(--accent)" opacity="0.16" stroke-linecap="round">
+    <circle cx="360" cy="262" r="212" stroke-width="1.25"/>
+    <circle cx="360" cy="262" r="258" stroke-width="1" stroke-dasharray="3 12"/>
+    <path d="M104 262a256 256 0 0 1 100-203" stroke-width="2.5"/>
+  </g>
+
+  <!-- נקודות מרחפות -->
+  <g class="soft">
+    <circle cx="118" cy="118" r="5"/>
+    <circle cx="612" cy="150" r="4"/>
+    <circle cx="648" cy="352" r="6"/>
+    <circle cx="96"  cy="404" r="4"/>
+    <circle cx="166" cy="470" r="3"/>
+  </g>
+
+  <!-- דף אחורי (עומק) -->
+  <g transform="rotate(-7 360 270)" opacity="0.75">
+    <rect x="238" y="112" width="262" height="316" rx="22" class="surf2 border" stroke-width="1.5" filter="url(#softer)"/>
+  </g>
+
+  <!-- דף התרגיל -->
+  <g transform="translate(214 104) rotate(3 143 168)" filter="url(#soft)">
+    <rect x="0" y="0" width="286" height="336" rx="22" class="surface border" stroke-width="1.5"/>
+
+    <g clip-path="url(#sheetClip)">
+      <!-- כותרת הדף -->
+      <rect x="0" y="0" width="286" height="56" class="surf2"/>
+      <circle cx="30" cy="28" r="6" class="accent" opacity="0.85"/>
+      <circle cx="50" cy="28" r="6" class="soft"/>
+      <circle cx="70" cy="28" r="6" class="soft" opacity="0.6"/>
+      <rect x="176" y="21" width="86" height="14" rx="7" class="soft" opacity="0.7"/>
+
+      <!-- שורות קוד -->
+      <g class="muted" opacity="0.75">
+        <rect x="30" y="90"  width="130" height="11" rx="5.5"/>
+        <rect x="46" y="116" width="176" height="11" rx="5.5"/>
+        <rect x="46" y="142" width="112" height="11" rx="5.5"/>
+        <rect x="62" y="168" width="150" height="11" rx="5.5"/>
+        <rect x="46" y="220" width="90"  height="11" rx="5.5"/>
+        <rect x="30" y="246" width="160" height="11" rx="5.5"/>
+        <rect x="30" y="272" width="72"  height="11" rx="5.5"/>
+      </g>
+
+      <!-- השורה שנבדקה: מודגשת -->
+      <rect x="18" y="188" width="250" height="22" rx="8" fill="var(--accent)" opacity="0.12"/>
+      <rect x="18" y="188" width="3.5" height="22" rx="2" class="accent"/>
+      <rect x="62" y="194" width="132" height="11" rx="5.5" class="accent" opacity="0.9"/>
+
+      <!-- ברק זכוכית -->
+      <path d="M-40 0h150L10 336H-40z" fill="url(#sheen)" opacity="0.5"/>
+    </g>
+  </g>
+
+  <!-- תג "נבדק" עם טבעת התקדמות -->
+  <g transform="translate(508 392)">
+    <circle r="74" fill="var(--surface)" opacity="0.55"/>
+    <circle r="66" fill="none" stroke="var(--accent)" stroke-width="4" opacity="0.16"/>
+    <circle r="66" fill="none" stroke="url(#badgeGrad)" stroke-width="4"
+            stroke-linecap="round" stroke-dasharray="352 415" transform="rotate(-90)"/>
+    <circle r="50" fill="url(#badgeGrad)" filter="url(#softer)"/>
+    <path d="M-21 2l14 15L23-16" fill="none" stroke="#fffdfa" stroke-width="8"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- ניצוצות -->
+  <g class="accent" opacity="0.55">
+    <path d="M596 96c0 14-8 22-22 22 14 0 22 8 22 22 0-14 8-22 22-22-14 0-22-8-22-22z"/>
+    <path d="M132 300c0 9-5 14-14 14 9 0 14 5 14 14 0-9 5-14 14-14-9 0-14-5-14-14z" opacity="0.7"/>
+  </g>
+
+  <!-- גרעיניות עדינה -->
+  <rect width="720" height="540" filter="url(#grain)" opacity="var(--grain-op)"
+        style="mix-blend-mode:multiply" pointer-events="none"/>
+</svg>

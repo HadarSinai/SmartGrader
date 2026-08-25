@@ -1,0 +1,36 @@
+name: tests
+
+# מריץ את בדיקות היחידה של השרת בכל דחיפה ובכל PR.
+#
+# למה זה קיים: Smart App Control של ווינדוס חוסם במחשב הפיתוח את טעינת Domain.dll
+# שנבנה מקומית (0x800711C7), ולכן אי אפשר לסמוך על הרצה מקומית. הריצה כאן היא על
+# לינוקס, שם המדיניות הזו לא קיימת — וממילא זה מה שהופך את הבדיקות ממשמעת אישית
+# למנגנון שעובד גם ביום לחוץ.
+#
+# ⚠️ אדום כאן = לא ממזגים. זו כל הנקודה.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore server/Tests/SmartGrader.UnitTests/SmartGrader.UnitTests.csproj
+
+      - name: Test
+        run: >
+          dotnet test server/Tests/SmartGrader.UnitTests/SmartGrader.UnitTests.csproj
+          --no-restore
+          --verbosity normal

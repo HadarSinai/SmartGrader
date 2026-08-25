@@ -4,10 +4,10 @@ using MediatR;
 using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.Common.HebrewDate;
 using SmartGrader.Application.Common.Interfaces;
+using SmartGrader.Application.Common.Validation;
 using SmartGrader.Application.Dtos.Student;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
-using System.Text.RegularExpressions;
 
 namespace SmartGrader.Application.UseCases.Students.ImportStudents
 {
@@ -139,12 +139,17 @@ namespace SmartGrader.Application.UseCases.Students.ImportStudents
                             messages.Add("שם המשתמש כבר קיים במערכת");
 
                         if (string.IsNullOrEmpty(password))
+                        {
                             messages.Add("יש למלא סיסמה כאשר מוזן שם משתמש");
-                        else if (password.Length < 8
-                            || !Regex.IsMatch(password, "[A-Z]")
-                            || !Regex.IsMatch(password, "[a-z]")
-                            || !Regex.IsMatch(password, "[0-9]"))
-                            messages.Add("סיסמה חייבת להכיל לפחות 8 תווים, אות גדולה, אות קטנה וספרה");
+                        }
+                        else
+                        {
+                            // ⚠️ לא לשכפל כאן את הכללים. הגרסה הקודמת מימשה אותם מחדש והשמיטה
+                            // את בדיקת האותיות בעברית — סיסמה שנדחתה בטופס התקבלה דרך הייבוא.
+                            var passwordError = PasswordPolicy.GetFailureReason(password);
+                            if (passwordError is not null)
+                                messages.Add(passwordError);
+                        }
                     }
 
                     if (messages.Count > 0)

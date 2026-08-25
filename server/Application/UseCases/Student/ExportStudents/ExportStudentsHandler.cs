@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using MediatR;
+using SmartGrader.Application.Common.Authorization;
 using SmartGrader.Domain.Abstractions;
 using System.IO;
 using System.Threading;
@@ -10,15 +11,26 @@ namespace SmartGrader.Application.UseCases.Students.ExportStudents;
 public class ExportStudentsHandler : IRequestHandler<ExportStudentsQuery, byte[]>
 {
     private readonly IStudentRepository _repository;
+    private readonly ILessonRepository _lessons;
 
-    public ExportStudentsHandler(IStudentRepository repository)
+    public ExportStudentsHandler(IStudentRepository repository, ILessonRepository lessons)
     {
         _repository = repository;
+        _lessons = lessons;
     }
 
     public async Task<byte[]> Handle(ExportStudentsQuery request, CancellationToken ct)
     {
-        var students = await _repository.GetAllAsync(ct);
+        // ⚠️ לא GetAllAsync: זה בדיוק המקרה שהאזהרה ב-IStudentRepository מתארת — קובץ אחד
+        // ובו כל תלמידה בבית הספר, בידי כל מורה שלוחצת "ייצוא". ר' StudentScope.
+        // includeArchived נשאר true: ייצוא רשימת התלמידות משקף את המסך, שמציג גם ארכיון.
+        var students = await StudentScope.GetVisibleAsync(
+            _repository,
+            _lessons,
+            request.TeacherId,
+            includeArchived: true,
+            includeCounts: true,
+            ct);
 
         using var workbook = new XLWorkbook();
         var ws = workbook.Worksheets.Add("סטודנטים");

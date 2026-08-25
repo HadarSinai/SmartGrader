@@ -4,23 +4,27 @@ using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.UseCases.LessonResults.CompleteLesson;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
+using SmartGrader.Domain.Services;
 
 public class CompleteLessonHandler
     : IRequestHandler<CompleteLessonCommand, LessonResult>
 {
     private readonly ILessonResultRepository _repository;
     private readonly ISubmissionRepository _submissions;
+    private readonly IAssignmentRepository _assignments;
     private readonly ILessonRepository _lessons;
     private readonly IUnitOfWork _unitOfWork;
 
     public CompleteLessonHandler(
         ILessonResultRepository repository,
         ISubmissionRepository submissions,
+        IAssignmentRepository assignments,
         ILessonRepository lessons,
         IUnitOfWork unitOfWork)
     {
         _repository = repository;
         _submissions = submissions;
+        _assignments = assignments;
         _lessons = lessons;
         _unitOfWork = unitOfWork;
     }
@@ -58,10 +62,51 @@ public class CompleteLessonHandler
             throw new BusinessRuleException($"לא ניתן לסכם את השיעור — {reason}");
         }
 
+        // 🔴 השרת מחשב את הציון. עד לתיקון הזה הוא נלקח מגוף הבקשה כמו שהוא, והמקום היחיד
+        // שבו הציון הסופי נגזר היה הדפדפן — בזמן שכל ציון להגשה בודדת נקבע בשרת בידי
+        // ScoreCalculator, שהוא פונקציה טהורה בדיוק כדי שאף אחד לא יוכל להשפיע עליו.
+        var assignments = await _assignments.GetByLessonIdAsync(command.LessonId, ct);
+        var summary = LessonScoreCalculator.Calculate(assignments, submissions);
+
+        // התקרה נגזרת מהתרגילים בפועל ולא ממה שהלקוח סימן.
+        var maxScore = summary.HasBonus ? 150 : 100;
+
         var result = await _repository.GetAsync(command.StudentId, command.LessonId, ct)
                      ?? LessonResult.Create(command.StudentId, command.LessonId);
 
-        result.CompleteWith(command.FinalScore, command.HasBonus);
+        var isOverride = command.FinalScore.HasValue
+                         && !LessonScoreCalculator.Matches(summary.ComputedScore, command.FinalScore.Value);
+
+        if (!isOverride)
+        {
+            if (summary.ComputedScore is null)
+                throw new BusinessRuleException(
+                    "לא ניתן לסכם את השיעור — אף תרגיל לא נבדק, ואין ציון מחושב. " +
+                    "אפשר לקבוע ציון סופי ידנית, ואז יש לציין סיבה.");
+
+            result.CompleteWith(summary.ComputedScore.Value, summary.HasBonus);
+        }
+        else
+        {
+            // הסיבה היא יומן הביקורת, בדיוק כמו בדריסת ציון של הגשה בודדת.
+            if (string.IsNullOrWhiteSpace(command.OverrideReason))
+                throw new BusinessRuleException(
+                    $"הציון שהוזן ({command.FinalScore}) שונה מהציון שהמערכת חישבה " +
+                    $"({summary.ComputedScore?.ToString() ?? "אין"}). יש לציין סיבה לשינוי.");
+
+            // ArgumentOutOfRangeException מהישות היה חוזר כ-500. הבדיקה כאן מחזירה 400 עם
+            // הסבר, והתקרה היא זו שנגזרה מהתרגילים.
+            if (command.FinalScore!.Value < 0 || command.FinalScore.Value > maxScore)
+                throw new BusinessRuleException(
+                    $"הציון הסופי חייב להיות בין 0 ל-{maxScore}.");
+
+            result.CompleteWithOverride(
+                summary.ComputedScore,
+                command.FinalScore.Value,
+                command.TeacherUserId,
+                command.OverrideReason,
+                summary.HasBonus);
+        }
 
         if (result.Id == 0)
             await _repository.AddAsync(result, ct);

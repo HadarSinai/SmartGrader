@@ -10,6 +10,7 @@ using SmartGrader.Api.BackgroundServices;
 using SmartGrader.Api.Middlewares;
 using SmartGrader.Application;
 using SmartGrader.Application.Services.BackgroundJobs;
+using SmartGrader.Application.Services.Notifications;
 using SmartGrader.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +49,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddScoped<IGradeSubmissionJob, AiWorker>();
 builder.Services.AddScoped<ILogCleanupJob, LogCleanupJob>();
+builder.Services.AddScoped<ITeacherDigestJob, TeacherDigestJob>();
 
 // --- Authentication: JWT Bearer ---
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "";
@@ -70,16 +72,46 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+// --- CORS ---
+// ⚠️ רשימת היתר מפורשת בלבד, מתוך App:AllowedOrigins. הערכים האמיתיים יושבים ב-
+// appsettings.Development.json (מחוץ ל-git) או במשתני סביבה בייצור.
+// הלקוח מזדהה עם כותרת Bearer ולא עם עוגיות, ולכן אין כאן AllowCredentials — וממילא
+// אסור לצרף אותו ל-AllowAnyOrigin.
+// רשימה ריקה = המדיניות אינה מנפיקה כותרות CORS כלל, כלומר בדיוק ההתנהגות שהייתה עד כה:
+// בפיתוח client/proxy.conf.json מגיש את הלקוח ואת ה-API מאותו מקור ואין בקשה חוצת-מקורות.
+const string CorsPolicyName = "SmartGraderClient";
+var allowedOrigins = builder.Configuration.GetSection("App:AllowedOrigins").Get<string[]>()
+                     ?? Array.Empty<string>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicyName, policy =>
+    {
+        if (allowedOrigins.Length == 0)
+            return;
+
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // --- Rate limiting: brute-force protection on auth endpoints (per client IP) ---
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // --- מדיניות "auth" ---
+    // ⚠️ זו הגנת-הצפה גסה בלבד, ולכן היא רחבה בכוונה: כל המורות בבית ספר יושבות מאחורי
+    // אותו NAT, ומכסה של 5 בדקה פירושה שמורה אחת שטעתה בסיסמה חוסמת את כל השאר.
+    // ההגנה המדויקת על החשבון עצמה יושבת ב-User.RegisterFailedLogin (נעילה לפי חשבון),
+    // שם היא גם אינה פוגעת באף אחת אחרת.
     options.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 5,
+                PermitLimit = 20,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -89,6 +121,10 @@ builder.Services.AddRateLimiter(options =>
     // אותו NAT, וחלוקה לפי IP הייתה נותנת להן מכסה משותפת אחת. כאן ההגנה היא מפני הוצאה
     // כספית של אותה משתמשת (קליק כפול, כפתור תקוע), לא מפני תוקף אנונימי.
     // QueueLimit = 0 בכוונה: להחזיר 429 מיד ולא להחזיק את המורה ממתינה מול מסך תקוע.
+    //
+    // 🔴 החלוקה הזו תלויה בסדר ה-middleware: app.UseRateLimiter() חייב לרוץ *אחרי*
+    // UseAuthentication, אחרת httpContext.User ריק מ-claims והמפתח נופל תמיד ל-IP —
+    // כלומר בדיוק ההתנהגות שההערה למעלה נכתבה כדי למנוע. ר' סדר ה-pipeline למטה.
     options.AddPolicy("ai", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -105,6 +141,19 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 
 // --- Seed the admin user (from the AdminUser configuration section) ---
+//
+// הזריעה פועלת רק כאשר שם המשתמש עדיין אינו קיים (ExistsByUsernameAsync למטה).
+//
+// ⚠️ הזורע *אינו* דורס סיסמה או מייל קיימים בכוונה. דריסה לפי הקונפיגורציה הייתה מאפסת
+// בשקט את סיסמת המנהלת בכל הפעלה מחדש, לערך שיושב בקובץ קונפיגורציה — ומחזירה מייל ישן
+// אחרי שהמנהלת כבר עדכנה אותו.
+//
+// AdminUser:Email נכתב לשורה כאן, וזה מה שמאפשר למנהלת לשחזר את הסיסמה שלה בעצמה דרך
+// POST /api/auth/forgot-password — עד לפני כן היא הייתה החשבון היחיד בלי שום דרך חזרה,
+// כי אין מעליה מורה שתאפס אותו.
+//
+// ⚠️ מגבלה שנשארה: שורת מנהלת שנזרעה *לפני* מיגרציית AddUserEmail מחזיקה Email=NULL,
+// ו-GetByEmailAsync לעולם אינה מתאימה ל-NULL. השורה הזו עדיין דורשת UPDATE ידני חד-פעמי.
 using (var scope = app.Services.CreateScope())
 {
     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
@@ -123,7 +172,8 @@ using (var scope = app.Services.CreateScope())
                 adminUsername,
                 hasher.Hash(adminPassword),
                 config["AdminUser:FullName"] ?? "Admin",
-                SmartGrader.Domain.Entities.UserRole.Admin);
+                SmartGrader.Domain.Entities.UserRole.Admin,
+                config["AdminUser:Email"]);
 
             await users.AddAsync(admin);
             await uow.SaveChangesAsync();
@@ -145,10 +195,18 @@ if (!app.Environment.IsDevelopment())
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-app.UseRateLimiter();
+// לפני האימות: גם דחייה (401/429) צריכה לצאת עם כותרות CORS, אחרת הדפדפן מציג
+// שגיאת CORS במקום את הסיבה האמיתית.
+app.UseCors(CorsPolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// 🔴 אחרי UseAuthentication, לא לפניו.
+// כשזה רץ לפני האימות, httpContext.User עדיין ריק מ-claims, ומדיניות "ai" — שמחלקת לפי
+// המשתמשת המחוברת — נפלה תמיד ל-fallback של כתובת ה-IP. כלומר כל המורות מאחורי אותו NAT
+// חלקו מכסה אחת של 10 בדקה על פעולות בתשלום, בדיוק מה שהמדיניות נכתבה כדי למנוע.
+app.UseRateLimiter();
 
 // Hangfire dashboard — development only
 if (app.Environment.IsDevelopment())
@@ -161,6 +219,18 @@ RecurringJob.AddOrUpdate<ILogCleanupJob>(
     "logs-cleanup",
     job => job.ExecuteAsync(),
     Cron.Daily);
+
+// Daily teacher digest — one email per teacher with signals from yesterday, and *no* email
+// at all on a quiet day (see SendTeacherDigestHandler).
+//
+// ⚠️ השעה נקראת מהקונפיגורציה ומתפרשת כשעון ישראל, ולכן היא נכתבת ל-Hangfire אחרי המרה
+// ל-UTC: Cron.Daily(hour) הוא UTC. ברירת המחדל 06:00 מקומי — הדיווח הוא על אתמול, ולכן
+// הוא שווה משהו בתחילת יום העבודה ולא בשתיים בלילה.
+var digestHourLocal = app.Configuration.GetValue<int?>("Notifications:DigestHourLocal") ?? 6;
+RecurringJob.AddOrUpdate<ITeacherDigestJob>(
+    "teacher-digest",
+    job => job.ExecuteAsync(),
+    Cron.Daily(ClassSignalPeriod.LocalHourToUtcHour(digestHourLocal)));
 
 app.MapControllers();
 

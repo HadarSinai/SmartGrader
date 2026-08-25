@@ -7,13 +7,13 @@ import { catchError, map } from "rxjs/operators";
 import { ConfirmationService, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
-import { CheckboxModule } from "primeng/checkbox";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { DataViewModule } from "primeng/dataview";
 import { DialogModule } from "primeng/dialog";
 import { DropdownModule } from "primeng/dropdown";
 import { InputNumberModule } from "primeng/inputnumber";
 import { InputTextModule } from "primeng/inputtext";
+import { InputTextareaModule } from "primeng/inputtextarea";
 import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
 import { TooltipModule } from "primeng/tooltip";
@@ -36,6 +36,10 @@ interface LessonResultRowVm {
   completedAssignments: number;
   finalScore: number | null;
   isComplete: boolean;
+  /** הציון נקבע ידנית ולא התקבל מהחישוב — ר' LessonResult.CompleteWithOverride בשרת. */
+  isFinalScoreOverridden: boolean;
+  /** מה חושב ומה הסיבה לשינוי. null כשהציון מחושב. */
+  overrideTooltip: string | null;
 }
 
 @Component({
@@ -53,7 +57,7 @@ interface LessonResultRowVm {
     DialogModule,
     ConfirmDialogModule,
     InputNumberModule,
-    CheckboxModule,
+    InputTextareaModule,
     DropdownModule,
     InputTextModule,
   ],
@@ -176,6 +180,15 @@ interface LessonResultRowVm {
                   </td>
                   <td class="text-center">
                     {{ row.finalScore ?? "טרם נקבע" }}
+                    <!-- בלי הסימון הזה אי אפשר להבחין בין ציון שהמערכת חישבה
+                         לציון שהוקלד, וזה בדיוק מה שהתיעוד נועד לשמר -->
+                    <i
+                      *ngIf="row.isFinalScoreOverridden"
+                      class="pi pi-user-edit sg-override-mark"
+                      [pTooltip]="row.overrideTooltip!"
+                      tooltipPosition="top"
+                      [attr.aria-label]="row.overrideTooltip"
+                    ></i>
                   </td>
                   <td class="text-center">
                     <p-tag
@@ -278,6 +291,13 @@ interface LessonResultRowVm {
                       <div>
                         <span class="label">ציון סופי</span>
                         {{ item.finalScore ?? "טרם נקבע" }}
+                        <i
+                          *ngIf="item.isFinalScoreOverridden"
+                          class="pi pi-user-edit sg-override-mark"
+                          [pTooltip]="item.overrideTooltip!"
+                          tooltipPosition="top"
+                          [attr.aria-label]="item.overrideTooltip"
+                        ></i>
                       </div>
                     </div>
 
@@ -375,15 +395,13 @@ interface LessonResultRowVm {
             </small>
           </div>
 
-          <div class="flex align-items-center gap-2">
-            <p-checkbox
-              inputId="hasBonus"
-              [(ngModel)]="hasBonus"
-              [binary]="true"
-              (onChange)="onBonusChange()"
-            ></p-checkbox>
-            <label class="sg-label mb-0" for="hasBonus">כולל בונוס</label>
+          <!-- ⚠️ תיבת סימון "כולל בונוס" הוסרה: היא נשלחה לשרת וקבעה את תקרת הציון,
+               כלומר המסך קבע לעצמו את הטווח החוקי. הבונוס נגזר מהתרגילים בפועל. -->
+          <div class="sg-hint" *ngIf="!suggestionLoading && suggestion?.hasBonus">
+            <i class="pi pi-star" aria-hidden="true"></i>
+            בשיעור יש תרגיל בונוס, ולכן הציון הסופי יכול להגיע עד {{ maxScore }}.
           </div>
+
           <div>
             <label class="sg-label" for="finalScore"
               >ציון סופי (0–{{ maxScore }}) *</label
@@ -397,7 +415,33 @@ interface LessonResultRowVm {
               styleClass="w-full"
             ></p-inputNumber>
             <small class="sg-hint block mt-1">
-              הערך ממולא מראש מהממוצע וניתן לשינוי — הציון הסופי נקבע על ידך.
+              הערך ממולא מראש מהציון שהמערכת חישבה. שינוי שלו הוא דריסה — היא
+              נרשמת עם שמך ועם הסיבה.
+            </small>
+          </div>
+
+          <!-- הציון שהוזן שונה מהמחושב: סיבה חובה, בדיוק כמו בדריסת ציון של הגשה בודדת -->
+          <div *ngIf="isOverride">
+            <label class="sg-label" for="overrideReason"
+              >סיבה לשינוי הציון *</label
+            >
+            <textarea
+              id="overrideReason"
+              pInputTextarea
+              [(ngModel)]="overrideReason"
+              [rows]="2"
+              class="w-full"
+              placeholder="למה הציון הסופי שונה מהמחושב?"
+            ></textarea>
+            <small class="sg-hint block mt-1">
+              המערכת חישבה
+              {{
+                suggestion?.suggestedScore !== null &&
+                suggestion?.suggestedScore !== undefined
+                  ? suggestion?.suggestedScore
+                  : "אין ציון מחושב — אף תרגיל לא נבדק"
+              }}. הציון שהוזן נשמר לצד המחושב, כדי שיהיה אפשר לדעת בדיעבד מה
+              השתנה.
             </small>
           </div>
         </div>
@@ -412,7 +456,7 @@ interface LessonResultRowVm {
             label="שמירה"
             styleClass="sg-btn-primary"
             [loading]="finalizeSaving"
-            [disabled]="finalScore === null"
+            [disabled]="finalScore === null || (isOverride && !overrideReason.trim())"
             (onClick)="saveFinalize()"
           ></p-button>
         </ng-template>
@@ -423,6 +467,12 @@ interface LessonResultRowVm {
   `,
   styles: [
     `
+      .sg-override-mark {
+        margin-inline-start: var(--space-1);
+        color: var(--app-text-muted, var(--text-color-secondary));
+        font-size: 0.85em;
+      }
+
       .sg-suggestion {
         display: flex;
         flex-direction: column;
@@ -514,23 +564,33 @@ export class LessonResultsListComponent implements OnInit {
   finalizeDialogOpen = false;
   finalizeRow: LessonResultRowVm | null = null;
   finalScore: number | null = null;
-  hasBonus = false;
+  overrideReason = "";
   finalizeSaving = false;
   suggestion: LessonScoreSuggestionDto | null = null;
   suggestionLoading = false;
 
+  /**
+   * ⚠️ נגזר מההצעה שהשרת החזיר, לא מתיבת סימון. עד כה המסך שלח `hasBonus` והשרת קיבל
+   * אותו כלשונו — כלומר הדפדפן קבע לעצמו אם מותר לעבור 100.
+   */
   get maxScore(): number {
-    return this.hasBonus ? 150 : 100;
+    return this.suggestion?.hasBonus ? 150 : 100;
   }
 
-  onBonusChange(): void {
-    if (
-      !this.hasBonus &&
-      this.finalScore !== null &&
-      this.finalScore > this.maxScore
-    ) {
-      this.finalScore = this.maxScore;
+  /**
+   * הציון שהוזן שונה מזה שהמערכת חישבה — ולכן דורש סיבה.
+   * הסף זהה ל-`LessonScoreCalculator.Matches` בשרת: המחושב מעוגל לספרה אחת, והשוואת
+   * שוויון מדויקת הייתה מסמנת את ההצעה עצמה כדריסה.
+   */
+  get isOverride(): boolean {
+    if (this.finalScore === null || !this.suggestion) {
+      return false;
     }
+    if (this.suggestion.suggestedScore === null) {
+      // אין ציון מחושב כלל — כל ציון שיוזן הוא הכרעה של המורה.
+      return true;
+    }
+    return Math.abs(this.suggestion.suggestedScore - this.finalScore) >= 0.05;
   }
 
   /**
@@ -540,7 +600,7 @@ export class LessonResultsListComponent implements OnInit {
   openFinalize(row: LessonResultRowVm): void {
     this.finalizeRow = row;
     this.finalScore = null;
-    this.hasBonus = false;
+    this.overrideReason = "";
     this.suggestion = null;
     this.suggestionLoading = true;
     this.finalizeDialogOpen = true;
@@ -551,9 +611,6 @@ export class LessonResultsListComponent implements OnInit {
         next: (suggestion: LessonScoreSuggestionDto) => {
           this.suggestion = suggestion;
           this.suggestionLoading = false;
-          // הבונוס נקבע לפי מה שיש בשיעור בפועל, ולא לפי מה שהמורה תזכור לסמן —
-          // הוא זה שקובע אם מותר לעבור 100.
-          this.hasBonus = suggestion.hasBonus;
           this.finalScore = suggestion.suggestedScore;
         },
         error: () => {
@@ -600,11 +657,13 @@ export class LessonResultsListComponent implements OnInit {
       return;
     }
 
+    // ⚠️ finalScore הוא בקשת דריסה, לא הציון: השרת גוזר את הציון מההגשות ומתעלם מהערך
+    // הזה כשהוא זהה למחושב. הסיבה נשלחת רק כשיש חריגה — היא יומן הביקורת.
     const request: CompleteLessonRequestDto = {
       studentId: this.finalizeRow.studentId,
       lessonId: this.lessonId,
       finalScore: this.finalScore,
-      hasBonus: this.hasBonus,
+      overrideReason: this.isOverride ? this.overrideReason.trim() : null,
     };
 
     this.finalizeSaving = true;
@@ -698,6 +757,12 @@ export class LessonResultsListComponent implements OnInit {
       completedAssignments: result.completedAssignments,
       finalScore: result.finalScore,
       isComplete: result.isComplete,
+      isFinalScoreOverridden: result.isFinalScoreOverridden,
+      overrideTooltip: result.isFinalScoreOverridden
+        ? `ציון שנקבע ידנית. המערכת חישבה ${result.computedScore ?? "—"}. סיבה: ${
+            result.finalScoreOverrideReason ?? "—"
+          }`
+        : null,
     };
   }
 
@@ -709,6 +774,8 @@ export class LessonResultsListComponent implements OnInit {
       completedAssignments: 0,
       finalScore: null,
       isComplete: false,
+      isFinalScoreOverridden: false,
+      overrideTooltip: null,
     };
   }
 

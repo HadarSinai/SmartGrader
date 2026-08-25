@@ -14,8 +14,13 @@ namespace SmartGrader.Domain.Abstractions
         // ⚠️ GetAllAsync() ללא פרמטרים מחזירה את כל בית הספר, כולל כיתות בארכיון — היא מיועדת
         // למסכי ניהול בלבד. לדוחות ולייצוא יש להשתמש ב-GetByClassIdsAsync, אחרת כל מורה מייצאת
         // רשימה ובה כל תלמידה בבית הספר.
+        /// <param name="includeCounts">
+        /// טוען גם Submissions ו-LessonResults, עבור קוראים שסופרים אותם (רשימת התלמידות
+        /// והייצוא שלה). כבוי כברירת מחדל — דוח התקופה קורא רק שמות וציונים, ואין סיבה
+        /// למשוך עבורו את כל ההגשות של בית הספר.
+        /// </param>
         Task<IReadOnlyList<Student>> GetByClassIdsAsync(
-            IReadOnlyList<int> classIds, bool includeArchived, CancellationToken ct = default);
+            IReadOnlyList<int> classIds, bool includeArchived, bool includeCounts, CancellationToken ct = default);
         Task<Student?> GetByIdAsync(int id, CancellationToken ct = default);
         Task<Student?> GetByUserIdAsync(int userId, CancellationToken ct = default);
         Task AddAsync(Student student, CancellationToken ct = default);

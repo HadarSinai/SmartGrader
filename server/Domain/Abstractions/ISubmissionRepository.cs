@@ -19,6 +19,22 @@ namespace SmartGrader.Domain.Abstractions
         Task<IReadOnlyList<Submission>> GetByLessonIdAsync(int lessonId, CancellationToken ct = default);
         Task<IReadOnlyList<Submission>> GetRecentGradedAsync(int limit, int? teacherId, int? studentId, CancellationToken ct = default);
 
+        /// <summary>
+        /// כל ההגשות שהוכרעו בחלון תאריכים — הבסיס לסיגנלים של הפעמון והדיג'סט.
+        /// <para>
+        /// ⚠️ החלון נחתך לפי <c>LastSubmittedAt</c> ולא לפי <c>GradedAt</c>: <c>GradedAt</c>
+        /// נכתב רק ב-<c>MarkDone</c>, כך שהגשה שנכשלה בקומפילציה או שלא עמדה בדרישה חוסמת
+        /// מחזיקה <c>NULL</c> — וסינון לפיו היה מוחק בשקט בדיוק את הסיגנלים על תרגיל שבור.
+        /// </para>
+        /// <para>
+        /// "הוכרעה" = Done / CompilationFailed / RequirementsNotMet / AiFailed.
+        /// PendingAi ו-ProcessingAi עדיין לא נבדקו, ו-JudgeUnavailable הוא תקלת תשתית ולא
+        /// תוצאה של התלמידה — שלושתם היו מרעילים את המכנה.
+        /// </para>
+        /// </summary>
+        Task<IReadOnlyList<Submission>> GetConcludedInRangeAsync(
+            DateTime fromUtc, DateTime toUtc, int? teacherId, CancellationToken ct = default);
+
         // ספירות לשמירה על עבודת תלמידים לפני מחיקה (ר' DeleteLesson/DeleteAssignment/DeleteStudent)
         Task<int> CountByLessonIdAsync(int lessonId, CancellationToken ct = default);
         Task<int> CountByAssignmentIdAsync(int assignmentId, CancellationToken ct = default);

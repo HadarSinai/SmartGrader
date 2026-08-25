@@ -42,7 +42,8 @@ public class ExportGradesPeriodReportHandler : IRequestHandler<ExportGradesPerio
         // ⚠️ לא GetAllAsync: היא מחזירה את כל תלמידות בית הספר, כולל שנים בארכיון. הדוח מצומצם
         // לכיתות שהשיעורים בתקופה משויכים אליהן, ובלי תלמידות מכיתות שהועברו לארכיון.
         var classIds = lessons.SelectMany(l => l.Classes).Select(c => c.Id).Distinct().ToList();
-        var students = await _studentRepo.GetByClassIdsAsync(classIds, includeArchived: false, ct);
+        var students = await _studentRepo.GetByClassIdsAsync(
+            classIds, includeArchived: false, includeCounts: false, ct);
 
         var lessonIds = lessons.Select(l => l.Id).ToList();
         var results = await _lessonResultRepo.GetByLessonIdsAsync(lessonIds, ct);

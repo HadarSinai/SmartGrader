@@ -56,16 +56,38 @@ import { NotificationsBellComponent } from "./notifications-bell.component";
 
             <div class="p-toolbar-group-left flex align-items-center gap-2">
               <app-notifications-bell></app-notifications-bell>
-              <p-avatar
-                [label]="avatarInitial()"
-                shape="circle"
-                [style]="{
-                  'background-color': 'var(--accent)',
-                  color: 'var(--accent-ink)',
-                }"
+              <!-- אותה כניסה בדיוק כמו בסרגל המורה, ליעד /my/profile: שם התלמידה
+                   מחליפה סיסמה. -->
+              <a
+                class="sg-topbar-identity"
+                routerLink="/my/profile"
+                routerLinkActive="active"
+                aria-label="החשבון שלי"
+                pTooltip="החשבון שלי"
+                tooltipPosition="bottom"
               >
-              </p-avatar>
-              <span class="sg-topbar-user">{{ auth.fullName() }}</span>
+                <p-avatar
+                  [label]="avatarInitial()"
+                  shape="circle"
+                  [style]="{
+                    'background-color': 'var(--accent)',
+                    color: 'var(--accent-ink)',
+                  }"
+                >
+                </p-avatar>
+                <span class="sg-topbar-user">{{ auth.fullName() }}</span>
+              </a>
+              <p-button
+                icon="pi pi-user"
+                [text]="true"
+                [rounded]="true"
+                severity="secondary"
+                ariaLabel="החשבון שלי"
+                pTooltip="החשבון שלי"
+                tooltipPosition="bottom"
+                routerLink="/my/profile"
+              >
+              </p-button>
               <p-button
                 icon="pi pi-sign-out"
                 [text]="true"
@@ -97,6 +119,20 @@ import { NotificationsBellComponent } from "./notifications-bell.component";
         border-bottom: 1px solid var(--app-border);
         background: var(--app-surface);
         padding-block: var(--space-2);
+      }
+
+      .sg-topbar-identity {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        border-radius: var(--radius-md, 8px);
+        padding: 0.25rem;
+      }
+
+      .sg-topbar-identity:hover .sg-topbar-user,
+      .sg-topbar-identity.active .sg-topbar-user {
+        color: var(--accent, #8a6a54);
       }
 
       .sg-topbar-user {

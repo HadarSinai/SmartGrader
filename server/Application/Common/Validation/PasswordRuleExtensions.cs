@@ -4,16 +4,15 @@ namespace SmartGrader.Application.Common.Validation
 {
     public static class PasswordRuleExtensions
     {
+        /// <summary>
+        /// כלל FluentValidation לסיסמה. הכללים עצמם אינם כאן אלא ב-<see cref="PasswordPolicy"/>,
+        /// כדי שהייבוא מ-Excel והטפסים יאכפו בדיוק את אותו דבר — ר' ההערה שם.
+        /// </summary>
         public static IRuleBuilderOptions<T, string> Password<T>(this IRuleBuilder<T, string> ruleBuilder)
         {
             return ruleBuilder
-                .NotEmpty().WithMessage("Password is required.")
-                .MinimumLength(8).WithMessage("Password must be at least 8 characters long.")
-                .Matches("[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
-                .Matches("[a-z]").WithMessage("Password must contain at least one lowercase letter.")
-                .Matches("[0-9]").WithMessage("Password must contain at least one digit.")
-                .Must(p => p is null || !System.Text.RegularExpressions.Regex.IsMatch(p, "[\u0590-\u05FF]"))
-                    .WithMessage("Password must not contain Hebrew characters.");
+                .Must(PasswordPolicy.IsValid)
+                .WithMessage((_, password) => PasswordPolicy.GetFailureReason(password) ?? "");
         }
     }
 }

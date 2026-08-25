@@ -43,7 +43,8 @@ public class ExportLessonResultsHandler : IRequestHandler<ExportLessonResultsQue
         // ⚠️ לא GetAllAsync: היא מחזירה את כל תלמידות בית הספר, כולל כיתות בארכיון, כך שהייצוא
         // של מורה אחת חשף את שמות כל התלמידות במערכת. הרשימה מצומצמת לכיתות שהשיעור משויך אליהן.
         var classIds = lesson.Classes.Select(c => c.Id).ToList();
-        var students = await _studentRepo.GetByClassIdsAsync(classIds, includeArchived: false, ct);
+        var students = await _studentRepo.GetByClassIdsAsync(
+            classIds, includeArchived: false, includeCounts: false, ct);
 
         var results = await _lessonResultRepo.GetByLessonIdAsync(request.LessonId, ct);
         var resultsByStudent = results.ToDictionary(r => r.StudentId);

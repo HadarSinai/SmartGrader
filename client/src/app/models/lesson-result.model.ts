@@ -3,17 +3,33 @@ export interface LessonResultResponseDto {
   studentId: number;
   lessonId: number;
   finalScore: number | null;
+  /** מה שהמערכת חישבה. נשמר גם כשהמורה דרסה — כך אפשר לדעת ממה חרגו. */
+  computedScore: number | null;
   isComplete: boolean;
   calculatedAt: string;
   totalAssignments: number;
   completedAssignments: number;
+
+  // ── יומן הביקורת של דריסת הציון הסופי ──
+  isFinalScoreOverridden: boolean;
+  finalScoreOverriddenByUserId: number | null;
+  finalScoreOverriddenAt: string | null;
+  finalScoreOverrideReason: string | null;
 }
 
+/**
+ * ⚠️ finalScore כאן הוא **בקשת דריסה, לא הציון**. השרת גוזר את הציון הסופי מההגשות
+ * בשיעור; הערך הזה נכנס לתוקף רק כשהוא שונה מהמחושב, ואז overrideReason הוא חובה.
+ * null = "קבעי את מה שחושב".
+ *
+ * ⚠️ hasBonus הוסר: הוא נשלח מכאן וקבע את תקרת הציון (150 במקום 100), כלומר הדפדפן
+ * קבע לעצמו את הטווח החוקי. התקרה נגזרת עכשיו מהתרגילים בפועל בשיעור.
+ */
 export interface CompleteLessonRequestDto {
   studentId: number;
   lessonId: number;
-  finalScore: number;
-  hasBonus: boolean;
+  finalScore: number | null;
+  overrideReason: string | null;
 }
 
 // ── הצעת הציון הסופי ──────────────────────────────────────────────────────

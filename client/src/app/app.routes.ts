@@ -14,7 +14,6 @@ import { ClassesListComponent } from "./pages/classes/classes-list.component";
 import { CourseFormComponent } from "./pages/courses/course-form.component";
 import { CoursesListComponent } from "./pages/courses/courses-list.component";
 import { LoginComponent } from "./pages/auth/login.component";
-import { RegisterComponent } from "./pages/auth/register.component";
 import { DashboardComponent } from "./pages/dashboard/dashboard.component";
 import { LessonResultDetailComponent } from "./pages/lesson-results/lesson-result-detail.component";
 import { LessonResultsListComponent } from "./pages/lesson-results/lesson-results-list.component";
@@ -28,13 +27,36 @@ import { MyLessonsListComponent } from "./pages/my/my-lessons-list.component";
 import { SubmitCodeComponent } from "./pages/my/submit-code.component";
 import { StudentFormComponent } from "./pages/students/student-form.component";
 import { StudentsListComponent } from "./pages/students/students-list.component";
+import { TeacherFormComponent } from "./pages/teachers/teacher-form.component";
+import { TeachersListComponent } from "./pages/teachers/teachers-list.component";
 import { SubmissionDetailComponent } from "./pages/submissions/submission-detail.component";
 import { SubmissionFormComponent } from "./pages/submissions/submission-form.component";
 import { SubmissionsListComponent } from "./pages/submissions/submissions-list.component";
 
 export const routes: Routes = [
   { path: "login", component: LoginComponent },
-  { path: "register", component: RegisterComponent },
+  // מסכי שחזור סיסמה — ציבוריים ובלי guard, כמו מסך הכניסה: מי שמגיעה אליהם היא
+  // בהגדרה מי שאינה יכולה להתחבר.
+  //
+  // ⚠️ loadComponent ולא component, בשונה מכל שאר הנתיבים כאן. שני המסכים האלה נטענים
+  // פעם בכמה חודשים לכל היותר, וייבוא רגיל שלהם דחף את חבילת ה-JS הראשית מעל תקציב
+  // ה-build (2MB) — כלומר כל טעינה של המערכת הייתה משלמת עליהם.
+  {
+    path: "forgot-password",
+    loadComponent: () =>
+      import("./pages/auth/forgot-password.component").then(
+        (m) => m.ForgotPasswordComponent,
+      ),
+  },
+  {
+    path: "reset-password",
+    loadComponent: () =>
+      import("./pages/auth/reset-password.component").then(
+        (m) => m.ResetPasswordComponent,
+      ),
+  },
+  // ⚠️ אין נתיב "register". הרשמה עצמית נסגרה — חשבון מורה נוצר רק בידי המנהלת
+  // במסך /teachers, והנקודה בשרת נמחקה גם היא.
   {
     path: "",
     component: AppLayoutComponent,
@@ -147,6 +169,37 @@ export const routes: Routes = [
         component: LogsListComponent,
         canActivate: [adminGuard],
       },
+      // ניהול חשבונות מורות — מנהלת בלבד, בתוך מעטפת המורה כמו /logs
+      {
+        path: "teachers",
+        component: TeachersListComponent,
+        canActivate: [adminGuard],
+      },
+      {
+        path: "teachers/new",
+        component: TeacherFormComponent,
+        canActivate: [adminGuard],
+      },
+      {
+        path: "teachers/:id/edit",
+        component: TeacherFormComponent,
+        canActivate: [adminGuard],
+      },
+      // האזור האישי — אותה קומפוננטה בדיוק כמו ב-/my/profile, בשתי המעטפות.
+      //
+      // teacherGuard ולא authGuard בלבד (שכבר יושב על ההורה): הוא כולל מנהלת, ושולח
+      // תלמידה ל-homeRoute שלה — כלומר ל-/my/profile, המסך הנכון עבורה במעטפת הנכונה.
+      //
+      // ⚠️ loadComponent מאותו נימוק בדיוק כמו במסכי שחזור הסיסמה למעלה: מסך שנפתח
+      // פעם בכמה חודשים, וייבוא רגיל שלו הוסיף ~12kB לחבילה הראשית שכבר חורגת מהתקציב.
+      {
+        path: "profile",
+        loadComponent: () =>
+          import("./pages/profile/profile.component").then(
+            (m) => m.ProfileComponent,
+          ),
+        canActivate: [teacherGuard],
+      },
       { path: "assignments", redirectTo: "lessons", pathMatch: "full" },
       { path: "submissions", redirectTo: "students", pathMatch: "full" },
     ],
@@ -174,6 +227,15 @@ export const routes: Routes = [
         component: SubmitCodeComponent,
       },
       { path: "grades", component: MyGradesComponent },
+      // אותה קומפוננטה כמו ב-/profile. שדות השם והמייל חבויים לתלמידה, ומה שנשאר
+      // הוא החלפת הסיסמה — הפעולה היחידה שיש לה על החשבון שלה.
+      {
+        path: "profile",
+        loadComponent: () =>
+          import("./pages/profile/profile.component").then(
+            (m) => m.ProfileComponent,
+          ),
+      },
     ],
   },
 ];

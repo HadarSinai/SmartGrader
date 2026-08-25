@@ -16,6 +16,7 @@ namespace SmartGrader.Infrastructure.Data
         public DbSet<User> Users { get; set; }
         public DbSet<SchoolClass> SchoolClasses { get; set; }
         public DbSet<Course> Courses { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
         public GradeSheetContext(DbContextOptions<GradeSheetContext> options)
             : base(options)
@@ -112,7 +113,32 @@ namespace SmartGrader.Infrastructure.Data
                 user.HasIndex(u => u.Username).IsUnique();
                 user.Property(u => u.PasswordHash).IsRequired();
                 user.Property(u => u.FullName).IsRequired();
+
+                // Email אינו IsRequired: לתלמידות אין מייל, ולכל השורות שקיימות היום אין.
+                // האינדקס הייחודי עדיין נכון — SQLite מתייחס ל-NULL-ים כשונים זה מזה, כך
+                // שאין-סוף שורות בלי מייל חיות זו לצד זו, ובכל זאת מייל אחד לא יכול להוביל
+                // לשני חשבונות כששחזור הסיסמה יחפש לפיו.
+                user.HasIndex(u => u.Email).IsUnique();
+
                 user.Property(u => u.Role).HasConversion<string>();
+            });
+
+            modelBuilder.Entity<PasswordResetToken>(token =>
+            {
+                token.Property(t => t.TokenHash).IsRequired();
+
+                // כל אימות של קישור הוא חיפוש לפי הגיבוב הזה, ולכן אינדקס. ייחודי — שני
+                // טוקנים לא אמורים להתגבב לאותו ערך, ואם זה קורה עדיף להיכשל בכתיבה
+                // מאשר ש-FirstOrDefault יבחר שרירותית לאיזו משתמשת הקישור שייך.
+                token.HasIndex(t => t.TokenHash).IsUnique();
+
+                // Cascade: לטוקן אין משמעות בלי המשתמשת. שאר השרשראות במערכת הן Restrict
+                // כדי להגן על עבודת תלמידות — כאן אין מה להגן עליו, וטוקן יתום היה
+                // מצביע על שורה שאינה קיימת.
+                token.HasOne<User>()
+                    .WithMany()
+                    .HasForeignKey(t => t.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<Student>()

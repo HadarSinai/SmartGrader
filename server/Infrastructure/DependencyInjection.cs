@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SmartGrader.Application.Services.CodeAnalysis;
 using SmartGrader.Application.Services.CodeRunner;
 using SmartGrader.Application.Services.Feedback;
+using SmartGrader.Application.Services.Notifications;
 using SmartGrader.Application.Common.Interfaces;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Infrastructure.Services.CodeAnalysis;
@@ -15,6 +16,7 @@ using SmartGrader.Infrastructure.Services.CodeRunner;
 using SmartGrader.Infrastructure.Data;
 using SmartGrader.Infrastructure.Repositories;
 using SmartGrader.Infrastructure.Services.Feedback;
+using SmartGrader.Infrastructure.Services.App;
 using SmartGrader.Infrastructure.Services.Auth;
 using SmartGrader.Infrastructure.Services.Email;
 using Microsoft.Extensions.Configuration;
@@ -39,6 +41,7 @@ namespace SmartGrader.Infrastructure
             services.AddScoped<ILogRepository, LogRepository>();
             services.AddScoped<ISchoolClassRepository, SchoolClassRepository>();
             services.AddScoped<ICourseRepository, CourseRepository>();
+            services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // בדיקת הדרישות המבניות — מקומית, מיידית וללא עלות. רצה לפני Judge0, כך שהגשה
@@ -63,8 +66,17 @@ namespace SmartGrader.Infrastructure
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddSingleton<IPasswordHasherService, PasswordHasherService>();
 
+            // ⚠️ נרשם כמופע ולא דרך Configure<T>/IOptions: ClassSignalThresholds יושב ב-Application,
+            // ושכבת Application אינה מושכת את Microsoft.Extensions.Options. הקוראת (ClassSignalDetector)
+            // מקבלת את ה-POCO ישירות.
+            services.AddSingleton(
+                configuration.GetSection("Notifications:ClassSignals").Get<ClassSignalThresholds>()
+                ?? new ClassSignalThresholds());
+            services.AddScoped<ClassSignalDetector>();
+
             services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
             services.AddSingleton<IEmailSender, SmtpEmailSender>();
+            services.AddSingleton<IClientUrlProvider, ClientUrlProvider>();
 
             var judge0Options = configuration.GetSection("Judge0").Get<Judge0Options>() ?? new Judge0Options();
             services.AddHttpClient<ICodeRunnerService, Judge0CodeRunner>(c =>

@@ -8,9 +8,9 @@ using SmartGrader.Application.Common.Interfaces;
 namespace SmartGrader.Infrastructure.Services.Email
 {
     /// <summary>
-    /// Sends emails to the admin address (AdminUser:Email) via SMTP.
-    /// When SMTP or the admin email is not configured, it no-ops with a warning —
-    /// the application must keep working without email.
+    /// Sends emails via SMTP — either to the admin address (AdminUser:Email) or to an
+    /// explicit recipient. When SMTP is not configured it no-ops with a warning; the
+    /// application must keep working without email.
     /// </summary>
     public class SmtpEmailSender : IEmailSender
     {
@@ -30,12 +30,34 @@ namespace SmartGrader.Infrastructure.Services.Email
 
         public async Task SendToAdminAsync(string subject, string body, CancellationToken ct = default)
         {
-            if (string.IsNullOrWhiteSpace(_options.Host) || string.IsNullOrWhiteSpace(_adminEmail))
+            if (string.IsNullOrWhiteSpace(_adminEmail))
             {
                 _logger.LogWarning(
-                    "Email not sent — SMTP host or admin email is not configured (subject: {Subject})",
+                    "Email not sent — admin email is not configured (subject: {Subject})",
                     subject);
                 return;
+            }
+
+            await SendAsync(_adminEmail, subject, body, ct);
+        }
+
+        /// <summary>
+        /// ⚠️ מדווחת על SMTP שאינו מוגדר במקום להשתיק — ר' ההסבר ב-<see cref="IEmailSender"/>.
+        /// חריגה אמיתית בשליחה עדיין נזרקת: הקורא כאן הוא handler שיודע לתפוס אותה,
+        /// בשונה מהתראות השגיאה שרצות מתוך טיפול-בשגיאה ואסור להן להיכשל.
+        /// </summary>
+        public async Task<bool> SendAsync(
+            string to,
+            string subject,
+            string body,
+            CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(_options.Host))
+            {
+                _logger.LogWarning(
+                    "Email not sent — SMTP host is not configured (subject: {Subject})",
+                    subject);
+                return false;
             }
 
             using var client = new SmtpClient(_options.Host, _options.Port)
@@ -52,9 +74,10 @@ namespace SmartGrader.Infrastructure.Services.Email
                 Body = body,
                 IsBodyHtml = false
             };
-            message.To.Add(_adminEmail);
+            message.To.Add(to);
 
             await client.SendMailAsync(message, ct);
+            return true;
         }
     }
 }

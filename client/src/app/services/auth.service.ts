@@ -3,10 +3,14 @@ import { Observable, tap } from "rxjs";
 import { ApiClient } from "../core/http/api-client";
 import {
     AuthResponseDto,
+    ChangeMyPasswordRequestDto,
     CreateAccountForStudentRequestDto,
     CreateStudentAccountRequestDto,
+    ForgotPasswordRequestDto,
     LoginRequestDto,
-    RegisterTeacherRequestDto,
+    MyProfileResponseDto,
+    ResetPasswordRequestDto,
+    UpdateMyProfileRequestDto,
 } from "../models/auth.model";
 import { StudentResponseDto } from "../models/student.model";
 
@@ -46,12 +50,28 @@ export class AuthService {
       .pipe(tap((res) => this.storeSession(res)));
   }
 
-  registerTeacher(dto: RegisterTeacherRequestDto): Observable<AuthResponseDto> {
-    return this.api.http
-      .post<AuthResponseDto>(this.api.url("/api/auth/register-teacher"), dto)
-      .pipe(tap((res) => this.storeSession(res)));
+  /**
+   * בקשת קישור לאיפוס סיסמה.
+   * ⚠️ מצליחה תמיד, גם כשהכתובת אינה רשומה — השרת מחזיר 200 זהה בכל מקרה, ולכן אין
+   * למסך שום דרך (ואין לו כוונה) לדעת אם נשלח מייל בפועל.
+   */
+  forgotPassword(dto: ForgotPasswordRequestDto): Observable<void> {
+    return this.api.http.post<void>(
+      this.api.url("/api/auth/forgot-password"),
+      dto,
+    );
   }
 
+  /** קביעת סיסמה חדשה באמצעות הטוקן החד-פעמי מהקישור שבמייל. */
+  resetPassword(dto: ResetPasswordRequestDto): Observable<void> {
+    return this.api.http.post<void>(
+      this.api.url("/api/auth/reset-password"),
+      dto,
+    );
+  }
+
+  // ⚠️ אין כאן registerTeacher. חשבון מורה נוצר רק בידי המנהלת דרך TeachersService,
+  // והוא אינו מחליף את ה-session שלה: המנהלת נשארת מחוברת כמנהלת.
   createStudentAccount(
     dto: CreateStudentAccountRequestDto,
   ): Observable<StudentResponseDto> {
@@ -67,6 +87,41 @@ export class AuthService {
   ): Observable<StudentResponseDto> {
     return this.api.http.post<StudentResponseDto>(
       this.api.url(`/api/auth/students/${studentId}/account`),
+      dto,
+    );
+  }
+
+  // ── האזור האישי: המשתמשת מתחזקת את החשבון של עצמה ──
+
+  /** פרטי החשבון מהמסד, לטעינת הטופס ב-/profile. */
+  getMyProfile(): Observable<MyProfileResponseDto> {
+    return this.api.http.get<MyProfileResponseDto>(
+      this.api.url("/api/auth/me/profile"),
+    );
+  }
+
+  /**
+   * שינוי השם המלא והמייל של המשתמשת המחוברת.
+   *
+   * ⚠️ ה-tap אינו קישוט. השם המלא הוא claim בתוך ה-JWT, והשרת מחזיר כאן טוקן **חדש**
+   * בדיוק בשביל זה. בלי storeSession, הדפדפן היה ממשיך להחזיק את הטוקן הישן ואת
+   * sg_user הישן — כלומר השם בסרגל העליון היה נשאר כפי שהיה עד הכניסה הבאה.
+   */
+  updateMyProfile(dto: UpdateMyProfileRequestDto): Observable<AuthResponseDto> {
+    return this.api.http
+      .put<AuthResponseDto>(this.api.url("/api/auth/me"), dto)
+      .pipe(tap((res) => this.storeSession(res)));
+  }
+
+  /**
+   * שינוי הסיסמה של המשתמשת המחוברת, מול הסיסמה הנוכחית שלה.
+   *
+   * ⚠️ אין כאן storeSession ואין ניתוק. הסיסמה אינה claim בטוקן, ולכן הטוקן הקיים
+   * נשאר נכון לחלוטין אחרי ההחלפה — בשונה משינוי שם.
+   */
+  changeMyPassword(dto: ChangeMyPasswordRequestDto): Observable<void> {
+    return this.api.http.post<void>(
+      this.api.url("/api/auth/me/password"),
       dto,
     );
   }

@@ -109,6 +109,37 @@ namespace SmartGrader.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        // ההגשות שהוכרעו — כל השאר (PendingAi/ProcessingAi/JudgeUnavailable) אינן תוצאה של
+        // התלמידה ולכן אינן נכנסות למונה ולא למכנה של הסיגנלים.
+        private static readonly SubmissionStatus[] ConcludedStatuses =
+        {
+            SubmissionStatus.Done,
+            SubmissionStatus.CompilationFailed,
+            SubmissionStatus.RequirementsNotMet,
+            SubmissionStatus.AiFailed
+        };
+
+        public async Task<IReadOnlyList<Submission>> GetConcludedInRangeAsync(
+            DateTime fromUtc, DateTime toUtc, int? teacherId, CancellationToken ct = default)
+        {
+            var query = _context.Submissions
+                // חצי־פתוח [from, to) — בלי זה הגשה בדיוק בחצות נספרת בשני ימים.
+                .Where(s => s.LastSubmittedAt >= fromUtc && s.LastSubmittedAt < toUtc)
+                .Where(s => ConcludedStatuses.Contains(s.Status))
+                .AsQueryable();
+
+            if (teacherId.HasValue)
+                query = query.Where(s => s.Assignment.Lesson.TeacherId == teacherId.Value);
+
+            // ⚠️ בלי Include(Student): הסיגנלים סופרים תלמידות ואינם נוקבים בשמן. מורה לא
+            // צריכה רשימת נכשלות בפעמון, וההגשות הן ממילא שורה אחת לכל תלמידה.
+            return await query
+                .Include(s => s.Assignment)
+                    .ThenInclude(a => a.Lesson)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
         // ⚠️ בלי AsNoTracking בכוונה — הקוראים (Update/Delete/AiWorker) משנים את הישות ושומרים דרך UnitOfWork.
         public async Task<Submission?> GetByIdAsync(int id, int? teacherId, CancellationToken ct = default)
         {

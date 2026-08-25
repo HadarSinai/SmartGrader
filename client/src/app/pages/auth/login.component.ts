@@ -73,6 +73,9 @@ import { AuthService } from "../../services/auth.service";
             >
               נדרשת סיסמה
             </small>
+            <a class="sg-auth-forgot" routerLink="/forgot-password"
+              >שכחתי סיסמה</a
+            >
           </div>
 
           <div class="sg-auth-error" *ngIf="loginError" role="alert">
@@ -89,9 +92,10 @@ import { AuthService } from "../../services/auth.service";
           />
         </form>
 
+        <!-- אין כאן קישור: הרשמה עצמית נסגרה. הטקסט עונה על השאלה שהמשתמשת הייתה
+             שואלת במקום להשאיר אותה מול מסך סתום. -->
         <footer class="sg-auth-footer">
-          <span>מורה חדשה?</span>
-          <a routerLink="/register">הרשמה</a>
+          <span>אין לך חשבון? יש לפנות למנהלת המערכת</span>
         </footer>
       </div>
     </div>
@@ -149,6 +153,21 @@ import { AuthService } from "../../services/auth.service";
 
       .sg-auth-field input {
         width: 100%;
+      }
+
+      /* מיושר לקצה ההתחלה של השורה — בעברית זהו הצד הימני, ולכן start ולא right:
+         ערך קשיח היה מציב את הקישור בצד הלא נכון אם הממשק יוצג אי-פעם ב-LTR. */
+      .sg-auth-forgot {
+        align-self: flex-start;
+        margin-top: 0.15rem;
+        font-size: var(--text-sm, 0.875rem);
+        color: var(--accent, #8a6a54);
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .sg-auth-forgot:hover {
+        text-decoration: underline;
       }
 
       .sg-auth-error {

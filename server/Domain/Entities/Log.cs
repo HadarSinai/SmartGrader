@@ -9,6 +9,19 @@
         public const string AiFailed = "AiFailed";
         public const string JudgeUnavailable = "JudgeUnavailable";
         public const string UnhandledError = "UnhandledError";
+
+        /// <summary>
+        /// תקלה תפעולית במסלול שחזור הסיסמה. ⚠️ נרשם רק על <b>כשל</b> ולא על כל בקשה:
+        /// רישום של כל בקשה היה יוצר במסך הלוגים רשימה של כתובות מייל שקיימות במערכת.
+        /// </summary>
+        public const string PasswordResetEmailFailed = "PasswordResetEmailFailed";
+
+        /// <summary>
+        /// הדיג'סט היומי למורה לא נשלח. ⚠️ נרשם רק על <b>כשל</b>, ובכוונה: יום בלי סיגנלים
+        /// אינו שולח מייל ואינו כותב שורה. בלי הרישום הזה, SMTP שבור נראה בדיוק כמו יום שקט —
+        /// <c>SmtpEmailSender</c> מחזיר <c>false</c> בשקט כשאינו מוגדר.
+        /// </summary>
+        public const string TeacherDigestEmailFailed = "TeacherDigestEmailFailed";
     }
 
     /// <summary>Well-known values for <see cref="Log.Status"/>.</summary>
