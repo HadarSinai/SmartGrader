@@ -41,10 +41,17 @@ jobs:
       - name: Publish the pass count
         if: success()
         run: |
-          summary=$(grep -E "^(Passed!|Failed!)" test-output.txt | head -1 || true)
+          # בלי עוגן ^ ואחרי הסרת קודי צבע: שורת הסיכום עשויה להגיע עם רווח מוביל או
+          # עם ANSI, ועוגן נוקשה פשוט לא מצא אותה.
+          summary=$(sed 's/\x1b\[[0-9;]*m//g' test-output.txt \
+            | grep -aoE "(Passed!|Failed!).*Total: *[0-9]+" | tail -1 || true)
+
           if [ -n "$summary" ]; then
             echo "::notice::${summary}"
             echo "## $summary" >> "$GITHUB_STEP_SUMMARY"
+          else
+            # ⚠️ ירוק בלי ספירה הוא בדיוק המצב שהשלב הזה קיים כדי לשלול
+            echo "::warning::הריצה עברה אך שורת הסיכום לא נמצאה — לא ידוע כמה בדיקות רצו"
           fi
 
       # ⚠️ הלוג הגולמי של Actions דורש הזדהות גם בריפו ציבורי, אבל *אנוטציות* ותקציר
@@ -76,5 +83,6 @@ jobs:
             done < <(tail -20 test-output.txt)
           fi
 
-          summary=$(grep -E "^(Passed!|Failed!)" test-output.txt | head -1 || true)
+          summary=$(sed 's/\x1b\[[0-9;]*m//g' test-output.txt \
+            | grep -aoE "(Passed!|Failed!).*Total: *[0-9]+" | tail -1 || true)
           [ -n "$summary" ] && echo "::error::${summary}" || true
