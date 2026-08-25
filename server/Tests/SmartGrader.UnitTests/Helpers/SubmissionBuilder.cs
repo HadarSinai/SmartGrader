@@ -38,6 +38,22 @@ namespace SmartGrader.UnitTests.Helpers
             return this;
         }
 
+        /// <summary>
+        /// מחבר את תכונות הניווט (Student / Assignment). ⚠️ אותה קטגוריה כמו
+        /// <see cref="SubmittedAt"/>: EF הוא שממלא אותן ברפלקציה, ושום handler לא קובע
+        /// אותן בעצמו. <c>SubmissionLock</c> קורא דרכן, ולכן אי אפשר לבדוק אותו בלעדיהן.
+        /// </summary>
+        public SubmissionBuilder WithNavigation(Student? student = null, Assignment? assignment = null)
+        {
+            if (student is not null)
+                typeof(Submission).GetProperty(nameof(Submission.Student))!.SetValue(_submission, student);
+
+            if (assignment is not null)
+                typeof(Submission).GetProperty(nameof(Submission.Assignment))!.SetValue(_submission, assignment);
+
+            return this;
+        }
+
         /// <summary>מסיים בדיקה בהצלחה עם הציון הנתון — במסלול המצבים החוקי.</summary>
         public SubmissionBuilder Graded(double score)
         {
