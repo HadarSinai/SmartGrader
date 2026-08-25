@@ -72,6 +72,24 @@ namespace SmartGrader.UnitTests.Helpers
             return this;
         }
 
+        /// <summary>
+        /// נכשלה בשלב ה-AI. ⚠️ מצב סופי ש<b>מותר</b> בכוונה לסכם עליו שיעור — כך מורה
+        /// יכולה לתת ציון ידני כשהמודל לא היה זמין.
+        /// </summary>
+        public SubmissionBuilder AiFailed()
+        {
+            _submission.MarkProcessingAi();
+            _submission.MarkAiFailed("המודל אינו זמין");
+            return this;
+        }
+
+        /// <summary>נכשלה בקומפילציה — מצב שחוסם סיכום שיעור, כי הוא ממתין להגשה מחדש.</summary>
+        public SubmissionBuilder CompilationFailed()
+        {
+            _submission.MarkCompilationFailed("CS1002: ; expected");
+            return this;
+        }
+
         /// <summary>בלי ציון — נשארת <see cref="SubmissionStatus.PendingAi"/> כפי שנוצרה.</summary>
         public Submission Build() => _submission;
     }
