@@ -77,7 +77,13 @@ namespace SmartGrader.Api.Controllers
         }
 
         // POST: api/classes/finish-year — מארכב את כל הכיתות הפעילות ("סיום שנה")
+        //
+        // ⚠️ מנהלת בלבד, ובכוונה יותר מחמיר משאר הבקר. הפעולה מארכבת בשאילתה אחת את *כל*
+        // הכיתות הפעילות במוסד, לא רק את אלה של הקוראת — כל התלמידות הופכות לקריאה־בלבד
+        // וכל ההגשות ננעלות (SubmissionLock נועל על כיתה מאורכבת). זה נכתב ישירות ל-DB
+        // דרך ExecuteUpdate, בלי undo. לחיצה אחת של מורה אחת הקפיאה את כל בית הספר.
         [HttpPost("finish-year")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> FinishYear(CancellationToken cancellationToken)
         {
             int archivedCount = await _mediator.Send(new FinishYearCommand(), cancellationToken);

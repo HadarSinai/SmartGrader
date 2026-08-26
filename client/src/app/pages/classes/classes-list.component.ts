@@ -15,6 +15,7 @@ import { ToggleButtonModule } from "primeng/togglebutton";
 import { TooltipModule } from "primeng/tooltip";
 
 import { SchoolClassResponseDto } from "@models/class.model";
+import { AuthService } from "@services/auth.service";
 import { ClassesService } from "@services/classes.service";
 
 @Component({
@@ -48,13 +49,19 @@ import { ClassesService } from "@services/classes.service";
               </div>
 
               <div class="flex flex-wrap align-items-center gap-2">
-                <p-button
-                  label="סיום שנה"
-                  icon="pi pi-calendar-times"
-                  [outlined]="true"
-                  styleClass="sg-btn-secondary"
-                  (onClick)="confirmFinishYear()"
-                ></p-button>
+                <!-- ⚠️ מנהלת בלבד. "סיום שנה" מארכב את *כל* הכיתות הפעילות במוסד בבת
+                     אחת, לא רק את אלה של המורה שלחצה, ואין undo. הבקרה האמיתית היא
+                     [Authorize(Roles = "Admin")] על POST /api/classes/finish-year;
+                     ההסתרה כאן היא כדי לא להציע פעולה שתחזור ב-403. -->
+                @if (auth.isAdmin()) {
+                  <p-button
+                    label="סיום שנה"
+                    icon="pi pi-calendar-times"
+                    [outlined]="true"
+                    styleClass="sg-btn-secondary"
+                    (onClick)="confirmFinishYear()"
+                  ></p-button>
+                }
 
                 <p-button
                   label="כיתה חדשה"
@@ -220,6 +227,7 @@ export class ClassesListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  readonly auth = inject(AuthService);
 
   classes: SchoolClassResponseDto[] = [];
   loading = false;
