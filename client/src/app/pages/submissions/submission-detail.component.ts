@@ -4,6 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import {
   STATUS_LABELS_HE,
+  SUBMISSION_POLL_INTERVAL_MS,
   SubmissionResponseDto,
 } from "@models/submission.model";
 import { SubmissionsService } from "@services/submissions.service";
@@ -15,6 +16,7 @@ import { InputNumberModule } from "primeng/inputnumber";
 import { InputTextareaModule } from "primeng/inputtextarea";
 import { TagModule } from "primeng/tag";
 import { SubmissionFeedbackPanelComponent } from "@components/submission-feedback-panel/submission-feedback-panel.component";
+import { SubmittedCodeComponent } from "@components/submitted-code/submitted-code.component";
 
 @Component({
   selector: "app-submission-detail",
@@ -29,6 +31,7 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
     InputTextareaModule,
     TagModule,
     SubmissionFeedbackPanelComponent,
+    SubmittedCodeComponent,
   ],
   template: `
     <section class="sg-page">
@@ -341,7 +344,9 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                 <div class="text-xs font-bold text-color-secondary mb-2">
                   קוד
                 </div>
-                <pre class="sg-code-box">{{ submission.sourceCode }}</pre>
+                <app-submitted-code
+                  [submission]="submission"
+                ></app-submitted-code>
               </div>
             </div>
           </div>
@@ -666,7 +671,10 @@ export class SubmissionDetailComponent implements OnInit, OnDestroy {
     const shouldPoll = status === "PendingAi" || status === "ProcessingAi";
     if (shouldPoll && !this.pollHandle) {
       this.isPolling = true;
-      this.pollHandle = setInterval(() => this.refreshSilently(), 7000);
+      this.pollHandle = setInterval(
+        () => this.refreshSilently(),
+        SUBMISSION_POLL_INTERVAL_MS,
+      );
     } else if (!shouldPoll) {
       this.stopPolling();
     }

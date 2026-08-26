@@ -8,11 +8,13 @@ import { TagModule } from "primeng/tag";
 
 import {
     STATUS_LABELS_HE,
+    SUBMISSION_POLL_INTERVAL_MS,
     SubmissionResponseDto,
 } from "@models/submission.model";
 import { AuthService } from "@services/auth.service";
 import { SubmissionsService } from "@services/submissions.service";
 import { SubmissionFeedbackPanelComponent } from "@components/submission-feedback-panel/submission-feedback-panel.component";
+import { SubmittedCodeComponent } from "@components/submitted-code/submitted-code.component";
 
 @Component({
   selector: "app-my-feedback",
@@ -24,6 +26,7 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
     CardModule,
     TagModule,
     SubmissionFeedbackPanelComponent,
+    SubmittedCodeComponent,
   ],
   template: `
     <section class="sg-page">
@@ -223,7 +226,7 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
             <!-- Submitted code -->
             <div class="col-12">
               <div class="sg-label">הקוד שהוגש</div>
-              <pre class="sg-code-box">{{ submission.sourceCode }}</pre>
+              <app-submitted-code [submission]="submission"></app-submitted-code>
             </div>
           </div>
         </p-card>
@@ -337,7 +340,10 @@ export class MyFeedbackComponent implements OnInit, OnDestroy {
   private syncPolling(status: string | null): void {
     const shouldPoll = status === "PendingAi" || status === "ProcessingAi";
     if (shouldPoll && !this.pollHandle) {
-      this.pollHandle = setInterval(() => this.refreshSilently(), 5000);
+      this.pollHandle = setInterval(
+        () => this.refreshSilently(),
+        SUBMISSION_POLL_INTERVAL_MS,
+      );
     } else if (!shouldPoll) {
       this.stopPolling();
     }

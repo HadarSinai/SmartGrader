@@ -19,6 +19,15 @@ export const STATUS_LABELS_HE: Record<string, string> = {
   RequirementsNotMet: "הדרישות לא התקיימו",
 };
 
+/**
+ * כל כמה זמן מסך פרטים מרענן הגשה שנמצאת ב-PendingAi/ProcessingAi.
+ *
+ * ⚠️ מספר אחד, ובמכוון לא שניים. קודם התלמידה רועננה כל 5 שניות והמורה כל 7 — אותה
+ * המתנה בדיוק, לאותה הגשה, בשני קצבים שאיש לא בחר. שני מסכים שמחזיקים כל אחד את המספר
+ * שלו הם גם שני מסכים שיסתרו זה את זה בפעם הבאה שמישהי תכוונן אחד מהם.
+ */
+export const SUBMISSION_POLL_INTERVAL_MS = 5000;
+
 export interface SubmissionFileDto {
   fileName: string;
   content: string;
