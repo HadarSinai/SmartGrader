@@ -1,6 +1,6 @@
 ---
 name: spec-requirement-writing
-description: "Use when writing or reviewing a single sentence in the SmartGrader specification set under docs/ — a functional requirement, a grading rule (G-N), a business rule (B-N), an acceptance criterion, or an outcome statement. Grounded in ISO/IEC/IEEE 29148: the sentence shape [condition][subject][action][object][constraint] and the nine quality characteristics as a review checklist. Covers the three writing failures this repository already produced (a defect list filed as specification, a goal phrased as a C# type name, a [Fix] that outlived its fix), why C# type names are banned from outcome statements, why Hebrew UI strings are quoted verbatim, stable rule ids, Given/When/Then acceptance criteria, and the document header. USE FOR: 'write a requirement for X', 'is this requirement well-formed', 'review the wording in grading-rules.md', 'turn this behaviour into a G-N rule', 'write acceptance criteria'. NOT for deciding which document a sentence belongs in or what an area doc must cover (that is spec-feature-area-doc), and NOT for the test that keeps a table true (that is spec-domain-doc-conformance)."
+description: "Use when writing or reviewing a single sentence in the SmartGrader specification set under docs/ — a functional requirement, a grading rule (G-N), a business rule (B-N), an acceptance criterion, or an outcome statement. Grounded in ISO/IEC/IEEE 29148:2018: the two requirements-construct patterns (5.2.4), the nine characteristics of an individual requirement (5.2.5), the five characteristics of a set (5.2.6), and the shall/should/will/may language criteria (5.2.7). Covers the three writing failures this repository already produced (a defect list filed as specification, a goal phrased as a C# type name, a [Fix] that outlived its fix), why C# type names are banned from outcome statements, why Hebrew UI strings are quoted verbatim, stable rule ids, Given/When/Then acceptance criteria, and the document header. USE FOR: 'write a requirement for X', 'is this requirement well-formed', 'review the wording in grading-rules.md', 'turn this behaviour into a G-N rule', 'write acceptance criteria', 'shall or should'. NOT for deciding which document a sentence belongs in or what an area doc must cover (that is spec-feature-area-doc), and NOT for the test that keeps a table true (that is spec-domain-doc-conformance)."
 ---
 
 # Writing a Requirement in the SmartGrader Spec Set
@@ -63,25 +63,50 @@ done.
 to a developer. "Add X" is a work item; "the form shall display X" is a requirement. The first goes
 stale silently; the second goes stale loudly, because a test can read it.
 
-## The sentence shape (29148)
+## The sentence shape — 29148:2018 clause 5.2.4, *Requirements construct*
+
+The standard gives **two** patterns. Use the one that fits; do not invent a third.
 
 ```
-[condition] [subject] [action] [object] [constraint]
+SYNTAX-1   [subject] [action] [constraint of action]
+SYNTAX-2   [condition] [subject] [action] [object] [constraint of action]
 ```
+
+SYNTAX-1 is for a requirement that always applies — no condition to state. SYNTAX-2 is the full form.
 
 | Slot | Question | Example |
 |---|---|---|
 | condition | when does this apply? | *While the assignment title is empty and has been touched,* |
-| subject | who or what acts? | *the assignment form* |
+| subject | who or what acts? — the system or a part of it | *the assignment form* |
 | action | one verb, `shall` | *shall display* |
-| object | on what? | *the message «שם התרגיל הוא שדה חובה»* |
-| constraint | bounded how? | *beneath the title field.* |
+| object | on what is the action performed? | *the message «שם התרגיל הוא שדה חובה»* |
+| constraint of action | bounded how, or to what result? | *beneath the title field.* |
 
-`shall` for a requirement. Not "should", not "must", not "will" — one modal, so a reader never has to
-guess whether a sentence is binding.
+The standard's own example, for comparison:
 
-**Omit a slot only deliberately.** A missing `condition` means *always*; if that is not what you meant,
-the requirement is incomplete.
+> "Upon receiving signal x *[condition]*, the system *[subject]* shall set *[action]* the 'signal x
+> received' bit *[object]* within 2 seconds *[constraint of action]*."
+
+**Dropping the `condition` is a decision, not an omission** — SYNTAX-1 states *always*. If that is not
+what you meant, the requirement is incomplete.
+
+### The four modals — clause 5.2.7, *Requirement language criteria*
+
+The standard does not ban the other modals. It assigns each one a distinct job, and mixing them up is
+what makes a reader unable to tell what is binding:
+
+| Modal | Means | Binding? |
+|---|---|---|
+| **shall** | a requirement | ✅ **yes** |
+| should | a preference or goal | ❌ no |
+| will | a statement of fact, futurity, or purpose — also used to set context | ❌ no |
+| may | a suggestion or an allowance | ❌ no |
+
+Non-requirement prose uses plain verbs — *is*, *are*, *was*.
+
+**"must" is the one to avoid.** It carries no assigned meaning here and reads as a synonym for `shall`,
+so it quietly creates a second binding modal. In `docs/`, a rule is `shall`; everything else is either
+one of the three non-binding modals, used on purpose, or plain prose.
 
 ## Four before/after pairs, all from this repo
 
@@ -120,24 +145,45 @@ the requirement is incomplete.
 **Every list screen's requirements must answer those four questions**: default sort · page size and
 options · which fields search matches · whether filters survive navigating back.
 
-## The nine characteristics, one question each
+## The nine characteristics — clause 5.2.5, one question each
 
 Run every sentence through these. A `no` sends it back.
 
-| # | Characteristic | The question |
-|---|---|---|
-| 1 | **Necessary** | If this were deleted, would anything be lost? A restatement of another rule is not necessary — cite its id. |
-| 2 | **Appropriate** | Is this the right document, and the right level? A pixel value is not a functional requirement. |
-| 3 | **Unambiguous** | Can two readers reach two different implementations? "clear instructions", "correct", "trustworthy" — all ambiguous. |
-| 4 | **Complete** | Can this be built without asking a follow-up question? (Pair 4.) |
-| 5 | **Singular** | One `shall`, one behaviour. An "and" joining two behaviours is two requirements. |
-| 6 | **Feasible** | Can it be built here, with this stack, this year? |
-| 7 | **Verifiable** | Name the test or the observation that decides pass/fail. If you cannot, rewrite until you can. |
-| 8 | **Correct** | Does the code actually do this today? `docs/` is **as-built** (decision 2) — desired-but-unbuilt goes to `.github/prompts/`. |
-| 9 | **Conforming** | Right shape, right modal, right mood — indicative, not imperative. |
+| # | Characteristic | 29148's meaning | The question to ask here |
+|---|---|---|---|
+| 1 | **Necessary** | Removing it would leave a deficiency | If this were deleted, would anything be lost? A restatement of another rule is not necessary — cite its id. |
+| 2 | **Appropriate** | The level of abstraction fits; no unnecessary constraints; no implementation detail | Is this the right document and the right altitude? A pixel value is not a functional requirement, and neither is a DTO name. |
+| 3 | **Unambiguous** | One interpretation only | Can two readers reach two different implementations? "clear instructions", "correct", "trustworthy" — all ambiguous. |
+| 4 | **Complete** | Everything needed to understand it is in it | Can this be built without asking a follow-up question? (Pair 4.) |
+| 5 | **Singular** | One capability, one requirement | One `shall`, one behaviour. An "and" joining two behaviours is two requirements. |
+| 6 | **Feasible** | Achievable within technical, cost and regulatory bounds | Can it be built here, with this stack, this year? |
+| 7 | **Verifiable** | Can be proven met, by a defined method | Name the test or the observation that decides pass/fail. If you cannot, rewrite until you can. |
+| 8 | **Correct** | An accurate representation of the actual need | Does the code actually do this today? `docs/` is **as-built** (decision 2) — desired-but-unbuilt goes to `.github/prompts/`. |
+| 9 | **Conforming** | Follows the approved template and conventions | Right pattern (SYNTAX-1/2), right modal, indicative mood — not imperative. |
 
 **7 is the one that bites.** "The dashboard shall feel responsive" fails it. "The dashboard shall
 render its KPI cards within 2 seconds of the four requests resolving" passes.
+
+## The five set characteristics — clause 5.2.6
+
+The nine above judge one sentence. `grading-rules.md`, `business-rules.md` and each area doc's
+`Functional Requirements` are **sets**, and a set can fail while every sentence in it passes.
+
+| # | Characteristic | The question to ask of the whole document |
+|---|---|---|
+| 1 | **Complete** | Does the set cover everything needed, with nothing left "to be determined"? |
+| 2 | **Consistent** | Do any two rules contradict? Is one term used for one thing throughout — the `glossary.md` job? |
+| 3 | **Feasible** | Can the set be satisfied *together*, within budget and schedule? Two individually feasible rules can be jointly impossible. |
+| 4 | **Comprehensible** | Can the owner read the set and understand what the system does? |
+| 5 | **Able to be validated** | Can the set as a whole be confirmed against the real need? |
+
+**5 has a concrete acceptance test here**, from the plan: hand `grading-rules.md` to the owner with a
+real graded submission and ask her to reproduce the number by hand, from the document alone. If she
+cannot, the set fails — regardless of how well-formed each `G-N` is.
+
+**2 is what the `G-N`/`B-N` registry exists to protect.** Consistency is a property of the set, so it
+cannot be checked one sentence at a time; a single numbered registry is what makes checking it possible
+at all.
 
 ## Stable rule ids
 
@@ -202,15 +248,38 @@ document has not been touched since July knows to distrust it.
 |---|---|
 | `[Fix]`, `TODO`, "currently broken" in `docs/` | Class C in a class B file. It expires and nothing goes red. |
 | A C# type name in an outcome | Nobody outside the code can confirm it. Use the glossary term. |
-| "should" / "must" / "will" mixed with "shall" | The reader cannot tell what is binding. |
+| "must" used for a requirement | It has no assigned meaning in 5.2.7 and reads as a second binding modal. Use `shall`. |
+| "should" / "will" / "may" used where `shall` was meant | Each is explicitly **non-binding**. The reader will correctly conclude the rule is optional. |
 | Restating a rule instead of citing `G-N`/`B-N` | Two sources of truth; the copy wins by accident. |
 | A hand-counted number (`33 constructs`) | The catalog has **31**. That figure drifted within days of being written. Numbers go in a marked block with a test — see the sibling skill. |
 | A requirement with no acceptance criterion | Unverifiable by construction. |
 | Translating a Hebrew UI string into English | A second string, guaranteed to drift. |
 | Prose inside a `<!-- gen: -->` block | Over-assertion; the markers get deleted by the next person they annoy. |
 
+## Provenance of the 29148 content
+
+Everything attributed to the standard above is from **ISO/IEC/IEEE 29148:2018**, clauses 5.2.4–5.2.7.
+The standard is paywalled, so this was verified against the official ISO/iTeh sample (which carries the
+clause numbering and titles) plus independent secondary sources that agree with each other:
+
+| Claim | Clause | Verified against |
+|---|---|---|
+| Clause numbers and titles | 5.2.4–5.2.7 | The official ISO/IEC/IEEE 29148:2018 sample PDF's table of contents |
+| Two syntax patterns, five slot names, the "signal x" example | 5.2.4 | Multiple published renderings of the construct |
+| The nine characteristics and their meanings | 5.2.5 | Two independent sources naming the same nine |
+| The five set characteristics | 5.2.6 | Same |
+| shall / should / will / may semantics | 5.2.7 | Same |
+
+⚠️ **The full normative text was not read** — it is behind ISO/IEEE licensing. If an argument ever turns
+on the standard's exact wording rather than its substance, buy the clause; do not settle it from here.
+
+Note that **29148:2011 is a different list.** Its stakeholder-requirements characteristics were
+*necessary, implementation free, unambiguous, consistent, complete, singular, feasible, traceable,
+verifiable, affordable, bounded*. Several online summaries still quote that list under a 2018 heading.
+This repository uses the **2018** nine.
+
 ## See Also
 
-- [spec-feature-area-doc](../spec-feature-area-doc/SKILL.md) — which document a sentence belongs in, and the seven sections every area doc has.
+- [spec-feature-area-doc](../spec-feature-area-doc/SKILL.md) — which document a sentence belongs in, and the fixed section outline every area doc shares.
 - [spec-domain-doc-conformance](../spec-domain-doc-conformance/SKILL.md) — the marker convention and the test that makes a table fail CI when the code moves.
 - [backend-unit-test-pattern](../backend-unit-test-pattern/SKILL.md) — where the `[Trait("Rule", "G-N")]` bindings live.
