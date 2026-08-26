@@ -117,12 +117,16 @@ namespace SmartGrader.UnitTests.Handlers
             result.Errors[0].RowNumber.Should().Be(3);
         }
 
-        // שורה ריקה לגמרי מדולגת בשקט ואינה נספרת כשגיאה
+        // שורה שנשארו בה רק רווחים מדולגת בשקט ואינה נספרת כשגיאה.
+        //
+        // ⚠️ הרווחים אינם קישוט: ‏`RowsUsed()` של ClosedXML אינו מחזיר שורה שכל תאיה ריקים
+        // באמת, ולכן היא לא מגיעה ל-handler כלל — וגרסה קודמת של הבדיקה עברה גם כשהדילוג
+        // עצמו נמחק. תא עם רווח הופך את השורה ל"בשימוש", וה-`Trim` בקוד מרוקן אותה.
         [Fact]
         public async Task Handle_SkipsFullyEmptyRowsSilently()
         {
             GivenTheClassExists();
-            var file = Workbook(Row("רותי לוי"), new[] { "", "", "", "" }, Row("שרה כהן"));
+            var file = Workbook(Row("רותי לוי"), new[] { " ", " ", " ", " " }, Row("שרה כהן"));
 
             var result = await ImportAsync(file);
 
