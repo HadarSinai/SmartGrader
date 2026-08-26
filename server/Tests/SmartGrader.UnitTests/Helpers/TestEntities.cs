@@ -40,6 +40,18 @@ namespace SmartGrader.UnitTests.Helpers
             }
         }
 
+        /// <summary>
+        /// משתמשת עם מזהה. <c>User.Create</c> אינו קובע <c>Id</c> — הוא נוצר במסד — ולכן כל
+        /// בדיקה שמשווה מזהים (למשל "האם זה החשבון שלי") חייבת לעבור דרך כאן.
+        /// ⚠️ אותו יוצא מן הכלל של <c>Id</c> בלבד, ר' למעלה.
+        /// </summary>
+        public static User UserWithId(
+            int id,
+            UserRole role,
+            string fullName = "דנה כהן",
+            string? email = "dana@school.org") =>
+            WithId(SmartGrader.Domain.Entities.User.Create($"user{id}", "hash", fullName, role, email), id);
+
         public static SchoolClass Class(int id, bool isArchived = false)
         {
             var schoolClass = SchoolClass.Create("י\"א 3", academicYear: 5786);
