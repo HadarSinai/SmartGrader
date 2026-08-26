@@ -145,6 +145,10 @@ const SOURCE_LABELS: Record<string, string> = {
                   <th class="text-center">סוג פעולה</th>
                   <th class="text-center">סטטוס</th>
                   <th class="text-center">מקור</th>
+                  <!-- ⚠️ שלושת המזהים נשלפו מה-DB ונשלחו בכל תשובה, ומעולם לא הוצגו.
+                       ביומן תקלות הם כל הערך: בלעדיהם "שגיאת קומפילציה" היא משפט בלי
+                       נמען, ואי אפשר להגיע ממנו לתלמידה או לתרגיל שבו זה קרה. -->
+                  <th class="text-center">הקשר</th>
                   <th class="text-right">הודעה</th>
                 </tr>
               </ng-template>
@@ -177,6 +181,28 @@ const SOURCE_LABELS: Record<string, string> = {
                   <td class="text-center">
                     {{ sourceLabel(log.systemSource) }}
                   </td>
+                  <td class="text-center">
+                    <div class="sg-log-refs">
+                      <span *ngIf="log.userId" pTooltip="מזהה משתמשת"
+                        >משתמשת #{{ log.userId }}</span
+                      >
+                      <span *ngIf="log.lessonId" pTooltip="מזהה שיעור"
+                        >שיעור #{{ log.lessonId }}</span
+                      >
+                      <span *ngIf="log.assignmentId" pTooltip="מזהה תרגיל"
+                        >תרגיל #{{ log.assignmentId }}</span
+                      >
+                      <!-- אירועים ברמת המערכת (למשל UnhandledError בזמן אתחול) באמת אינם
+                           קשורים לאף ישות. מקף מבדיל את זה מעמודה שלא נטענה. -->
+                      <span
+                        class="text-color-secondary"
+                        *ngIf="
+                          !log.userId && !log.lessonId && !log.assignmentId
+                        "
+                        >—</span
+                      >
+                    </div>
+                  </td>
                   <td class="text-right sg-log-message">{{ log.message }}</td>
                 </tr>
               </ng-template>
@@ -184,7 +210,7 @@ const SOURCE_LABELS: Record<string, string> = {
               <ng-template pTemplate="emptymessage">
                 <tr>
                   <td
-                    colspan="5"
+                    colspan="6"
                     class="text-center px-3 py-6 text-color-secondary"
                   >
                     <ng-container *ngIf="hasActiveFilters; else noLogs">
@@ -219,6 +245,16 @@ const SOURCE_LABELS: Record<string, string> = {
       .sg-log-message {
         max-width: 32rem;
         word-break: break-word;
+      }
+
+      .sg-log-refs {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.15rem;
+        font-size: var(--text-xs, 0.75rem);
+        color: var(--app-text-muted);
+        white-space: nowrap;
       }
     `,
   ],
