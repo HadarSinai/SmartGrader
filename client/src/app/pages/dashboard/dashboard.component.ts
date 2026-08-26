@@ -81,8 +81,8 @@ interface KPI {
               class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
             >
               <div class="sg-title">
-                <div class="sg-h1">הגשות אחרונות</div>
-                <div class="sg-h2">חמש ההגשות האחרונות במערכת</div>
+                <div class="sg-h1">הגשות שנבדקו לאחרונה</div>
+                <div class="sg-h2">חמש ההגשות האחרונות שקיבלו ציון</div>
               </div>
 
               <p-button
@@ -230,12 +230,12 @@ export class DashboardComponent implements OnInit {
             icon: "pi-users",
           },
           {
-            label: "הגשות אחרונות",
+            label: "הגשות שנבדקו לאחרונה",
             value: String(recent.length),
             icon: "pi-send",
           },
           {
-            label: "ממוצע ציונים (הגשות אחרונות)",
+            label: "ממוצע ציונים (הגשות שנבדקו)",
             value: average !== null ? String(average) : "—",
             icon: "pi-chart-line",
           },

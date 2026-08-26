@@ -4,6 +4,7 @@ using SmartGrader.Application.Common.Exceptions;
 using SmartGrader.Application.UseCases.Teachers.DeleteTeacher;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
+using SmartGrader.UnitTests.Helpers;
 using Xunit;
 
 namespace SmartGrader.UnitTests.Handlers
@@ -17,6 +18,7 @@ namespace SmartGrader.UnitTests.Handlers
     {
         private const int TeacherId = 7;
         private const int AdminId = 1;
+        private const int SomeoneElseId = 99;
 
         private readonly IUserRepository _users = Substitute.For<IUserRepository>();
         private readonly ILessonRepository _lessons = Substitute.For<ILessonRepository>();
@@ -26,11 +28,13 @@ namespace SmartGrader.UnitTests.Handlers
         private DeleteTeacherHandler Handler() =>
             new(_users, _lessons, _courses, _unitOfWork);
 
+        // ⚠️ דרך TestEntities ולא דרך User.Create: הבנאי אינו קובע Id, וכל בדיקה שמשווה
+        // מזהים הייתה משווה 0 למספר אמיתי ולעולם לא מזהה את המקרה שהיא נכתבה בשבילו.
         private static User Teacher() =>
-            User.Create("dana", "hash", "דנה כהן", UserRole.Teacher, "dana@school.org");
+            TestEntities.UserWithId(TeacherId, UserRole.Teacher);
 
         private static User Admin() =>
-            User.Create("admin", "hash", "מנהלת", UserRole.Admin, "admin@school.org");
+            TestEntities.UserWithId(AdminId, UserRole.Admin, "מנהלת", "admin@school.org");
 
         private void GivenUser(User? user) =>
             _users.GetByIdAsync(TeacherId, Arg.Any<CancellationToken>()).Returns(user);
@@ -71,8 +75,8 @@ namespace SmartGrader.UnitTests.Handlers
             GivenUser(Admin());
             GivenWorkload(0, 0);
 
-            var selfMessage = await RefusalMessageAsync(new DeleteTeacherCommand(TeacherId, TeacherId));
-            var roleMessage = await RefusalMessageAsync(new DeleteTeacherCommand(TeacherId, AdminId));
+            var selfMessage = await RefusalMessageAsync(new DeleteTeacherCommand(TeacherId, AdminId));
+            var roleMessage = await RefusalMessageAsync(new DeleteTeacherCommand(TeacherId, SomeoneElseId));
 
             selfMessage.Should().NotBe(roleMessage);
         }
@@ -83,7 +87,7 @@ namespace SmartGrader.UnitTests.Handlers
         [InlineData(UserRole.Student)]
         public async Task Handle_RefusesToDeleteAnyoneWhoIsNotATeacher(UserRole role)
         {
-            GivenUser(User.Create("mi", "hash", "מישהי", role, null));
+            GivenUser(TestEntities.UserWithId(TeacherId, role, "מישהי"));
             GivenWorkload(0, 0);
 
             var act = async () => await Handler().Handle(

@@ -103,10 +103,16 @@ export class SubmissionsService {
   }
 
   // Dashboard helper
+  //
+  // ⚠️ הכתובת היא /api/notifications/graded-submissions ולא משהו תחת /api/students.
+  // הנתיב שהיה כאן קודם ניסה לקרוא ל-recent מתחת ל-students, ולא התאים לשום route
+  // בשרת (המקטע "submissions" אינו int ב-{studentId:int}) — הוא החזיר 404 בתוך
+  // ה-forkJoin של הדשבורד והפיל איתו את כל ארבעת כרטיסי ה-KPI.
+  //
+  // ⚠️ השרת חוסם limit ב-InclusiveBetween(1, 100) — ערך גדול יותר יחזור כ-400.
   getRecent(limit: number): Observable<SubmissionResponseDto[]> {
-    // If your backend uses a different query name, adjust here.
     return this.api.http.get<SubmissionResponseDto[]>(
-      this.api.url(`/api/students/submissions/recent?limit=${limit}`),
+      this.api.url(`/api/notifications/graded-submissions?limit=${limit}`),
     );
   }
 
