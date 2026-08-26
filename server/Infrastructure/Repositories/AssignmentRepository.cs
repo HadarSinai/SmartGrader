@@ -22,10 +22,15 @@ namespace SmartGrader.Infrastructure.Repositories
                 .FirstOrDefaultAsync(a => a.Id == id, ct);
         }
 
+        // ⚠️ ה-Include על Submissions אינו קישוט: AssignmentProfile ממפה את SubmissionsCount
+        // לפי מוסכמת השם מ-Submissions.Count, ובלי הטעינה הרשימה תמיד ריקה — עמודת "הגשות"
+        // במסך התרגילים הראתה 0 לכל תרגיל, גם כשהיו עשרות הגשות. GetByIdAsync כבר טוען אותן,
+        // ולכן אותו תרגיל הראה מספר נכון במסך אחד ואפס בשני.
         public async Task<IReadOnlyList<Assignment>> GetByLessonIdAsync(int lessonId, CancellationToken ct = default)
         {
             return await _context.Assignments
                 .Where(a => a.LessonId == lessonId)
+                .Include(a => a.Submissions)
                 .AsNoTracking()
                 .ToListAsync(ct);
         }
