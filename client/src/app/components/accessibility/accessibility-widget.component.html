@@ -11,7 +11,7 @@
   <div class="flex flex-column gap-3">
     <div class="flex align-items-center justify-content-between">
       <h3 class="m-0">נגישות</h3>
-      <p-button label="איפוס" icon="pi pi-refresh" [text]="true" (onClick)="reset()"></p-button>
+      <p-button label="איפוס" icon="pi pi-refresh" [text]="true" (onClick)="a11y.reset()"></p-button>
     </div>
 
     <div class="flex align-items-center justify-content-between">
@@ -19,7 +19,7 @@
         <div class="font-semibold">מצב כהה</div>
         <small class="text-500">נוחות בעבודה בלילה</small>
       </div>
-      <p-inputSwitch [(ngModel)]="isDark" (onChange)="applyTheme()"></p-inputSwitch>
+      <p-inputSwitch [ngModel]="a11y.state.dark" (onChange)="a11y.update({ dark: $event.checked })"></p-inputSwitch>
     </div>
 
     <div class="flex align-items-center justify-content-between">
@@ -27,7 +27,7 @@
         <div class="font-semibold">טקסט גדול</div>
         <small class="text-500">הגדלת גופן בכל המערכת</small>
       </div>
-      <p-inputSwitch [(ngModel)]="largeText" (onChange)="applyFontScale()"></p-inputSwitch>
+      <p-inputSwitch [ngModel]="a11y.largeText" (onChange)="setLargeText($event.checked)"></p-inputSwitch>
     </div>
 
     <div class="flex align-items-center justify-content-between">
@@ -35,7 +35,7 @@
         <div class="font-semibold">הפחתת אנימציות</div>
         <small class="text-500">מינימום תנועה ואפקטים</small>
       </div>
-      <p-inputSwitch [(ngModel)]="reduceMotion" (onChange)="applyReducedMotion()"></p-inputSwitch>
+      <p-inputSwitch [ngModel]="a11y.state.reduceMotion" (onChange)="a11y.update({ reduceMotion: $event.checked })"></p-inputSwitch>
     </div>
 
     <div class="border-top-1 pt-3" style="border-color: var(--app-border);">
@@ -43,7 +43,7 @@
       <p-slider
         [min]="1"
         [max]="1.4"
-        [step]="0.1"
+        [step]="0.05"
         [ngModel]="a11y.state.scale"
         (onChange)="a11y.update({ scale: $event.value })">
       </p-slider>

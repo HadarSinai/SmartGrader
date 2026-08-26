@@ -528,12 +528,10 @@ body.dark .p-paginator {
   color: var(--app-text);
 }
 
-/* Reduced motion support */
-body.reduced-motion * {
-  transition: none !important;
-  animation: none !important;
-  scroll-behavior: auto !important;
-}
+/* Reduced motion support.
+   ⚠️ מחלקת ההעדפה היא body.a11y-reduce-motion, מוגדרת פעם אחת תחת "A11Y helpers".
+   כאן היה בעבר כלל שני, body.reduced-motion, שהווידג'ט החיל במקביל למחלקה של
+   AccessibilityService — אותה העדפה בשני שמות, וכיבוי של אחת השאיר את השנייה. */
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
@@ -640,9 +638,8 @@ body.a11y-links a {
   text-underline-offset: 3px;
 }
 body.a11y-reduce-motion * {
-  animation-duration: 0.001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
+  animation: none !important;
+  transition: none !important;
   scroll-behavior: auto !important;
 }
 

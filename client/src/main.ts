@@ -1,20 +1,17 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
 import { appConfig } from './app/app.config';
+import {
+  applyAccessibilityState,
+  readAccessibilityState,
+} from './app/services/accessibility.service';
 
-// Apply saved accessibility preferences ASAP (prevents theme flash)
-try {
-  const theme = localStorage.getItem('theme');
-  document.body.classList.toggle('dark', theme === 'dark');
-
-  const reduceMotion = localStorage.getItem('reduceMotion');
-  document.body.classList.toggle('reduced-motion', reduceMotion === '1');
-
-  const fontScale = localStorage.getItem('fontScale');
-  document.documentElement.style.fontSize = fontScale === 'large' ? '15.5px' : '14px';
-} catch {
-  // ignore
-}
+// מחיל את העדפות הנגישות לפני ש-Angular עולה, כדי שלא יהיה הבהוב ערכת נושא.
+//
+// ⚠️ קורא את אותו מפתח בדיוק שהשירות כותב אליו, דרך אותן פונקציות. קודם היה כאן קוד
+// עצמאי שקרא מפתחות גולמיים (`theme`, `reduceMotion`, `fontScale`) שאף אחד מלבד הווידג'ט
+// לא כתב — ולכן "איפוס" בשירות לא השפיע כאן, וההעדפה הישנה חזרה בכל טעינה.
+applyAccessibilityState(readAccessibilityState());
 
 bootstrapApplication(AppComponent, appConfig)
   .catch((err) => console.error(err));
