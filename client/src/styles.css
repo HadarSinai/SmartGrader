@@ -1051,20 +1051,9 @@ body.a11y-reduce-motion * {
   outline-offset: 3px;
 }
 
-/* Assignments: difficulty + bonus visual tags (semantic status colors) */
-.difficulty-easy {
-  background-color: var(--status-success-bg) !important;
-  color: var(--status-success-ink) !important;
-}
-.difficulty-medium {
-  background-color: var(--status-warn-bg) !important;
-  color: var(--status-warn-ink) !important;
-}
-.difficulty-hard {
-  background-color: var(--status-error-bg) !important;
-  color: var(--status-error-ink) !important;
-}
-
+/* Assignments: bonus visual tag (semantic status colors).
+   .difficulty-easy/medium/hard used to live here too. Nothing ever applied them:
+   `difficulty` existed only on AssignmentExtended, a model with no importers. */
 .sg-bonus-chip {
   background-color: var(--status-success-bg) !important;
   color: var(--status-success-ink) !important;

@@ -12,8 +12,11 @@ import { ApiClient } from "../core/http/api-client";
 /**
  * Submissions API
  *
- * Supports student-scoped routes (recommended) and a few helper routes used
- * by the dashboard.
+ * ⚠️ כל הגשה חיה מתחת לתלמידה: `/api/students/{studentId}/submissions/...` (הנתיבים
+ * נמצאים ב-StudentsController; SubmissionController כולו בהערה). אין נתיב שטוח.
+ * `getById` נשא בעבר גם העמסה בארגומנט אחד שפנתה ל-`/api/students/submissions/{id}` —
+ * כתובת שאינה תואמת לשום route, כי `{studentId:int}` לעולם לא יתאים למחרוזת
+ * "submissions". זו אותה טעות בדיוק שהשביתה את הדשבורד (ר' getRecent למטה).
  */
 @Injectable({ providedIn: "root" })
 export class SubmissionsService {
@@ -29,16 +32,9 @@ export class SubmissionsService {
   getById(
     studentId: number,
     submissionId: number,
-  ): Observable<SubmissionResponseDto>;
-  getById(id: number): Observable<SubmissionResponseDto>;
-  getById(a: number, b?: number): Observable<SubmissionResponseDto> {
-    if (typeof b === "number") {
-      return this.api.http.get<SubmissionResponseDto>(
-        this.api.url(`/api/students/${a}/submissions/${b}`),
-      );
-    }
+  ): Observable<SubmissionResponseDto> {
     return this.api.http.get<SubmissionResponseDto>(
-      this.api.url(`/api/students/submissions/${a}`),
+      this.api.url(`/api/students/${studentId}/submissions/${submissionId}`),
     );
   }
 
@@ -113,13 +109,6 @@ export class SubmissionsService {
   getRecent(limit: number): Observable<SubmissionResponseDto[]> {
     return this.api.http.get<SubmissionResponseDto[]>(
       this.api.url(`/api/notifications/graded-submissions?limit=${limit}`),
-    );
-  }
-
-  // Flat endpoints (optional)
-  getAll(studentId: number): Observable<SubmissionResponseDto[]> {
-    return this.api.http.get<SubmissionResponseDto[]>(
-      this.api.url(`/api/students/${studentId}/submissions`),
     );
   }
 }

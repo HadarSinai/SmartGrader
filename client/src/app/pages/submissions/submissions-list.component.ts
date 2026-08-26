@@ -16,7 +16,6 @@ import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
 import { TooltipModule } from "primeng/tooltip";
 
-import { SubmissionExtended } from "@models/submission-extended.model";
 import {
     STATUS_LABELS_HE,
     SubmissionResponseDto,
@@ -55,7 +54,7 @@ export class SubmissionsListComponent implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
 
-  submissions: SubmissionExtended[] = [];
+  submissions: SubmissionResponseDto[] = [];
   loading = false;
   studentId!: number;
 
@@ -71,11 +70,11 @@ export class SubmissionsListComponent implements OnInit {
     ];
 
   // Multi-select (design only — no real bulk delete)
-  selectedSubmissions: SubmissionExtended[] = [];
+  selectedSubmissions: SubmissionResponseDto[] = [];
 
   rowMenuItems: MenuItem[] = [];
 
-  get filteredSubmissions(): SubmissionExtended[] {
+  get filteredSubmissions(): SubmissionResponseDto[] {
     const q = this.query.trim().toLowerCase();
     return this.submissions.filter(
       (s) =>
@@ -108,7 +107,7 @@ export class SubmissionsListComponent implements OnInit {
     this.loading = true;
     this.submissionsService.getByStudent(this.studentId).subscribe({
       next: (data: SubmissionResponseDto[]) => {
-        this.submissions = (data ?? []).map((s) => this.toExtended(s));
+        this.submissions = data ?? [];
         this.loading = false;
       },
       error: (_err: unknown) => {
@@ -178,7 +177,7 @@ export class SubmissionsListComponent implements OnInit {
     }
   }
 
-  openRowMenu(event: Event, menu: Menu, submission: SubmissionExtended): void {
+  openRowMenu(event: Event, menu: Menu, submission: SubmissionResponseDto): void {
     this.rowMenuItems = [
       {
         label: "עריכה",
@@ -212,7 +211,7 @@ export class SubmissionsListComponent implements OnInit {
     return STATUS_LABELS_HE[status] ?? status;
   }
 
-  confirmDelete(submission: SubmissionExtended): void {
+  confirmDelete(submission: SubmissionResponseDto): void {
     this.confirmationService.confirm({
       message: `האם למחוק את ההגשה עבור "${submission.assignmentName ?? ""}"?  לא ניתן לשחזר פעולה זו.`,
       header: "אישור מחיקה",
@@ -241,9 +240,5 @@ export class SubmissionsListComponent implements OnInit {
         });
       },
     });
-  }
-
-  private toExtended(s: SubmissionResponseDto): SubmissionExtended {
-    return { ...s };
   }
 }
