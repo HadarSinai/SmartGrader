@@ -1,0 +1,781 @@
+<section class="sg-page">
+  <div class="pt-3 pb-5">
+    <p-card styleClass="sg-card sg-form-card">
+      <ng-template pTemplate="header">
+        <div
+          class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
+        >
+          <div class="sg-title">
+            <div class="sg-h1">
+              {{ isEditMode ? "עריכת תרגיל" : "תרגיל חדש" }}
+            </div>
+            <div class="sg-h2">הגדרת תרגיל ומקרי בדיקה</div>
+          </div>
+        </div>
+      </ng-template>
+
+      <form class="px-4 pb-4" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="formgrid grid">
+          <div class="field col-12 md:col-6">
+            <label class="block font-bold mb-2" for="title">כותרת *</label>
+            <input
+              pInputText
+              class="w-full"
+              id="title"
+              formControlName="title"
+              placeholder="לדוגמה: מיון מערכים"
+            />
+            <small
+              class="p-error"
+              *ngIf="
+                form.get('title')?.invalid && form.get('title')?.touched
+              "
+            >
+              כותרת היא שדה חובה
+            </small>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <label class="block font-bold mb-2" for="bonusValue"
+              >בונוס</label
+            >
+            <div class="flex align-items-center gap-3 flex-wrap">
+              <div class="flex align-items-center gap-2">
+                <p-checkbox
+                  inputId="isBonus"
+                  formControlName="isBonus"
+                  [binary]="true"
+                ></p-checkbox>
+                <label for="isBonus" class="font-semibold"
+                  >תרגיל בונוס</label
+                >
+              </div>
+
+              <p-inputNumber
+                *ngIf="form.get('isBonus')?.value"
+                inputId="bonusValue"
+                styleClass="w-full"
+                formControlName="bonusValue"
+                [minFractionDigits]="0"
+                [maxFractionDigits]="2"
+              >
+              </p-inputNumber>
+            </div>
+          </div>
+
+          <div class="field col-12">
+            <label class="block font-bold mb-2" for="description"
+              >תיאור</label
+            >
+            <textarea
+              pInputTextarea
+              class="w-full"
+              id="description"
+              formControlName="description"
+              rows="4"
+              placeholder="הסבר קצר לסטודנטים"
+            ></textarea>
+          </div>
+
+          <div class="field col-12">
+            <label class="block font-bold mb-2">סוג ההגשה *</label>
+            <p-selectButton
+              [options]="gradingModeOptions"
+              formControlName="gradingMode"
+              optionLabel="label"
+              optionValue="value"
+            ></p-selectButton>
+            <small class="sg-hint block mt-2">{{
+              gradingModeDescription
+            }}</small>
+          </div>
+
+          <div class="field col-12 md:col-6" *ngIf="isMethodMode">
+            <label class="block font-bold mb-2" for="methodName"
+              >שם המתודה *</label
+            >
+            <input
+              pInputText
+              class="w-full"
+              id="methodName"
+              formControlName="methodName"
+              placeholder="לדוגמה: Sum"
+            />
+            <small
+              class="p-error"
+              *ngIf="
+                form.get('methodName')?.invalid &&
+                form.get('methodName')?.touched
+              "
+            >
+              שם המתודה הוא שדה חובה
+            </small>
+          </div>
+
+          <div class="field col-12">
+            <div
+              class="flex align-items-center justify-content-between gap-2 flex-wrap"
+            >
+              <div class="font-bold">
+                קבצים נדרשים (הגשה רב-קובצית){{
+                  isFullProgramMode ? " — אופציונלי" : " *"
+                }}
+              </div>
+              <p-button
+                label="הוספת קובץ"
+                icon="pi pi-plus"
+                [text]="true"
+                (onClick)="addExpectedFile()"
+                type="button"
+              ></p-button>
+            </div>
+            <p-message
+              *ngIf="isFullProgramMode"
+              severity="info"
+              styleClass="w-full mt-2"
+              text="אם מוגדרים קבצים, התלמיד יעלה קובץ לכל שורה והתוכנית תורץ עם ה-Main שהוא כתב — בלי עטיפה."
+            ></p-message>
+
+            <div
+              formArrayName="expectedFiles"
+              class="mt-3 flex flex-column gap-3"
+            >
+              <div
+                *ngFor="let file of expectedFiles.controls; let i = index"
+                [formGroupName]="i"
+                class="p-3 border-1 border-round-xl"
+                style="border-color: var(--app-border); background: rgba(239,232,221,0.40)"
+              >
+                <div
+                  class="flex align-items-center justify-content-between gap-2 flex-wrap mb-3"
+                >
+                  <div class="font-bold text-color">קובץ {{ i + 1 }}</div>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    (onClick)="removeExpectedFile(i)"
+                    type="button"
+                  ></p-button>
+                </div>
+
+                <div class="grid">
+                  <div class="col-12 md:col-4">
+                    <label class="block font-bold mb-2">שם קובץ</label>
+                    <input
+                      pInputText
+                      class="w-full"
+                      formControlName="fileName"
+                      placeholder="לדוגמה: Calculator.cs"
+                    />
+                  </div>
+                  <div class="col-12 md:col-4" *ngIf="!isFullProgramMode">
+                    <label class="block font-bold mb-2"
+                      >שם המתודה בקובץ</label
+                    >
+                    <input
+                      pInputText
+                      class="w-full"
+                      formControlName="methodName"
+                      placeholder="לדוגמה: Sum"
+                    />
+                  </div>
+                  <div class="col-12 md:col-4">
+                    <label class="block font-bold mb-2">תיאור</label>
+                    <input
+                      pInputText
+                      class="w-full"
+                      formControlName="description"
+                      placeholder="הסבר קצר לקובץ"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                *ngIf="expectedFiles.length === 0"
+                class="text-color-secondary p-3 border-1 border-round-xl"
+                style="border-color: var(--app-border);"
+              >
+                {{
+                  isFullProgramMode
+                    ? "ללא קבצים נדרשים — התלמיד יגיש קובץ יחיד עם Main."
+                    : "ללא קבצים נדרשים — הגשה תישאר בפורמט הישן (קובץ יחיד)."
+                }}
+              </div>
+            </div>
+          </div>
+
+          <!-- הפתרון לדוגמה — מקופל כברירת מחדל: הוא הבסיס לשתי התכונות אבל אינו
+               שדה שממלאים בכל תרגיל, ופתוח כברירת מחדל הוא היה דוחף את מקרי הבדיקה
+               אל מתחת לקיפול. -->
+          <div class="field col-12">
+            <!-- ⚠️ נכס נפרד ולא [collapsed]="!hasReferenceSolution": ביטוי שנגזר מהטופס
+                 נדרס בכל שינוי, וכשהמורה מוחקת את תוכן הפתרון הפאנל היה נסגר לה
+                 באמצע העבודה. הערך נקבע פעם אחת, אחרי הטעינה. -->
+            <p-panel
+              [toggleable]="true"
+              [collapsed]="referencePanelCollapsed"
+              styleClass="sg-ref-panel"
+            >
+              <ng-template pTemplate="header">
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-lock"></i>
+                  <span class="font-bold">פתרון לדוגמה (לא נראה לתלמידות)</span>
+                </div>
+              </ng-template>
+
+              <p class="sg-hint mt-0">
+                הפתרון התקין שלך לתרגיל. המערכת מריצה אותו מול מקרי הבדיקה כדי לוודא
+                שהפלטים הצפויים נכונים, ומשתמשת בו כדי לבדוק הצעות של ה-AI. הוא נשמר
+                בשרת ולעולם לא נשלח לתלמידה.
+              </p>
+
+              <p class="sg-hint mt-0">{{ referenceSolutionHint }}</p>
+
+              <div
+                class="flex align-items-center justify-content-end gap-2 flex-wrap"
+              >
+                <p-button
+                  label="הוספת קובץ"
+                  icon="pi pi-plus"
+                  [text]="true"
+                  (onClick)="addReferenceFile()"
+                  type="button"
+                ></p-button>
+              </div>
+
+              <div
+                formArrayName="referenceSolution"
+                class="mt-2 flex flex-column gap-3"
+              >
+                <div
+                  *ngFor="
+                    let file of referenceSolution.controls;
+                    let i = index
+                  "
+                  [formGroupName]="i"
+                  class="p-3 border-1 border-round-xl"
+                  style="border-color: var(--app-border);"
+                >
+                  <div
+                    class="flex align-items-center justify-content-between gap-2 flex-wrap mb-2"
+                  >
+                    <input
+                      pInputText
+                      class="sg-ref-filename"
+                      formControlName="fileName"
+                      placeholder="שם קובץ (לדוגמה: Solution.cs)"
+                    />
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      [text]="true"
+                      (onClick)="removeReferenceFile(i)"
+                      type="button"
+                    ></p-button>
+                  </div>
+
+                  <textarea
+                    pInputTextarea
+                    class="w-full sg-code-input"
+                    formControlName="content"
+                    rows="10"
+                    [placeholder]="referenceSolutionHint"
+                  ></textarea>
+                </div>
+
+                <div
+                  *ngIf="referenceSolution.length === 0"
+                  class="text-color-secondary p-3 border-1 border-round-xl"
+                  style="border-color: var(--app-border);"
+                >
+                  ללא פתרון לדוגמה — אפשר לשמור כך, אבל בלעדיו אי אפשר לבדוק את מקרי
+                  הבדיקה ואי אפשר לאמת הצעות של ה-AI.
+                </div>
+              </div>
+            </p-panel>
+          </div>
+
+          <div class="field col-12">
+            <div
+              class="flex align-items-center justify-content-between gap-2 flex-wrap"
+            >
+              <div class="font-bold">מקרי בדיקה</div>
+              <div class="flex align-items-center gap-1 flex-wrap">
+                <p-button
+                  label="הצע מקרי בדיקה"
+                  icon="pi pi-sparkles"
+                  [text]="true"
+                  [disabled]="!canSuggest"
+                  [pTooltip]="suggestTooltip"
+                  tooltipPosition="bottom"
+                  (onClick)="suggestTests()"
+                  type="button"
+                ></p-button>
+                <p-button
+                  label="בדיקת מקרי הבדיקה"
+                  icon="pi pi-play"
+                  [text]="true"
+                  [loading]="verifying"
+                  [disabled]="!canVerify"
+                  [pTooltip]="verifyTooltip"
+                  tooltipPosition="bottom"
+                  (onClick)="verifyTests()"
+                  type="button"
+                ></p-button>
+                <p-button
+                  label="הוספת מקרה"
+                  icon="pi pi-plus"
+                  [text]="true"
+                  (onClick)="addTestCase()"
+                  type="button"
+                ></p-button>
+              </div>
+            </div>
+            <p-message
+              severity="info"
+              styleClass="w-full mt-2"
+              [text]="testCaseInputHint"
+            ></p-message>
+
+            <!-- מקרה שאינו דוגמה מוסתר לחלוטין מהתלמידה (גם הקלט וגם הפלט הצפוי), לכן
+                 בלי אף דוגמה היא לא יכולה לדעת באיזה פורמט הקלט מגיע. אזהרה רכה בלבד —
+                 ההגשה עצמה לא נחסמת. -->
+            <p-message
+              *ngIf="tests.length > 0 && !hasSampleTest"
+              severity="warn"
+              styleClass="w-full mt-2"
+              text="אף מקרה בדיקה לא סומן כדוגמה — התלמידה לא תראה אף קלט לדוגמה ולא תדע באיזה פורמט להגיש. מומלץ לסמן לפחות אחד."
+            ></p-message>
+
+            <!-- גרעיניות הציון. הפרופורציה נלקחת על *כל* המקרים, ולכן כל מקרה שווה
+                 allocation/count. בשני מקרים כל אחד שווה חצי מנקודות הבדיקות — וזו בדיוק
+                 הקשיחות שחלוקת ליבה/קצה נועדה להסיר. אזהרה רכה, לא חסימה. -->
+            <p-message
+              *ngIf="showTestGranularityWarning"
+              severity="warn"
+              styleClass="w-full mt-2"
+              [text]="testGranularityWarning"
+            ></p-message>
+
+            <!-- ⚠️ הצורה הנפוצה בקורס הזה, לא היוצא מן הכלל: רוב התרגילים מקודדים את
+                 הנתונים בתוך הקוד, ואז אין מה לגוון — מקרה בדיקה אחד, ניקוד בינארי. -->
+            <p-message
+              *ngIf="tests.length === 1"
+              severity="info"
+              styleClass="w-full mt-2"
+              text="למקרה בדיקה יחיד הניקוד בינארי — או הכול או כלום. אפשר להעביר חלק מהנקודות לדרישות (למשל בדיקות 50 · דרישות 50), וכך תלמידה שהפלט שלה קצת שגוי אבל הקוד שלה עומד בדרישות עדיין מקבלת עליהן. אפשרות אחרת: לנסח את התרגיל כמתודה (״כתבי FindMax(int[,] matrix)״) — אז אפשר להזין כמה קלטים שונים ולהחזיר גרעיניות לציון."
+            ></p-message>
+
+            <!-- ⚠️ אזהרה רכה בלבד. הכפייה כאן הייתה שגויה: אימות דורש פתרון לדוגמה,
+                 והמורה חייבת להיות מסוגלת לשמור טיוטה בלי לכתוב אותו. -->
+            <p-message
+              *ngIf="showUnverifiedWarning"
+              severity="warn"
+              styleClass="w-full mt-2"
+              text="מקרי הבדיקה לא נבדקו מול הפתרון שלך. טעות בפלט צפוי אחד מפילה את כל הכיתה על קוד תקין — מומלץ ללחוץ על ״בדיקת מקרי הבדיקה״ לפני השמירה."
+            ></p-message>
+
+            <app-test-verification-panel
+              [result]="verifyResult"
+              (fixRequested)="applyFix($event)"
+            ></app-test-verification-panel>
+
+            <div formArrayName="tests" class="mt-3 flex flex-column gap-3">
+              <div
+                *ngFor="let test of tests.controls; let i = index"
+                [formGroupName]="i"
+                class="p-3 border-1 border-round-xl"
+                style="border-color: var(--app-border); background: rgba(239,232,221,0.40)"
+              >
+                <div
+                  class="flex align-items-center justify-content-between gap-2 flex-wrap mb-3"
+                >
+                  <div class="font-bold text-color">מקרה {{ i + 1 }}</div>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    (onClick)="removeTestCase(i)"
+                    type="button"
+                  ></p-button>
+                </div>
+
+                <div class="grid">
+                  <div class="col-12 md:col-6">
+                    <label class="block font-bold mb-2">קלט</label>
+                    <textarea
+                      pInputTextarea
+                      class="w-full"
+                      formControlName="input"
+                      rows="2"
+                      placeholder="הקלידי קלט"
+                    ></textarea>
+                  </div>
+                  <div class="col-12 md:col-6">
+                    <label class="block font-bold mb-2">פלט צפוי</label>
+                    <textarea
+                      pInputTextarea
+                      class="w-full"
+                      formControlName="expected"
+                      rows="2"
+                      placeholder="הקלידי פלט צפוי"
+                    ></textarea>
+                  </div>
+
+                  <!-- שורת הדגלים של המקרה. מוגדרת כרשימה של דגלים ולא כדגל בודד כדי
+                       שתוספת דגל נוסף בהמשך (למשל מקרה ליבה מול מקרה קצה, שמשפיע על
+                       הניקוד) תהיה הוספת בלוק כאן ולא שינוי פריסה. -->
+                  <div class="col-12">
+                    <div class="sg-test-flags">
+                      <div class="sg-test-flag">
+                        <p-checkbox
+                          [inputId]="'isSample' + i"
+                          formControlName="isSample"
+                          [binary]="true"
+                        ></p-checkbox>
+                        <label [for]="'isSample' + i">
+                          מקרה דוגמה — מוצג לתלמידה
+                        </label>
+                      </div>
+
+                      <div class="sg-test-flag">
+                        <p-checkbox
+                          [inputId]="'isCore' + i"
+                          formControlName="isCore"
+                          [binary]="true"
+                        ></p-checkbox>
+                        <label [for]="'isCore' + i">
+                          מקרה ליבה — בודק את עיקר התרגיל
+                        </label>
+                      </div>
+                    </div>
+                    <small class="sg-hint block mt-1">
+                      מקרה שאינו דוגמה לא נשלח לתלמידה כלל — לא לפני ההגשה ולא אחרי
+                      הבדיקה. היא רואה רק אם הוא עבר או נכשל.
+                    </small>
+                    <!-- ⚠️ ליבה הוא שער, לא משקל: מקרה ליבה שנכשל מאפס את *כל* נקודות
+                         הבדיקות. הניסוח כאן חייב לומר את זה, אחרת המורה מסמנת ליבה
+                         כברירת מחדל בלי לדעת שהיא בונה שער. -->
+                    <small class="sg-hint block mt-1">
+                      מקרה ליבה הוא שער: אם אחד מהם נכשל, נקודות הבדיקות מתאפסות לגמרי —
+                      פתרון שמקודד תשובה קבועה ומצליח במקרה במקרה קצה אחד לא יזכה בנקודות.
+                      מקרי קצה נספרים באופן יחסי. הורידי את הסימון ממקרים שהם באמת קצה
+                      (n=0, מספר שלילי) והשאירי אותו על עיקר התרגיל.
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ⚠️ "או", לא "וגם": תרגיל מחלקות ("כתבי מחלקה Student עם בנאי ושתי
+                   תכונות") אין לו קלט, אין לו פלט ואין מה להריץ בו — הוא מנוקד על
+                   המבנה בלבד וזו הגדרה לגיטימית. רק תרגיל שאין לו לא זה ולא זה נחסם. -->
+              <div
+                *ngIf="tests.length === 0"
+                class="p-3 border-1 border-round-xl"
+                [class.p-error]="!hasStructuralRules"
+                [class.text-color-secondary]="hasStructuralRules"
+                style="border-color: var(--app-border);"
+              >
+                <ng-container *ngIf="hasStructuralRules">
+                  ללא מקרי בדיקה — התרגיל ינוקד על המבנה בלבד, לפי הדרישות שהגדרת.
+                  זו ההגדרה הנכונה לתרגיל מחלקות, שאין לו קלט ואין לו פלט להריץ.
+                </ng-container>
+                <ng-container *ngIf="!hasStructuralRules">
+                  חייב להיות לפחות מקרה בדיקה אחד <b>או</b> לפחות דרישה מבנית אחת —
+                  אחרת אי אפשר לנקד את התרגיל וכל התלמידות יקבלו 0.
+                </ng-container>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ דרישות התרגיל ══════════════════════════════════════════════
+               ⚠️ פתוח ובאותו משקל ויזואלי כמו מקרי הבדיקה, בכוונה: בקורס הזה רוב
+               התרגילים מקודדים את הנתונים בקוד ולכן יש להם מקרה בדיקה יחיד — הדרישות
+               הן שנושאות את רוב הנקודות ברוב התרגילים, ולא תוספת "מתקדמת". -->
+          <div class="field col-12">
+            <div
+              class="flex align-items-center justify-content-between gap-2 flex-wrap"
+            >
+              <div class="font-bold">דרישות התרגיל</div>
+              <p-button
+                label="הוספת דרישה"
+                icon="pi pi-plus"
+                [text]="true"
+                (onClick)="addRule()"
+                type="button"
+              ></p-button>
+            </div>
+
+            <p-message
+              severity="info"
+              styleClass="w-full mt-2"
+              text="הדרישות נבדקות על הקוד עצמו (Roslyn), לא על ידי ה-AI — אותו קוד מקבל תמיד אותו ציון. כאן מנסחים את מה שכתוב במטלה: ״פתרי ברקורסיה״, ״השתמשי במשתנה בוליאני״, ״לכל היותר 3 if״."
+            ></p-message>
+
+            <div
+              formArrayName="structuralRules"
+              class="mt-3 flex flex-column gap-3"
+            >
+              <div
+                *ngFor="let rule of structuralRules.controls; let i = index"
+                [formGroupName]="i"
+                class="p-3 border-1 border-round-xl"
+                style="border-color: var(--app-border); background: rgba(239,232,221,0.40)"
+              >
+                <div
+                  class="flex align-items-center justify-content-between gap-2 flex-wrap mb-3"
+                >
+                  <div class="font-bold text-color">
+                    {{ ruleSummary(i) }}
+                  </div>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    [attr.aria-label]="'מחיקת דרישה ' + (i + 1)"
+                    (onClick)="removeRule(i)"
+                    type="button"
+                  ></p-button>
+                </div>
+
+                <div class="grid">
+                  <div class="col-12 md:col-4">
+                    <label class="block font-bold mb-2">סוג הדרישה</label>
+                    <p-dropdown
+                      [options]="ruleKindOptions"
+                      formControlName="kind"
+                      optionLabel="label"
+                      optionValue="value"
+                      styleClass="w-full"
+                      [autoDisplayFirst]="false"
+                    ></p-dropdown>
+                  </div>
+
+                  <div class="col-6 md:col-2" *ngIf="needsThreshold(i)">
+                    <label class="block font-bold mb-2">כמה</label>
+                    <p-inputNumber
+                      formControlName="threshold"
+                      [min]="1"
+                      [showButtons]="true"
+                      styleClass="w-full"
+                    ></p-inputNumber>
+                  </div>
+
+                  <div
+                    class="col-12"
+                    [ngClass]="
+                      needsThreshold(i) ? 'md:col-4' : 'md:col-6'
+                    "
+                  >
+                    <label class="block font-bold mb-2">מבנה בקוד</label>
+                    <p-dropdown
+                      [options]="constructOptions"
+                      [group]="true"
+                      [filter]="true"
+                      filterBy="label"
+                      filterPlaceholder="חיפוש מבנה"
+                      formControlName="construct"
+                      optionLabel="label"
+                      optionValue="value"
+                      styleClass="w-full"
+                      [autoDisplayFirst]="false"
+                    ></p-dropdown>
+                  </div>
+
+                  <div class="col-12 md:col-8">
+                    <label class="block font-bold mb-2">חומרה</label>
+                    <p-selectButton
+                      [options]="severityOptions"
+                      formControlName="severity"
+                      optionLabel="label"
+                      optionValue="value"
+                    ></p-selectButton>
+                  </div>
+
+                  <div class="col-6 md:col-4" *ngIf="isScored(i)">
+                    <label class="block font-bold mb-2">נקודות *</label>
+                    <p-inputNumber
+                      formControlName="points"
+                      [min]="0"
+                      [max]="maxScore"
+                      [showButtons]="true"
+                      styleClass="w-full"
+                    ></p-inputNumber>
+                    <small class="p-error block mt-1" *ngIf="isScored(i) && rulePoints(i) < 1">
+                      דרישה מנוקדת חייבת לשאת לפחות נקודה אחת.
+                    </small>
+                  </div>
+
+                  <div class="col-12">
+                    <small class="sg-hint block">{{
+                      severityHint(i)
+                    }}</small>
+                  </div>
+
+                  <!-- 🔴 הפרצה: while (false) { } מקיים את "חובה while" והפתרון האמיתי
+                       נכתב ב-for. Roslyn סופר את הצומת ואינו יודע אם הקוד רץ. -->
+                  <div class="col-12" *ngIf="missingCounterpart(i) as pair">
+                    <div class="sg-rule-warning">
+                      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+                      <span>
+                        דרישת "חובה" לבדה אינה סוגרת את הפרצה: אפשר לקיים אותה בשורה
+                        אחת שלא רצה כלל ולפתור את התרגיל בדרך אחרת (למשל
+                        {{ constructLabel(pair) }}). הבדיקה תחבירית ואינה יודעת אם
+                        הקוד הגיע לשם. מומלץ להוסיף גם דרישה שאוסרת את החלופה.
+                      </span>
+                      <p-button
+                        label="הוספת דרישה אוסרת"
+                        icon="pi pi-plus"
+                        [text]="true"
+                        (onClick)="addCounterpart(i)"
+                        type="button"
+                      ></p-button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                *ngIf="structuralRules.length === 0"
+                class="text-color-secondary p-3 border-1 border-round-xl"
+                style="border-color: var(--app-border);"
+              >
+                ללא דרישות — התרגיל ינוקד על מקרי הבדיקה בלבד, בדיוק כמו עד היום.
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ ניקוד ═══════════════════════════════════════════════════════
+               מוצג רק כשיש מה לחלק. בלי דרישות מנוקדות הבדיקות מקבלות את כל התקרה
+               אוטומטית, ואין למורה החלטה לקבל כאן. -->
+          <div class="field col-12" *ngIf="showRubric">
+            <div class="font-bold mb-2">ניקוד</div>
+
+            <div class="sg-rubric">
+              <!-- ⚠️ בלי מקרי בדיקה אין שדה לערוך: נקודות בדיקות בתרגיל שאין בו מה
+                   להריץ הן נקודות שאיש אינו יכול לזכות בהן, והשרת מתעלם מהן ממילא. -->
+              <div class="sg-rubric__row">
+                <label class="sg-rubric__label" for="testsAllocation"
+                  >בדיקות</label
+                >
+                <ng-container *ngIf="tests.length > 0; else noTestsPoints">
+                  <p-inputNumber
+                    inputId="testsAllocation"
+                    formControlName="testsAllocation"
+                    [min]="0"
+                    [max]="maxScore"
+                    [showButtons]="true"
+                    styleClass="sg-rubric__input"
+                  ></p-inputNumber>
+                  <span class="sg-hint" *ngIf="!testsAllocationManual"
+                    >מחושב אוטומטית</span
+                  >
+                  <p-button
+                    *ngIf="testsAllocationManual"
+                    label="חישוב אוטומטי"
+                    icon="pi pi-refresh"
+                    [text]="true"
+                    (onClick)="resetTestsAllocation()"
+                    type="button"
+                  ></p-button>
+                </ng-container>
+                <ng-template #noTestsPoints>
+                  <span class="sg-rubric__value">0</span>
+                  <span class="sg-hint">אין מקרי בדיקה בתרגיל</span>
+                </ng-template>
+              </div>
+
+              <div class="sg-rubric__row">
+                <span class="sg-rubric__label">דרישות</span>
+                <span class="sg-rubric__value">{{ rulesAllocation }}</span>
+                <span class="sg-hint">סכום הדרישות המנוקדות</span>
+              </div>
+
+              <div
+                class="sg-rubric__total"
+                [class.sg-rubric__total--bad]="!rubricValid"
+              >
+                <span>סה"כ</span>
+                <span>{{ rubricTotal }}</span>
+                <span>מתוך {{ maxScore }}</span>
+                <i
+                  class="pi"
+                  [class.pi-check]="rubricValid"
+                  [class.pi-times]="!rubricValid"
+                  aria-hidden="true"
+                ></i>
+              </div>
+            </div>
+
+            <!-- ⚠️ "מתוך התקרה" ולא "מתוך 100": בתרגיל בונוס התקרה גבוהה יותר,
+                 ותרגיל בונוס עם "מתוך 100" נראה שבור. -->
+            <small class="p-error block mt-2" *ngIf="!rubricValid">
+              הניקוד חייב להסתכם ב-{{ maxScore }} בדיוק: בדיקות + סכום הנקודות של
+              הדרישות המנוקדות.
+            </small>
+
+            <small class="sg-hint block mt-2" *ngIf="rubricSplitHint">{{
+              rubricSplitHint
+            }}</small>
+          </div>
+
+          <!-- ⚠️ מוצג רק במקרה "הכול שערים": אין טסטים ואין דרישות מנוקדות, רק חוסמות.
+               זו הצורה הטבעית של תרגיל מחלקות, ואין בה מה לחלק. -->
+          <div class="field col-12" *ngIf="isAllGates">
+            <p-message
+              severity="info"
+              styleClass="w-full"
+              text="בתרגיל הזה אין מקרי בדיקה ואין דרישות מנוקדות — רק דרישות חוסמות. תלמידה שעומדת בכולן מקבלת 100, ומי שלא עומדת באחת מהן אינה מקבלת ציון ומגישה שוב."
+            ></p-message>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <label class="block font-bold mb-2" for="retryThreshold"
+              >סף להגשה חוזרת</label
+            >
+            <p-inputNumber
+              inputId="retryThreshold"
+              formControlName="retryThreshold"
+              [min]="0"
+              [max]="100"
+              [showButtons]="true"
+              styleClass="w-full"
+            ></p-inputNumber>
+            <small class="sg-hint block mt-1">
+              מתחת לציון הזה ההגשה נשארת פתוחה והתלמידה רשאית לתקן ולהגיש שוב, בלי
+              הגבלת ניסיונות. מהציון הזה ומעלה ההגשה ננעלת, ורק את יכולה לפתוח אותה.
+            </small>
+          </div>
+        </div>
+
+        <div class="sg-form-actions">
+          <p-button
+            label="ביטול"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+            type="button"
+          ></p-button>
+          <p-button
+            [label]="isEditMode ? 'שמירה' : 'יצירה'"
+            type="submit"
+            styleClass="sg-btn-primary"
+            [loading]="loading"
+            [disabled]="form.invalid"
+          ></p-button>
+        </div>
+      </form>
+    </p-card>
+  </div>
+</section>
+
+<p-confirmDialog></p-confirmDialog>
+
+<app-test-suggestions-dialog
+  [(visible)]="suggestDialogVisible"
+  [loading]="suggesting"
+  [result]="suggestResult"
+  (addSelected)="addSuggestedTests($event)"
+></app-test-suggestions-dialog>
