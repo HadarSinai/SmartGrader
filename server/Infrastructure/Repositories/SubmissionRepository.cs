@@ -41,7 +41,11 @@ namespace SmartGrader.Infrastructure.Repositories
                 query = query.Where(s => s.Assignment.Lesson.TeacherId == teacherId.Value);
 
             return await query
+                // ⚠️ ThenInclude(Class) אינו לתצוגה: SubmissionLock נועל כל הגשה של תלמידה
+                // בכיתה מאורכבת, ובלי הטעינה IsArchived נקרא כ-null והרשימה תציג הגשות
+                // כפתוחות אחרי גלגול שנה. GetByIdAsync כבר טוען אותה מאותה סיבה.
                 .Include(s => s.Student)
+                    .ThenInclude(s => s!.Class)
                 .Include(s => s.Assignment)
                 .AsNoTracking()
                 .ToListAsync(ct);

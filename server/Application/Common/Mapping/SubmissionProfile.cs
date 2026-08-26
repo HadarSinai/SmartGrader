@@ -51,8 +51,13 @@ namespace SmartGrader.Application.Common.Mapping
                     opt => opt.MapFrom(s => s.Attempts.OrderByDescending(a => a.AttemptNumber)))
                 .ForMember(d => d.ScoreBreakdown,
                     opt => opt.MapFrom(s => s.ScoreBreakdown))
-                // הכלל מערב את סף הציון של התרגיל, ולכן הוא נגזר כאן ולא בקליינט. נעילת
-                // השיעור לתלמידה אינה ידועה בשלב המיפוי — ההגשה עצמה עדיין תסרב ב-MarkPendingAi.
+                // הכלל מערב את סף הציון של התרגיל, ולכן הוא נגזר כאן ולא בקליינט.
+                //
+                // ⚠️ זה רק חצי מהכלל. נעילת השיעור לתלמידה דורשת שאילתת LessonResult, ו-AutoMapper
+                // אינו אסינכרוני — לכן הערך שיוצא מכאן הוא "פתוח לפי הסף", לא "פתוח". את החצי
+                // השני מחיל SubmissionLock.ApplyAsync בסוף ה-handler, ובלעדיו ה-DTO משקר לתלמידה.
+                // LockReason נשאר null כאן במכוון — ר' SubmissionResponseDto.
+                .ForMember(d => d.LockReason, opt => opt.Ignore())
                 .ForMember(d => d.CanResubmit,
                     opt => opt.MapFrom(s => s.CanResubmit(
                         s.Assignment != null

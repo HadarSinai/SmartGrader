@@ -10,13 +10,16 @@ namespace SmartGrader.Application.UseCases.Submissions.GetSubmissions
         : IRequestHandler<GetSubmissionsQuery, IReadOnlyList<SubmissionResponseDto>>
     {
         private readonly ISubmissionRepository _repository;
+        private readonly ILessonResultRepository _lessonResults;
         private readonly IMapper _mapper;
 
         public GetSubmissionsHandler(
             ISubmissionRepository repository,
+            ILessonResultRepository lessonResults,
             IMapper mapper)
         {
             _repository = repository;
+            _lessonResults = lessonResults;
             _mapper = mapper;
         }
 
@@ -29,10 +32,17 @@ namespace SmartGrader.Application.UseCases.Submissions.GetSubmissions
                 request.TeacherId,
                 cancellationToken);
 
+            if (submissions.Count == 0)
+                return Array.Empty<SubmissionResponseDto>();
+
             // ⚠️ רשימת ההגשות נושאת TestResults מלאים בדיוק כמו הפריט הבודד — אותו סינון.
-            return TestVisibility.RedactTestResults(
+            var dtos = TestVisibility.RedactTestResults(
                 _mapper.Map<IReadOnlyList<SubmissionResponseDto>>(submissions),
                 request.IsStudentCaller);
+
+            // ...ובדיוק כמו הפריט הבודד, גם CanResubmit כאן מכיר רק את סף הציון. שאילתה אחת
+            // לכל הרשימה — כל ההגשות שייכות לתלמידה אחת.
+            return await SubmissionLock.ApplyAsync(_lessonResults, dtos, submissions, cancellationToken);
         }
     }
 }

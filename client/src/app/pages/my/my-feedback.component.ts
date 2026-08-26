@@ -151,12 +151,8 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                   <!-- הגשה שנבדקה ועדיין פתוחה — כלומר הציון מתחת לסף התרגיל, או שהמורה
                        אישרה ניסיון נוסף. ⚠️ הכלל מגיע מהשרת (canResubmit) ולא מחושב כאן:
                        הוא מערב את סף הציון של התרגיל ואת נעילת השיעור. -->
-                  <ng-container *ngIf="submission.canResubmit">
-                    <span>{{ improvableNote }}</span>
-                    <ng-container
-                      *ngTemplateOutlet="fixAndResubmit"
-                    ></ng-container>
-                  </ng-container>
+                  <span *ngIf="submission.canResubmit">{{ improvableNote }}</span>
+                  <ng-container *ngTemplateOutlet="fixAndResubmit"></ng-container>
                 </ng-container>
 
                 <!-- דרישה חוסמת שלא התקיימה. Judge0 לא רץ בכלל, ולכן אין כאן תוצאות
@@ -234,9 +230,12 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
       </div>
     </section>
 
-    <!-- הכשל הוא בקוד של התלמידה, ולכן יש לה מה לתקן. השרת כבר מתיר עריכה במצבים האלה. -->
+    <!-- הכשל הוא בקוד של התלמידה, ולכן יש לה מה לתקן.
+         ⚠️ ההחלטה מרוכזת כאן ולא בכל ענף סטטוס בנפרד: canResubmit מגיע מהשרת אחרי
+         שהנעילה כבר הוחלה עליו (SubmissionLock.ApplyAsync), וכל ענף שהציג את הכפתור
+         ללא תנאי הבטיח לתלמידה תיקון ששיעור שסוכם יסרב לו בלחיצה. -->
     <ng-template #fixAndResubmit>
-      <div class="mt-2">
+      <div class="mt-2" *ngIf="submission?.canResubmit">
         <p-button
           label="תיקון והגשה מחדש"
           icon="pi pi-pencil"
@@ -244,6 +243,9 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
           [routerLink]="['/my', 'submissions', submissionId, 'edit']"
         ></p-button>
       </div>
+
+      <!-- בלי המשפט הזה מסך של שיעור שסוכם היה שותק לגמרי: לא כפתור, לא הסבר. -->
+      <span *ngIf="submission?.lockReason">{{ submission!.lockReason }}</span>
     </ng-template>
   `,
   styles: [

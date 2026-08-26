@@ -30,8 +30,26 @@
         /// <summary>
         /// האם ההגשה פתוחה כרגע להגשה חוזרת. מחושב בשרת ולא בקליינט: הכלל מערב את סף הציון
         /// של התרגיל, נעילת השיעור לתלמידה ואישור חד-פעמי של המורה.
+        /// <para>
+        /// ⚠️ הנעילה אינה ידועה בשלב המיפוי (היא דורשת שאילתת <c>LessonResult</c>), ולכן
+        /// <c>SubmissionProfile</c> מחשב כאן רק את חלק הסף. את הנעילה מחיל
+        /// <see cref="Common.Authorization.SubmissionLock.ApplyAsync"/> אחרי המיפוי — כל
+        /// handler שמחזיר את ה-DTO הזה חייב לקרוא לו, אחרת השדה יאמר <c>true</c> בזמן
+        /// ש-<c>MarkPendingAi</c> יסרב.
+        /// </para>
         /// </summary>
         public bool CanResubmit { get; set; }
+
+        /// <summary>
+        /// ההסבר לנעילה סופית — שיעור שסוכם לתלמידה, או כיתה בארכיון. <c>null</c> כשההגשה
+        /// אינה נעולה.
+        /// <para>
+        /// ⚠️ נעילה גוברת גם על <see cref="CanResubmit"/> וגם על אישור המורה. כשיש כאן טקסט,
+        /// "אישור הגשה נוספת" לא יפתח דבר ואין להציע אותו — לכן זה שדה נפרד ולא רק
+        /// <c>CanResubmit = false</c>: חסימה בגלל סף הציון המורה <i>כן</i> יכולה לעקוף.
+        /// </para>
+        /// </summary>
+        public string? LockReason { get; set; }
 
         /// <summary>מספר הניסיון הנוכחי, החל מ-1. רק האחרון נחשב כציון.</summary>
         public int AttemptNumber { get; set; }

@@ -1,6 +1,7 @@
 using FluentAssertions;
 using NSubstitute;
 using SmartGrader.Application.Common.Authorization;
+using SmartGrader.Application.Dtos.Submissions;
 using SmartGrader.Domain.Abstractions;
 using SmartGrader.Domain.Entities;
 using SmartGrader.UnitTests.Helpers;
@@ -135,6 +136,106 @@ namespace SmartGrader.UnitTests.Authorization
         public void Message_ExplainsBothLockReasons()
         {
             SubmissionLock.Message.Should().Contain("סוכם").And.Contain("ארכיון");
+        }
+
+        // ── ApplyAsync: הנעילה מגיעה עד ה-DTO ──
+        //
+        // ⚠️ זה מה שהיה שבור: SubmissionProfile מחשב CanResubmit מסף הציון בלבד, ולכן ההגשה
+        // חזרה כ"פתוחה" לשיעור שכבר סוכם. מסך התלמידה הציג "תיקון והגשה מחדש", והלחיצה נפלה
+        // ב-MarkPendingAi על כלל שהמסך מעולם לא הזכיר.
+
+        private static SubmissionResponseDto OpenDto(int lessonId = LessonId) =>
+            new() { CanResubmit = true, LessonId = lessonId };
+
+        [Fact]
+        public async Task Apply_ClosesTheDto_AndExplainsWhy_WhenLocked()
+        {
+            var dto = OpenDto();
+
+            await SubmissionLock.ApplyAsync(
+                ResultsReturning(CompletedResult()),
+                dto,
+                SubmissionIn(TestEntities.Class(20)),
+                CancellationToken.None);
+
+            dto.CanResubmit.Should().BeFalse();
+            dto.LockReason.Should().Be(SubmissionLock.Message);
+        }
+
+        // ⚠️ LockReason נשאר null כשההגשה פתוחה — הקליינט מבדיל לפיו בין "חסום אבל המורה
+        // יכולה לאשר" (null) ל"נעול סופית" (טקסט), ולכן מילויו כאן היה מסתיר את כפתור האישור
+        [Fact]
+        public async Task Apply_LeavesAnOpenSubmissionAlone()
+        {
+            var dto = OpenDto();
+
+            await SubmissionLock.ApplyAsync(
+                ResultsReturning(null),
+                dto,
+                SubmissionIn(TestEntities.Class(20)),
+                CancellationToken.None);
+
+            dto.CanResubmit.Should().BeTrue();
+            dto.LockReason.Should().BeNull();
+        }
+
+        // ── ApplyAsync על רשימה ──
+
+        // כיתה בארכיון נועלת את כל השורות בלי לשאול על שיעורים בכלל
+        [Fact]
+        public async Task Apply_ToList_LocksEveryRow_WhenClassIsArchived()
+        {
+            var repo = ResultsReturning(null);
+            var dtos = new List<SubmissionResponseDto> { OpenDto(), OpenDto(lessonId: 99) };
+            var submission = SubmissionIn(TestEntities.Class(20, isArchived: true));
+
+            await SubmissionLock.ApplyAsync(
+                repo, dtos, new[] { submission, submission }, CancellationToken.None);
+
+            dtos.Should().OnlyContain(d => !d.CanResubmit && d.LockReason == SubmissionLock.Message);
+            await repo.DidNotReceive().GetByStudentIdAsync(
+                Arg.Any<int>(), Arg.Any<CancellationToken>());
+        }
+
+        // ⚠️ הנעילה היא לפי שיעור, לא לפי תלמידה: שיעור אחד שסוכם אינו נועל את השאר
+        [Fact]
+        public async Task Apply_ToList_LocksOnlyTheFinalizedLesson()
+        {
+            var repo = ResultsReturning(null);
+            repo.GetByStudentIdAsync(StudentId, Arg.Any<CancellationToken>())
+                .Returns(new[] { CompletedResult() });
+
+            var locked = OpenDto();
+            var open = OpenDto(lessonId: 99);
+            var submission = SubmissionIn(TestEntities.Class(20));
+
+            await SubmissionLock.ApplyAsync(
+                repo,
+                new List<SubmissionResponseDto> { locked, open },
+                new[] { submission, submission },
+                CancellationToken.None);
+
+            locked.CanResubmit.Should().BeFalse();
+            locked.LockReason.Should().Be(SubmissionLock.Message);
+            open.CanResubmit.Should().BeTrue();
+            open.LockReason.Should().BeNull();
+        }
+
+        // רשימה שכולה סגורה ממילא לא שולחת שאילתה — הנעילה לא תשנה בה דבר
+        [Fact]
+        public async Task Apply_ToList_SkipsTheQuery_WhenNothingIsOpen()
+        {
+            var repo = ResultsReturning(null);
+            var submission = SubmissionIn(TestEntities.Class(20));
+
+            await SubmissionLock.ApplyAsync(
+                repo,
+                new List<SubmissionResponseDto> { new() { CanResubmit = false, LessonId = LessonId } },
+                new[] { submission },
+                CancellationToken.None);
+
+            await repo.DidNotReceive().GetByStudentIdAsync(
+                Arg.Any<int>(), Arg.Any<CancellationToken>());
         }
     }
 }

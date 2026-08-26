@@ -55,14 +55,24 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
 
               <div class="flex align-items-center gap-2 flex-wrap">
                 <!-- ⚠️ כפתור ולא קוד משותף: קוד עובר בין תלמידות ומנטרל את הכלל בשקט.
-                     ההגנה כאן היא ההזדהות הקיימת, וכל אישור נרשם ביומן ביקורת. -->
+                     ההגנה כאן היא ההזדהות הקיימת, וכל אישור נרשם ביומן ביקורת.
+                     ⚠️ lockReason מוציא מכלל זה שיעור שסוכם או כיתה בארכיון: שם האישור
+                     לא יפתח דבר (נעילה גוברת גם עליו — ר' Submission.MarkPendingAi),
+                     והצעתו הייתה מבטיחה למורה פעולה שתחזור כשגיאה. -->
                 <p-button
-                  *ngIf="submission && !submission.canResubmit"
+                  *ngIf="submission && !submission.canResubmit && !submission.lockReason"
                   label="אישור הגשה נוספת"
                   icon="pi pi-unlock"
                   [outlined]="true"
                   (onClick)="openGrantExtraAttempt()"
                 ></p-button>
+
+                <span
+                  *ngIf="submission?.lockReason"
+                  class="sg-lock-note"
+                  ><i class="pi pi-lock" aria-hidden="true"></i>
+                  {{ submission!.lockReason }}</span
+                >
                 <p-button
                   *ngIf="canOverrideScore"
                   label="דריסת ציון"
@@ -70,7 +80,11 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                   [outlined]="true"
                   (onClick)="openOverrideScore()"
                 ></p-button>
+                <!-- ⚠️ "עריכה" מוליכה ל-UpdateSubmission, וזה זורק על הגשה נעולה
+                     (SubmissionLock.Message). המסך הסביר כבר למה — אין להציע פעולה
+                     שהמסך עצמו הרגע פסל. -->
                 <p-button
+                  *ngIf="!submission?.lockReason"
                   label="עריכה"
                   icon="pi pi-pencil"
                   styleClass="sg-btn-primary"
@@ -303,11 +317,14 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
                     [submission]="submission"
                   ></app-submission-feedback-panel>
 
+                  <!-- ⚠️ אותה נעילה כמו ב-"עריכה" שבכותרת: שיעור שסוכם דוחה גם הגשה
+                       חוזרת אחרי כשל קומפילציה. -->
                   <div
                     *ngIf="
-                      submission.status === 'CompilationFailed' ||
-                      submission.status === 'AiFailed' ||
-                      submission.status === 'JudgeUnavailable'
+                      !submission.lockReason &&
+                      (submission.status === 'CompilationFailed' ||
+                        submission.status === 'AiFailed' ||
+                        submission.status === 'JudgeUnavailable')
                     "
                   >
                     <p-button
@@ -445,6 +462,17 @@ import { SubmissionFeedbackPanelComponent } from "@components/submission-feedbac
   `,
   styles: [
     `
+      .sg-lock-note {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        background: var(--app-surface-2);
+        color: var(--app-text-muted);
+        font-size: var(--text-sm);
+      }
+
       .sg-attempts {
         list-style: none;
         margin: 0;
