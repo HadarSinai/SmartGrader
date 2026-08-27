@@ -1,3 +1,5 @@
+> ⛔ **SUPERSEDED — do not read as current.** Accessibility is a product contract, not a checklist. Every item here is now a numbered requirement with an acceptance criterion in [docs/design-system.md](../design-system.md), `D-1` … `D-15`. Deleted in phase A7.
+
 # SmartGrader — Accessibility Requirements Checklist (Hebrew/RTL, PrimeNG)
 
 Reusable accessibility checklist for every SmartGrader client screen. Each per-feature flow spec

@@ -1,3 +1,5 @@
+> ⛔ **SUPERSEDED — do not read as current.** The design contract now lives in [docs/design-system.md](../design-system.md): the three mother templates, the tokens, the shared patterns and the date format moved there, and the status table grew from **4 rows to 7** and is now machine-checked against the enum. The pixel values (`~38px`, `~400px`) were dropped on purpose — they were never enforceable. Deleted in phase A7.
+
 # SmartGrader — אפיון-על (Master Spec)
 
 > גרסה 1 · 14.07.2026 · מסמך-העל של צד הלקוח. מסמכי הפיצ'רים (jtbd/journey/flow) עונים על

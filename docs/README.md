@@ -17,7 +17,7 @@ wrong.
 | [permissions.md](permissions.md) | May this person do this, to whose data? | ✅ |
 | [grading-rules.md](grading-rules.md) | How is a grade produced, and how do I explain one to a parent? | ✅ |
 | [business-rules.md](business-rules.md) | What is the rule about resubmission / lockout / deletion, and where is it enforced? | ✅ |
-| `design-system.md` | What makes every screen one system — templates, states, statuses, accessibility? | phase A3 |
+| [design-system.md](design-system.md) | What makes every screen one system — templates, states, statuses, accessibility? | ✅ |
 | `areas/teacher-content.md` | Courses, lessons, assignments — authoring what students will do | phase A4 |
 | `areas/teacher-classroom.md` | Classes, students, submissions, lesson results, dashboard — running a class | phase A4 |
 | `areas/student.md` | The `/my` area — what a student sees of her own work | phase A4 |
@@ -40,6 +40,7 @@ Prose cannot be verified, so it is not asserted. Everything derived from code is
 | `PermissionsMatrixConformanceTests` | an endpoint or client route has no row, or its roles disagree |
 | `GradingRuleCoverageTests` | a `G-N` loses the test that proves it, or a test cites a rule that does not exist |
 | `BusinessRuleAnchorTests` | a `B-N` cites a file that no longer exists, or the ids stop being unique |
+| `DesignTokenTests` | the design system names a token `styles.css` does not define, or hardcoded colours increase |
 
 Tables inside an invisible `<!-- gen: … -->` marker are the machine-checked ones. Meaning and rationale
 columns are prose and are deliberately left alone — asserting them would make ordinary editing hostile,
@@ -51,7 +52,7 @@ and the markers would be deleted within a month.
   translation is a second string that will drift.
 - **As-built.** These documents describe what exists. Desired-but-unbuilt work lives in
   `.github/prompts/`.
-- **Stable rule ids** — `G-N` for grading, `B-N` for business. A rule is stated once and referenced
+- **Stable rule ids** — `G-N` grading, `B-N` business, `D-N` design and accessibility. A rule is stated once and referenced
   everywhere else by id.
 - Written with the [spec-requirement-writing](../.claude/skills/spec-requirement-writing/SKILL.md),
   [spec-domain-doc-conformance](../.claude/skills/spec-domain-doc-conformance/SKILL.md) and

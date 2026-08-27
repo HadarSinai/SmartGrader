@@ -17,39 +17,48 @@ namespace SmartGrader.UnitTests.Docs
     /// </summary>
     public class EnumTableConformanceTests
     {
-        private const string Document = "domain-model.md";
-
-        // כל בלוק gen:enum מתאר enum קיים, על שמותיו וערכיו
+        /// <summary>
+        /// כל מסמכי המפרט, ולא <c>domain-model.md</c> בלבד: טבלת הסטטוסים ב-
+        /// <c>design-system.md</c> נגזרת מאותו enum, ושתי הטבלאות חייבות להתיישן יחד.
+        /// </summary>
         [Fact]
-        public void EveryEnumBlock_MatchesTheDomainType()
+        public void EveryEnumBlock_InEveryDocument_MatchesTheDomainType()
         {
-            var blocks = GenBlock.FindAll(RepoRoot.ReadDoc(Document), "enum");
+            var found = 0;
 
-            blocks.Should().HaveCount(6,
-                $"{Document} מתעד את כל ששת ה-enums של הדומיין — בלוק חסר הוא טבלה בלי שומר");
-
-            foreach (var block in blocks)
+            foreach (var file in RepoRoot.SpecDocs())
             {
-                var type = typeof(Submission).Assembly.GetType(block.Argument);
+                var name = Path.GetFileName(file);
 
-                type.Should().NotBeNull(
-                    $"{Document} מפנה אל {block.Argument}, שאינו קיים בהרכבת הדומיין");
-                type!.IsEnum.Should().BeTrue($"{block.Argument} אינו enum");
+                foreach (var block in GenBlock.FindAll(File.ReadAllText(file), "enum"))
+                {
+                    found++;
 
-                var documented = block.Rows
-                    .Select(r => (Member: r[0], Value: int.Parse(r[1])))
-                    .OrderBy(x => x.Value)
-                    .ToList();
+                    var type = typeof(Submission).Assembly.GetType(block.Argument);
 
-                var actual = Enum.GetValues(type)
-                    .Cast<object>()
-                    .Select(v => (Member: v.ToString()!, Value: (int)v))
-                    .OrderBy(x => x.Value)
-                    .ToList();
+                    type.Should().NotBeNull(
+                        $"{name} מפנה אל {block.Argument}, שאינו קיים בהרכבת הדומיין");
+                    type!.IsEnum.Should().BeTrue($"{block.Argument} אינו enum");
 
-                documented.Should().Equal(actual,
-                    $"הטבלה של {type.Name} ב-{Document} התיישנה מול הקוד");
+                    var documented = block.Rows
+                        .Select(r => (Member: r[0], Value: int.Parse(r[1])))
+                        .OrderBy(x => x.Value)
+                        .ToList();
+
+                    var actual = Enum.GetValues(type)
+                        .Cast<object>()
+                        .Select(v => (Member: v.ToString()!, Value: (int)v))
+                        .OrderBy(x => x.Value)
+                        .ToList();
+
+                    documented.Should().Equal(actual,
+                        $"הטבלה של {type.Name} ב-{name} התיישנה מול הקוד");
+                }
             }
+
+            // ששת ה-enums ב-domain-model.md ועוד טבלת הסטטוסים ב-design-system.md
+            found.Should().BeGreaterThanOrEqualTo(7,
+                "בלוק gen:enum שנעלם הוא טבלה שנשארה בלי שומר");
         }
 
         // שני ה-enums שהמסמך הישן טעה בהם, מוצמדים במפורש

@@ -1,3 +1,5 @@
+> ⛔ **SUPERSEDED — do not read as current.** The design tokens defined here are now specified in [docs/design-system.md](../docs/design-system.md), and `DesignTokenTests` asserts that every one of them exists in `client/src/styles.css`. Deleted in phase A7.
+
 # SmartGrader Client – Modern UI Spec (Figma-inspired)
 
 ## Goal
