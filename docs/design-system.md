@@ -264,9 +264,22 @@ Plan B's B3; the requirement is what stops it recurring.
 | every token named here exists in `styles.css` | `DesignTokenTests` |
 | the status table matches the enum | `EnumTableConformanceTests` |
 | hardcoded colours in `client/src/app` do not increase | `DesignTokenTests`, ratcheted |
+| no component redefines a selector `styles.css` already defines | `DesignTokenTests` |
 
 **The colour ratchet is currently 0 files.** A6 converted all fourteen. From here on, one hardcoded
 colour anywhere under `client/src/app` is a failing test — and the failure names the file.
+
+**A colour is a colour in any notation.** The first version of that check looked for `#rrggbb` only,
+so eight files that wrote `rgba(...)` passed underneath it while the ratchet read zero. Among them was
+the dashboard hero overlay, which painted a light cream wash over the dark theme's ground — the exact
+defect the check exists to catch, sitting inside a green test. The pattern now covers `rgb`, `rgba`,
+`hsl` and `hsla` as well.
+
+**Shared rules have one home.** `.sg-auth-*` lived in three components, `.sg-account-*` in three,
+`.sg-header` and `.sg-shell` in two, `.sr-only` in three plus `styles.css`. Identical copies, so
+nothing looked wrong — until one copy is edited. All of them now live in `client/src/styles.css`, and
+a test fails if a component defines a base class selector the global sheet already defines. A
+component that needs to differ adds a **modifier** class; it does not redefine the base.
 
 **What the conversion actually found.** Every one of those hex values was a CSS fallback
 (`var(--token, #hex)`), not a raw colour — so at first glance the tokens were already in use. But

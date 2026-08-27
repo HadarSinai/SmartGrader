@@ -8,7 +8,7 @@
 .sg-summary-average {
   font-size: 1.05rem;
   padding: 0.75rem 1rem;
-  background: rgba(239, 232, 221, 0.55);
+  background: color-mix(in srgb, var(--app-surface-2) 55%, transparent);
   border-radius: var(--radius-md);
 }
 

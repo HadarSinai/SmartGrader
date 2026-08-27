@@ -258,7 +258,7 @@ import { TooltipModule } from "primeng/tooltip";
         align-items: center;
         gap: 0.5rem;
         padding: 0.75rem 1rem;
-        border-radius: var(--radius-md, 8px);
+        border-radius: var(--radius-md);
         background: var(--app-surface-2);
         color: var(--app-muted);
       }

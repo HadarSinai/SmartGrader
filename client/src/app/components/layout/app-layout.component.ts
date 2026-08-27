@@ -63,15 +63,7 @@ import { TopbarComponent } from "./topbar.component";
   `,
   styles: [
     `
-      .sg-shell {
-        background: var(--app-bg);
-      }
-
-      .sg-header {
-        border-bottom: 1px solid var(--app-border);
-        background: var(--app-surface);
-        padding-block: var(--space-2);
-      }
+      /* ‎.sg-shell‎ ו-‎.sg-header‎ משותפים לשני ה-layouts ויושבים ב-styles.css. */
 
       .sg-welcome {
         padding-block: var(--space-4) 0;
@@ -87,11 +79,13 @@ import { TopbarComponent } from "./topbar.component";
       .sg-welcome-card--hero {
         position: relative;
         overflow: hidden;
+        /* השכבה שמעל התמונה נגזרת מצבע המשטח ולא מקבועה בהיר: בערכת הכהה
+           הצבע הקשיח היה מדפיס פס קרם על גבי הרקע הכהה. */
         background:
           linear-gradient(
             to left,
-            rgba(250, 246, 240, 0.95) 35%,
-            rgba(250, 246, 240, 0.55)
+            color-mix(in srgb, var(--app-surface) 95%, transparent) 35%,
+            color-mix(in srgb, var(--app-surface) 55%, transparent)
           ),
           url("/assets/hero-classroom.jpg") center / cover no-repeat;
         min-height: 120px;

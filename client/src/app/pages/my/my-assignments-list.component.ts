@@ -147,23 +147,6 @@ interface MyAssignmentRow {
       </div>
     </section>
   `,
-  styles: [
-    `
-      .sg-score {
-        font-weight: 800;
-        color: var(--status-success-ink);
-      }
-
-      .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-        white-space: nowrap;
-      }
-    `,
-  ],
 })
 export class MyAssignmentsListComponent implements OnInit {
   lessonId!: number;

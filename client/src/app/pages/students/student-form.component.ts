@@ -231,48 +231,19 @@ import { AuthService } from "../../services/auth.service";
   `,
   styles: [
     `
-      .sg-account-section {
-        border-top: 1px solid var(--app-border);
-        margin-top: 1rem;
-        padding-top: 1rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .sg-account-title {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 700;
-        color: var(--app-text-strong);
-        margin-bottom: 0.75rem;
-      }
+      /* מקטע פרטי הכניסה המשותף לשלושת הטפסים יושב ב-styles.css.
+         כאן רק שני המצבים שקיימים בטופס התלמיד בלבד. */
 
       .sg-account-optional {
         font-weight: 400;
         color: var(--app-muted);
-        font-size: var(--text-sm, 0.875rem);
-      }
-
-      .sg-account-error {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--status-error);
-        background: color-mix(
-          in srgb,
-          var(--status-error) 10%,
-          transparent
-        );
-        border-radius: var(--radius-sm, 6px);
-        padding: 0.6rem 0.75rem;
-        margin-bottom: 1rem;
-        font-size: var(--text-sm, 0.875rem);
+        font-size: var(--text-sm);
       }
 
       .sg-account-exists {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: var(--space-2);
         color: var(--status-success);
       }
 

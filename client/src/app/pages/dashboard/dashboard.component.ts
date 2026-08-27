@@ -177,7 +177,7 @@ interface KPI {
         height: 60px;
         border-radius: var(--radius-lg);
         background: var(--app-surface);
-        border: 1px solid rgba(58, 48, 40, 0.12);
+        border: 1px solid var(--app-border);
       }
 
       .sg-kpi-icon {

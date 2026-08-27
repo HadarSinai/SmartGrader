@@ -33,7 +33,7 @@ import {
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
-        font-size: var(--text-sm, 0.875rem);
+        font-size: var(--text-sm);
         color: var(--app-muted);
       }
 

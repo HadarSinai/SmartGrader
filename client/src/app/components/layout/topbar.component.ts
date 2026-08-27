@@ -141,7 +141,7 @@ import { NotificationsBellComponent } from "./notifications-bell.component";
         align-items: center;
         gap: 0.5rem;
         text-decoration: none;
-        border-radius: var(--radius-md, 8px);
+        border-radius: var(--radius-md);
         padding: 0.25rem;
       }
 

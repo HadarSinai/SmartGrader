@@ -111,22 +111,14 @@ import { NotificationsBellComponent } from "./notifications-bell.component";
   `,
   styles: [
     `
-      .sg-shell {
-        background: var(--app-bg);
-      }
-
-      .sg-header {
-        border-bottom: 1px solid var(--app-border);
-        background: var(--app-surface);
-        padding-block: var(--space-2);
-      }
+      /* ‎.sg-shell‎ ו-‎.sg-header‎ משותפים לשני ה-layouts ויושבים ב-styles.css. */
 
       .sg-topbar-identity {
         display: flex;
         align-items: center;
         gap: 0.5rem;
         text-decoration: none;
-        border-radius: var(--radius-md, 8px);
+        border-radius: var(--radius-md);
         padding: 0.25rem;
       }
 

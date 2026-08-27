@@ -102,107 +102,20 @@ import { AuthService } from "../../services/auth.service";
   `,
   styles: [
     `
-      .sg-auth-page {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--app-bg);
-        padding: var(--space-4, 1rem);
-      }
-
-      .sg-auth-card {
-        width: 100%;
-        max-width: 400px;
-        background: var(--app-surface);
-        border: 1px solid var(--app-border);
-        border-radius: var(--radius-lg, 12px);
-        box-shadow: var(--shadow-md, 0 2px 8px rgba(0, 0, 0, 0.06));
-        padding: var(--space-6, 2rem);
-      }
-
-      .sg-auth-header {
-        text-align: center;
-        margin-bottom: var(--space-6);
-      }
-
-      .sg-auth-header h1 {
-        margin: 0 0 0.25rem;
-        font-size: var(--text-xl, 1.5rem);
-        color: var(--app-text-strong);
-      }
-
-      .sg-auth-header p {
-        margin: 0;
-        color: var(--app-muted);
-        font-size: var(--text-sm, 0.875rem);
-      }
-
-      .sg-auth-field {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-        margin-bottom: var(--space-4, 1rem);
-      }
-
-      .sg-auth-field label {
-        font-weight: 600;
-        color: var(--app-text-strong);
-        font-size: var(--text-sm, 0.875rem);
-      }
-
-      .sg-auth-field input {
-        width: 100%;
-      }
+      /* המשותף לשלושת מסכי ה-auth יושב ב-styles.css. כאן רק מה שייחודי לכניסה. */
 
       /* מיושר לקצה ההתחלה של השורה — בעברית זהו הצד הימני, ולכן start ולא right:
          ערך קשיח היה מציב את הקישור בצד הלא נכון אם הממשק יוצג אי-פעם ב-LTR. */
       .sg-auth-forgot {
         align-self: flex-start;
         margin-top: 0.15rem;
-        font-size: var(--text-sm, 0.875rem);
+        font-size: var(--text-sm);
         color: var(--accent);
         font-weight: 600;
         text-decoration: none;
       }
 
       .sg-auth-forgot:hover {
-        text-decoration: underline;
-      }
-
-      .sg-auth-error {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--status-error);
-        background: color-mix(
-          in srgb,
-          var(--status-error) 10%,
-          transparent
-        );
-        border-radius: var(--radius-sm, 6px);
-        padding: 0.6rem 0.75rem;
-        margin-bottom: var(--space-4, 1rem);
-        font-size: var(--text-sm, 0.875rem);
-      }
-
-      .sg-auth-footer {
-        margin-top: var(--space-6);
-        text-align: center;
-        font-size: var(--text-sm, 0.875rem);
-        color: var(--app-muted);
-        display: flex;
-        justify-content: center;
-        gap: 0.5rem;
-      }
-
-      .sg-auth-footer a {
-        color: var(--accent);
-        font-weight: 600;
-        text-decoration: none;
-      }
-
-      .sg-auth-footer a:hover {
         text-decoration: underline;
       }
 

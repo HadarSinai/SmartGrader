@@ -1092,6 +1092,18 @@ body.a11y-reduce-motion * {
   font-weight: 600;
 }
 
+/* מעטפת ופס עליון — שני ה-layouts (מורה/מנהל ותלמיד) החזיקו את שני הכללים האלה
+   בעותק זהה. סרגל הכלים שמתחת כבר גר כאן, והבסיס שלו גר במקום אחר — כך נשבר. */
+.sg-shell {
+  background: var(--app-bg);
+}
+
+.sg-header {
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-surface);
+  padding-block: var(--space-2);
+}
+
 /* Topbar (moved from component styles, so it’s consistent) */
 .sg-header .sg-topbar.p-toolbar {
   position: relative;
@@ -1160,7 +1172,7 @@ body.a11y-reduce-motion * {
   height: 32px;
   border-radius: 8px;
   object-fit: cover;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.08));
+  box-shadow: var(--shadow-sm);
 }
 
 .sg-brand-name {
@@ -1213,7 +1225,7 @@ body.a11y-reduce-motion * {
 
 .sg-footer-copyright {
   color: rgba(58, 48, 40, 0.6);
-  font-size: var(--text-sm, 0.875rem);
+  font-size: var(--text-sm);
 }
 
 .sg-footer-copyright a {
@@ -1232,6 +1244,147 @@ body.a11y-reduce-motion * {
     align-items: flex-start;
     gap: var(--space-3);
   }
+}
+
+/* -----------------------------
+   Auth screens — login / forgot-password / reset-password
+   שלושת המסכים הם אותו כרטיס ממורכז על רקע ריק. הכללים חיו בשלושה עותקים
+   זהים ב-styles של הרכיבים, ולכן כל תיקון היה צריך להיעשות שלוש פעמים —
+   או שנשכח באחד. מה שייחודי למסך אחד (‎.sg-auth-forgot‎ בכניסה,
+   ‎.sg-auth-confirm‎ בשחזור) נשאר אצלו.
+   ----------------------------- */
+.sg-auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-bg);
+  padding: var(--space-4);
+}
+
+.sg-auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-6);
+}
+
+.sg-auth-header {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.sg-auth-header h1 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xl);
+  color: var(--app-text-strong);
+}
+
+.sg-auth-header p {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: var(--text-sm);
+}
+
+.sg-auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: var(--space-4);
+}
+
+.sg-auth-field label {
+  font-weight: 600;
+  color: var(--app-text-strong);
+  font-size: var(--text-sm);
+}
+
+.sg-auth-field input {
+  width: 100%;
+}
+
+.sg-auth-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--status-error);
+  background: var(--status-error-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem var(--space-3);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.sg-auth-footer {
+  margin-top: var(--space-6);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--app-muted);
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.sg-auth-footer a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sg-auth-footer a:hover {
+  text-decoration: underline;
+}
+
+/* -----------------------------
+   Account / credentials sections — profile / student-form / teacher-form
+   שלושת הטפסים פותחים אותה מקטע-משנה של פרטי כניסה. אותו סיפור כמו למעלה.
+   ----------------------------- */
+.sg-account-section {
+  border-top: 1px solid var(--app-border);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.sg-account-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 700;
+  color: var(--app-text-strong);
+  margin-bottom: var(--space-3);
+}
+
+.sg-account-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--status-error);
+  background: var(--status-error-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem var(--space-3);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.sg-readonly-value {
+  padding: 0.6rem var(--space-3);
+  background: var(--app-bg);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-sm);
+  color: var(--app-text-strong);
+}
+
+/* ציון שהושג — הודגש בשלושת מסכי ‎/my‎ באותו כלל בדיוק, בשני שמות.
+   שני השמות נשמרו כי הם אומרים דברים שונים (ציון תרגיל מול ציון שיעור סופי),
+   אבל ההצגה היא אחת ומוגדרת פעם אחת. */
+.sg-score,
+.sg-final-score {
+  font-weight: 800;
+  color: var(--status-success-ink);
 }
 
 /* Screen reader only */

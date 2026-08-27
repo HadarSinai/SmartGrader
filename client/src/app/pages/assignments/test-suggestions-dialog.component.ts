@@ -177,7 +177,7 @@ import { TagModule } from "primeng/tag";
         padding: var(--space-3);
         border: 1px solid var(--app-border);
         border-radius: var(--radius-lg);
-        background: rgba(239, 232, 221, 0.4);
+        background: color-mix(in srgb, var(--app-surface-2) 40%, transparent);
       }
 
       .sg-suggest-row--flagged {
