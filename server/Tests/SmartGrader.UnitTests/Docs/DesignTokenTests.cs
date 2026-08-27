@@ -17,10 +17,10 @@ namespace SmartGrader.UnitTests.Docs
         private const string Document = "design-system.md";
 
         /// <summary>
-        /// הספירה של היום, לא יעד. A6 מוריד אותה לאפס; עד אז היא נעולה כדי שלא תגדל.
-        /// <b>להוריד את המספר הזה כשקובץ מנוקה — לעולם לא להעלות אותו.</b>
+        /// אפס. A6 המיר את כל 14 הקבצים לטוקנים; מכאן והלאה כל צבע קשיח חדש מפיל.
+        /// <b>לעולם לא להעלות את המספר הזה.</b>
         /// </summary>
-        private const int HardcodedColourFileRatchet = 14;
+        private const int HardcodedColourFileRatchet = 0;
 
         private static readonly Regex CssVariable =
             new(@"^\s*(?<token>--[a-z0-9-]+)\s*:", RegexOptions.Compiled | RegexOptions.Multiline);

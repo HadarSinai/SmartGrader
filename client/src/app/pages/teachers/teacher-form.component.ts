@@ -280,7 +280,7 @@ import { passwordStrengthValidator } from "../../core/validators/password.valida
   styles: [
     `
       .sg-account-section {
-        border-top: 1px solid var(--app-border, #e5e0d8);
+        border-top: 1px solid var(--app-border);
         margin-top: 1rem;
         padding-top: 1rem;
         margin-bottom: 0.5rem;
@@ -297,8 +297,8 @@ import { passwordStrengthValidator } from "../../core/validators/password.valida
 
       .sg-readonly-value {
         padding: 0.6rem 0.75rem;
-        background: var(--app-bg, #f4f1ec);
-        border: 1px solid var(--app-border, #e5e0d8);
+        background: var(--app-bg);
+        border: 1px solid var(--app-border);
         border-radius: var(--radius-sm, 6px);
         color: var(--app-text-strong);
       }
@@ -307,10 +307,10 @@ import { passwordStrengthValidator } from "../../core/validators/password.valida
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        color: var(--status-error, #b4552d);
+        color: var(--status-error);
         background: color-mix(
           in srgb,
-          var(--status-error, #b4552d) 10%,
+          var(--status-error) 10%,
           transparent
         );
         border-radius: var(--radius-sm, 6px);

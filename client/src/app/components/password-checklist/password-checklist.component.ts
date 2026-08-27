@@ -34,7 +34,7 @@ import {
         flex-direction: column;
         gap: 0.25rem;
         font-size: var(--text-sm, 0.875rem);
-        color: var(--app-text-muted, #75695e);
+        color: var(--app-muted);
       }
 
       .sg-password-checklist li {
@@ -48,7 +48,7 @@ import {
       }
 
       .sg-password-checklist li.sg-rule-met {
-        color: var(--status-success, #5f7d5a);
+        color: var(--status-success);
       }
 
       .sg-visually-hidden {

@@ -11,6 +11,8 @@
 :root {
   /* font */
   --app-font: "Rubik", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  /* קוד מוצג תמיד במונוספייס ו-LTR — ר' sg-code-box */
+  --app-font-mono: ui-monospace, "Cascadia Code", "Consolas", "Courier New", monospace;
 
   --app-bg: #f3efe7;
   --app-surface: #fbfaf8;
@@ -72,6 +74,7 @@
   --space-4: 1rem;
   --space-6: 1.5rem;
 
+  --text-xs: 0.75rem;
   --text-sm: 0.86rem;
   --text-base: 1rem;
   --text-lg: 1.15rem;

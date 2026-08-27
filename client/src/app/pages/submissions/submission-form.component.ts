@@ -171,9 +171,9 @@ interface AssignmentOption {
 
       .sg-readonly-field {
         padding: 0.65rem 0.85rem;
-        border-radius: var(--border-radius, 6px);
+        border-radius: var(--radius-sm);
         background: rgba(0, 0, 0, 0.04);
-        border: 1px solid var(--app-border, #d9d9d9);
+        border: 1px solid var(--app-border);
         font-weight: 600;
       }
     `,

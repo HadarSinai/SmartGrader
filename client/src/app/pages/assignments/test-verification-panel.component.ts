@@ -153,7 +153,7 @@ import { MessageModule } from "primeng/message";
       }
 
       .sg-verify-row--failed {
-        border-color: var(--red-300);
+        border-color: var(--status-error);
         background: rgba(254, 226, 226, 0.35);
       }
 

@@ -181,7 +181,7 @@ import { TagModule } from "primeng/tag";
       }
 
       .sg-suggest-row--flagged {
-        border-color: var(--yellow-500);
+        border-color: var(--status-warn);
       }
 
       .sg-suggest-body {
@@ -233,7 +233,7 @@ import { TagModule } from "primeng/tag";
       }
 
       .sg-suggest-note--warn {
-        color: var(--yellow-700);
+        color: var(--status-warn-ink);
       }
     `,
   ],

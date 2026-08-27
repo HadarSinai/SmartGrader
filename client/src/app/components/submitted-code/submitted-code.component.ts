@@ -51,7 +51,7 @@ import { SubmissionResponseDto } from "@models/submission.model";
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        font-family: var(--font-mono, monospace);
+        font-family: var(--app-font-mono);
         font-size: var(--text-sm);
         font-weight: 700;
         margin-bottom: var(--space-1);
@@ -61,7 +61,7 @@ import { SubmissionResponseDto } from "@models/submission.model";
 
       .sg-file__empty {
         font-size: var(--text-sm);
-        color: var(--app-text-muted);
+        color: var(--app-muted);
       }
     `,
   ],

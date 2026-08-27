@@ -156,11 +156,11 @@ import { NotificationsService } from "../../services/notifications.service";
 
       /* מה קרה לכיתה מול מה שבור בתרגיל — שני צבעים, לא אחד */
       .sg-notif-icon.sg-class {
-        color: var(--app-warning, #b45309);
+        color: var(--status-warn);
       }
 
       .sg-notif-icon.sg-exercise {
-        color: var(--app-danger, #b91c1c);
+        color: var(--status-error);
       }
 
       .sg-notif-text {

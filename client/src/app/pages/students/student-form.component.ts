@@ -232,7 +232,7 @@ import { AuthService } from "../../services/auth.service";
   styles: [
     `
       .sg-account-section {
-        border-top: 1px solid var(--app-border, #e5e0d8);
+        border-top: 1px solid var(--app-border);
         margin-top: 1rem;
         padding-top: 1rem;
         margin-bottom: 0.5rem;
@@ -249,7 +249,7 @@ import { AuthService } from "../../services/auth.service";
 
       .sg-account-optional {
         font-weight: 400;
-        color: var(--app-text-muted, #75695e);
+        color: var(--app-muted);
         font-size: var(--text-sm, 0.875rem);
       }
 
@@ -257,10 +257,10 @@ import { AuthService } from "../../services/auth.service";
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        color: var(--status-error, #b4552d);
+        color: var(--status-error);
         background: color-mix(
           in srgb,
-          var(--status-error, #b4552d) 10%,
+          var(--status-error) 10%,
           transparent
         );
         border-radius: var(--radius-sm, 6px);
@@ -273,7 +273,7 @@ import { AuthService } from "../../services/auth.service";
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        color: var(--status-success, #5f7d5a);
+        color: var(--status-success);
       }
 
       :host ::ng-deep .p-password {

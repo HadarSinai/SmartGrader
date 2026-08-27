@@ -435,7 +435,7 @@ import { SubmittedCodeComponent } from "@components/submitted-code/submitted-cod
         padding: var(--space-2) var(--space-3);
         border-radius: var(--radius-md);
         background: var(--app-surface-2);
-        color: var(--app-text-muted);
+        color: var(--app-muted);
         font-size: var(--text-sm);
       }
 

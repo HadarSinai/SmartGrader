@@ -114,8 +114,8 @@ import { AuthService } from "../../services/auth.service";
       .sg-auth-card {
         width: 100%;
         max-width: 400px;
-        background: var(--app-surface, #fbfaf8);
-        border: 1px solid var(--app-border, #e5e0d8);
+        background: var(--app-surface);
+        border: 1px solid var(--app-border);
         border-radius: var(--radius-lg, 12px);
         box-shadow: var(--shadow-md, 0 2px 8px rgba(0, 0, 0, 0.06));
         padding: var(--space-6, 2rem);
@@ -123,7 +123,7 @@ import { AuthService } from "../../services/auth.service";
 
       .sg-auth-header {
         text-align: center;
-        margin-bottom: var(--space-5, 1.5rem);
+        margin-bottom: var(--space-6);
       }
 
       .sg-auth-header h1 {
@@ -134,7 +134,7 @@ import { AuthService } from "../../services/auth.service";
 
       .sg-auth-header p {
         margin: 0;
-        color: var(--app-text-muted, #75695e);
+        color: var(--app-muted);
         font-size: var(--text-sm, 0.875rem);
       }
 
@@ -161,7 +161,7 @@ import { AuthService } from "../../services/auth.service";
         align-self: flex-start;
         margin-top: 0.15rem;
         font-size: var(--text-sm, 0.875rem);
-        color: var(--accent, #8a6a54);
+        color: var(--accent);
         font-weight: 600;
         text-decoration: none;
       }
@@ -174,10 +174,10 @@ import { AuthService } from "../../services/auth.service";
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        color: var(--status-error, #b4552d);
+        color: var(--status-error);
         background: color-mix(
           in srgb,
-          var(--status-error, #b4552d) 10%,
+          var(--status-error) 10%,
           transparent
         );
         border-radius: var(--radius-sm, 6px);
@@ -187,17 +187,17 @@ import { AuthService } from "../../services/auth.service";
       }
 
       .sg-auth-footer {
-        margin-top: var(--space-5, 1.5rem);
+        margin-top: var(--space-6);
         text-align: center;
         font-size: var(--text-sm, 0.875rem);
-        color: var(--app-text-muted, #75695e);
+        color: var(--app-muted);
         display: flex;
         justify-content: center;
         gap: 0.5rem;
       }
 
       .sg-auth-footer a {
-        color: var(--accent, #8a6a54);
+        color: var(--accent);
         font-weight: 600;
         text-decoration: none;
       }

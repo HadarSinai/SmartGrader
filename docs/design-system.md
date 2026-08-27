@@ -73,6 +73,7 @@ the system**; `DesignTokenTests` counts those.
 | `--app-muted` | captions and secondary text |
 | `--app-shadow` | the base shadow colour |
 | `--app-font` | the single family |
+| `--app-font-mono` | code, everywhere it is shown |
 | `--primary-color` | the primary action |
 | `--primary-color-text` | text on primary |
 | `--accent` | the warm accent |
@@ -101,6 +102,7 @@ the system**; `DesignTokenTests` counts those.
 | `--space-3` | |
 | `--space-4` | |
 | `--space-6` | |
+| `--text-xs` | the smallest caption |
 | `--text-sm` | caption |
 | `--text-base` | body |
 | `--text-lg` | subheading |
@@ -154,27 +156,28 @@ to go debug a problem she does not have.
 code ran fine, it simply did not do what the exercise asked. A different icon is what keeps
 "rejection" from reading as "crash" (`G-1`).
 
-### ⚠️ The mapping is duplicated five times, and one copy is wrong
+### The mapping has one home — `STATUS_PRESENTATION`
 
-The status-to-icon-and-severity mapping is written independently in five components:
-`my/my-assignments-list`, `my/my-grades`, `my/my-feedback`, `submissions/submission-detail` and
-`submissions/submissions-list`.
+The table above is realised once, in `client/src/app/models/submission.model.ts`. Every screen reads
+from it. **A sixth special case is not the way to fix a seventh disagreement.**
 
-Four agree. **`submissions/submissions-list` derives severity by substring matching** —
+**It was written five times, and two of the copies disagreed.** Kept here because the two failures are
+the argument for the single source:
+
+`submissions/submissions-list` derived severity by substring matching —
 
 ```ts
 if (s.includes("fail") || s.includes("error")) return "danger";
 ```
 
-— and `"judgeunavailable"` contains none of the tested substrings, so it falls through to the default
-`"info"`. **On the teacher's submissions list an outage renders as a neutral blue information chip,
-while every other screen in the app shows it amber.**
+— and `"judgeunavailable"` contains none of the tested substrings, so it fell through to the default
+`"info"`. On the teacher's submissions list an outage rendered as a neutral blue information chip while
+every other screen showed it amber. The comment directly above that code already warned about this
+exact failure for `RequirementsNotMet`, which had been special-cased; the second case was missed.
 
-The comment directly above that code already warns about exactly this failure mode for
-`RequirementsNotMet`, which was special-cased. The second case was missed.
-
-**The fix is one shared mapping, not a sixth special case** — the table above is what it should be
-generated from. Scheduled for A6.
+`my/my-grades` gave `CompilationFailed` the icon `pi-times-circle` where every other screen gave it
+`pi-exclamation-triangle`. Nobody would have found that by reading — only by opening two screens side
+by side and noticing.
 
 ---
 
@@ -262,9 +265,17 @@ Plan B's B3; the requirement is what stops it recurring.
 | the status table matches the enum | `EnumTableConformanceTests` |
 | hardcoded colours in `client/src/app` do not increase | `DesignTokenTests`, ratcheted |
 
-**The colour ratchet is currently 14 files.** That is not a target — it is today's count, held so it
-cannot grow while A6 brings it down to zero. Lowering the number is the deliverable; raising it is a
-failing test.
+**The colour ratchet is currently 0 files.** A6 converted all fourteen. From here on, one hardcoded
+colour anywhere under `client/src/app` is a failing test — and the failure names the file.
+
+**What the conversion actually found.** Every one of those hex values was a CSS fallback
+(`var(--token, #hex)`), not a raw colour — so at first glance the tokens were already in use. But
+**four of the token names did not exist**: `--app-text-muted`, `--app-surface-muted`, `--app-warning`
+and `--app-danger`. Those fallbacks were firing on every render, silently, and in **dark mode they
+painted light-theme colours** into an otherwise dark screen. Four more uses of `--app-text-muted` had
+no fallback at all, so the declaration was simply invalid and the colour was inherited.
+
+A fallback is not a safety net here. It is the thing that hides a typo in a token name for months.
 
 `D-1` … `D-15` are **not** machine-verified. Every one of them needs a person with a keyboard, a
 screen reader, or a contrast meter. Saying so plainly is better than a green test that checked

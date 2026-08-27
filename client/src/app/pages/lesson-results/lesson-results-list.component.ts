@@ -469,7 +469,7 @@ interface LessonResultRowVm {
     `
       .sg-override-mark {
         margin-inline-start: var(--space-1);
-        color: var(--app-text-muted, var(--text-color-secondary));
+        color: var(--app-muted);
         font-size: 0.85em;
       }
 

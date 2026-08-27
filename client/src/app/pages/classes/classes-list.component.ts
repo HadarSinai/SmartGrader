@@ -216,8 +216,8 @@ import { ClassesService } from "@services/classes.service";
       }
 
       :host ::ng-deep .sg-tag-archived {
-        background: var(--app-surface-muted, #eee9e1);
-        color: var(--app-text-muted, #75695e);
+        background: var(--app-surface-2);
+        color: var(--app-muted);
       }
     `,
   ],

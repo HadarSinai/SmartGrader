@@ -132,7 +132,7 @@ import { NotificationsBellComponent } from "./notifications-bell.component";
 
       .sg-topbar-identity:hover .sg-topbar-user,
       .sg-topbar-identity.active .sg-topbar-user {
-        color: var(--accent, #8a6a54);
+        color: var(--accent);
       }
 
       .sg-topbar-user {

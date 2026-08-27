@@ -252,8 +252,8 @@ const SOURCE_LABELS: Record<string, string> = {
         flex-direction: column;
         align-items: center;
         gap: 0.15rem;
-        font-size: var(--text-xs, 0.75rem);
-        color: var(--app-text-muted);
+        font-size: var(--text-xs);
+        color: var(--app-muted);
         white-space: nowrap;
       }
     `,

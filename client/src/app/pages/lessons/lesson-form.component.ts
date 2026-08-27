@@ -259,8 +259,8 @@ import { TooltipModule } from "primeng/tooltip";
         gap: 0.5rem;
         padding: 0.75rem 1rem;
         border-radius: var(--radius-md, 8px);
-        background: var(--app-surface-muted, #eee9e1);
-        color: var(--app-text-muted, #75695e);
+        background: var(--app-surface-2);
+        color: var(--app-muted);
       }
     `,
   ],
