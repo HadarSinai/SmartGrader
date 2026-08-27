@@ -152,12 +152,89 @@ named blocks appear.
 
 ## Screen Composition
 
-*Filled in phase A5.* Recorded now:
+### Feedback panel — the one that matters
 
-**The feedback panel is the suspected problem.** Score tiles, a requirements table, the model's prose
-in tabs, and test results are stacked on one screen — shown to a student who arrived to understand
-**one number**. A5 must decide what comes off it, and the answer is probably not "everything a teacher
-needs is also what a student needs".
+Four regions stacked: score tiles · requirements table · the model's prose in tabs · test results.
+
+**Decision: same panel, two default states.**
+
+| Viewer | Open on load | Collapsed |
+|---|---|---|
+| **Student** | the score and the prose | the requirements table, the test results |
+| **Teacher** | everything | nothing |
+
+| | |
+|---|---|
+| **Comes off** | **Nothing, for either viewer.** The difference is what is open, not what exists. |
+| **Eye hits first** | Student: the score and the sentence explaining it. Teacher: the same score, in a screen she reads top to bottom to diagnose. |
+| **Reading order** | Score → why → which requirement → which test. |
+| **Per row** | Requirements: what was required · was it met · where in the code. Test results: verdict · case name, and for a hidden case the verdict alone (`S-8`). |
+
+**Why collapsed and not removed.** When a blocking requirement fails there is **no grade at all**
+(`G-1`), and the requirements table is the only element on the screen that says which one. Remove it
+and a student is looking at «אין ציון» with no reason given — which is the precise failure this whole
+area exists to prevent. Collapsing costs her one click; removing costs her the explanation.
+
+**Why the same component and not two.** Two screens rendering the same graded submission is exactly the
+shape that produced the multi-file bug: both detail screens forgot `sourceFiles` and each showed an
+empty box, independently. One implementation, two default states.
+
+**The score tile must render `null` and `0` differently** (`SH-9`). «אין ציון» and «0» mean opposite
+things — one is a rejection, the other is a grade — and a tile that shows «0» for both tells a student
+she failed when she was never assessed.
+
+### Notifications bell
+
+| | |
+|---|---|
+| **Comes off** | Nothing. |
+| **Eye hits first** | The unread count. |
+| **Reading order** | Newest first, unread before read. |
+| **Per row** | One sentence, built server-side, plus its time. |
+
+**The sentence is built on the server on purpose**, so the bell and the daily digest email can never
+drift into sounding like two different alert systems. A hidden test case's input never appears in it —
+only its position (`SH-5`, `B-31`) — because the same sentence is emailed and email gets forwarded.
+
+**There is no "no news" state to design for a teacher's email**: a day with nothing to report sends
+nothing at all (`B-34`). The bell itself does need an empty state, and it must not read as an error.
+
+### Topbar and shells
+
+| | |
+|---|---|
+| **Comes off** | **The two fake items.** «תרגילים» and «הגשות» point at `redirectTo` stubs, so they land on the wrong screen and highlight the wrong item (`SH-11`). |
+| **Eye hits first** | The current location. |
+| **Reading order** | **By the two real hierarchies**: courses → lessons → assignments, and classes → students → submissions. |
+| **Per row** | — |
+
+The nav order should follow the hierarchies the area docs establish, which is why Plan B's B4 was
+blocked on this phase. It no longer is. **Topbar first, then the routes** — reversed, a wrong highlight
+becomes a hard 404.
+
+The hero strip renders on the dashboard only (`SH-12`); a decorative band on every screen is a band
+nobody sees and everybody scrolls past.
+
+### Form controls
+
+| | |
+|---|---|
+| **Hebrew date picker** | Three dropdowns, one value. Day and month reset when the year changes, because Adar I and Adar II exist only in a leap year and a stale month is a wrong date. |
+| **Password checklist** | Four rules, filling in live. It reflects the rules; it never restates them (`SH-14`). |
+| **Submitted code** | Every file with its name, LTR, monospace, one dark background — and always escaped (`SH-19`, `B-51`). |
+
+### Accessibility widget
+
+| | |
+|---|---|
+| **Comes off** | Nothing to remove — but it holds **no state of its own** (`SH-16`). |
+| **Eye hits first** | The controls, in the order people actually need them: contrast, then text size, then motion. |
+| **Reading order** | Theme → font scale → reduced motion → reset. |
+| **Per row** | — |
+
+**«איפוס» must clear everything, and nothing may come back on reload** (`SH-17`, `D-15`). That is
+written as a requirement because it was a real defect: the widget and the service each stored
+`reduceMotion` under a different key, so reset cleared one copy and the other returned on the next load.
 
 ## Explicitly Not Supported
 

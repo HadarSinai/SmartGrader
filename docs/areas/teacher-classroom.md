@@ -158,12 +158,96 @@ chip. Full analysis in [design-system.md](../design-system.md); the fix is one s
 
 ## Screen Composition
 
-*Filled in phase A5.* Recorded now:
+Four questions per screen: **what comes off · what does the eye hit first · what is the reading order ·
+how much per row.**
 
-**The dashboard** is the screen whose content decision is needed regardless — it was rebuilt in Plan
-B's B1 after every one of its four KPI cards was blank for weeks (a client URL that matched no server
-route, 404-ing inside a `forkJoin`). Its copy now says «הגשות שנבדקו לאחרונה» rather than «הגשות
-אחרונות», because the endpoint it really calls returns recently *graded* submissions, not recent ones.
+### Dashboard — `/`
+
+Four KPI cards and a table of the five most recently graded submissions.
+
+| | |
+|---|---|
+| **Comes off** | Nothing yet — but **every card must be re-justified**, because all four were blank for weeks and nobody noticed. A card nobody misses when it breaks is a card nobody reads. |
+| **Eye hits first** | **What needs attention today**, not a total. A count of everything ever graded is a vanity number; a count of what is waiting is a decision. |
+| **Reading order** | What is stuck → what just finished → act. |
+| **Per row** | Five recent submissions: student · assignment · score · when. Four columns. |
+
+**The copy was corrected in Plan B's B1** and the correction must survive A6: the endpoint returns
+recently **graded** submissions, not recent ones, so the card reads «הגשות שנבדקו לאחרונה». Leaving the
+old wording would have swapped a card that showed nothing for a card that quietly showed something else.
+
+### Students — `/students`
+
+Six columns: [☑] · שם התלמיד/ה · כיתה · פעילות · צפייה · פעולות.
+
+| | |
+|---|---|
+| **Comes off** | Nothing. |
+| **Eye hits first** | **«פעילות»** — the column that says who is working and who has stopped. |
+| **Reading order** | Name → class → activity → act. |
+| **Per row** | Six, of which three are controls. Three real columns. |
+
+«צפייה» stays a separate icon rather than folding into ⋯: looking at a student's submissions is the
+most frequent action on this screen, and burying the common action behind a menu to tidy the row makes
+the row tidier and the work slower.
+
+### Classes — `/classes`
+
+Five columns: שם · שנה · תלמידים · סטטוס · פעולות.
+
+| | |
+|---|---|
+| **Comes off** | Nothing. |
+| **Eye hits first** | **The status** — archived or active decides whether anything on that class can still change (`TK-4`). |
+| **Reading order** | Name → year → size → state → act. |
+| **Per row** | Five. Correct. |
+
+**«סיום שנה» is the most destructive action in the system** — one click archives every active class and
+locks every submission behind it, with no undo. It is admin-only since Plan B's B1 (`TK-3`). It must
+not sit beside «כיתה חדשה» as a peer; it is not a routine action and must not be positioned like one.
+
+### One student's submissions — `/students/:studentId/submissions`
+
+Six columns: תרגיל · נשלח · סטטוס · ציון · צפייה · פעולות.
+
+| | |
+|---|---|
+| **Comes off** | Nothing. |
+| **Eye hits first** | **Status.** This screen exists to find what went wrong. |
+| **Reading order** | Assignment → when → state → score → act. |
+| **Per row** | Six, of which two are controls. |
+
+⚠️ **The status chip on this screen is wrong today** for `JudgeUnavailable` — it renders as a neutral
+information chip because severity is derived by substring match, while every other screen shows it
+amber. A6 replaces all five copies of that mapping with the one table in
+[design-system.md](../design-system.md).
+
+### Lesson results — `/lessons/:lessonId/results`
+
+Four columns: שם התלמיד/ה · ציון סופי · סטטוס · פעולות. **The screen where a grade becomes final.**
+
+| | |
+|---|---|
+| **Comes off** | Nothing — it is already minimal. |
+| **Eye hits first** | **The computed score the system suggests**, because accepting it is the common case and departing from it is the exception that must be argued for (`G-22`). |
+| **Reading order** | Student → suggested score → state → finalise. |
+| **Per row** | Four. Correct. |
+
+**The finalisation dialog is where the real density is, and it must show three things at once:** the
+computed score, the ceiling it must fall under (`G-21`), and the reason field — which appears **only**
+when the entered score departs from the suggestion by more than 0.05. A reason field that is always
+visible teaches teachers to fill it in reflexively, and then it stops meaning anything.
+
+### Class form, student form — `/classes/new`, `/students/new`
+
+| | |
+|---|---|
+| **Comes off** | Nothing. Both are three or four fields. |
+| **Eye hits first** | The first field. |
+| **Reading order** | Top to bottom, actions at the end of the row. |
+| **Per row** | — |
+
+Both are among the **14 files carrying hardcoded colours** that A6 converts to tokens.
 
 ## Explicitly Not Supported
 

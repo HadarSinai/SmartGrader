@@ -56,6 +56,34 @@ namespace SmartGrader.UnitTests.Docs
                 "נתיב חסר הוא מסך שלא אופיין, ונתיב כפול הוא שני מסמכים שסותרים זה את זה");
         }
 
+        /// <summary>
+        /// סעיף Screen Composition נכתב ואינו נשאר placeholder.
+        /// <para>
+        /// ⚠️ לא נבדק <b>מה</b> כתוב שם — זו החלטה עיצובית, כלומר class B. נבדק רק שהסעיף
+        /// קיים ושהטקסט הזמני של שלב A4 לא שרד, כי placeholder שנשאר נקרא כמו החלטה.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void EveryAreaDocument_HasAWrittenScreenComposition()
+        {
+            var areasDir = Path.Combine(RepoRoot.DocsDir, "areas");
+            var files = Directory.GetFiles(areasDir, "*.md");
+
+            files.Should().HaveCount(6);
+
+            foreach (var file in files)
+            {
+                var text = File.ReadAllText(file);
+                var name = Path.GetFileName(file);
+
+                text.Should().Contain("## Screen Composition",
+                    $"{name} חייב להחזיק סעיף Screen Composition");
+
+                text.Should().NotContain("*Filled in phase A5.*",
+                    $"{name} עדיין מחזיק את הטקסט הזמני של A4 — placeholder שנשאר נקרא כמו החלטה");
+            }
+        }
+
         // ששת מסמכי האזורים קיימים ותובעים משהו
         [Fact]
         public void AllSixAreaDocuments_Exist_AndClaimRoutes()

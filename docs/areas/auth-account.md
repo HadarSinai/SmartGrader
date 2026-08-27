@@ -130,9 +130,74 @@ fields are absent and only the password section is shown.
 
 ## Screen Composition
 
-*Filled in phase A5.* Expected to be a consistency pass rather than a redesign — three narrow, single-
-purpose screens. Note that all three are among the **14 files carrying hardcoded colours** that A6 must
-convert to tokens.
+A consistency pass rather than a redesign — four narrow, single-purpose screens. **All four are among
+the 14 files carrying hardcoded colours** that A6 converts to tokens, which is itself the finding: the
+screens least like the rest of the app are the ones every user meets first.
+
+### Login — `/login`
+
+| | |
+|---|---|
+| **Comes off** | Nothing to remove. The screen is username, password, submit, and a link to recovery. |
+| **Eye hits first** | The username field, focused on load. |
+| **Reading order** | Username → password → submit → «שכחתי סיסמה». |
+| **Per row** | — |
+
+**The error message is the whole design problem here, and it must stay unhelpful.** One identical
+sentence for an unknown username, a wrong password and a locked account (`AU-1`, `B-11`). Every
+instinct on this screen is to be more specific, and every step in that direction turns the form into an
+oracle that confirms which accounts exist.
+
+It renders **inline above the button** in the error colour with an icon — not as a toast (`AU-5`). A
+toast is for something that happened elsewhere; this happened right here, to the thing she is looking
+at, and it disappears before she has finished reading it.
+
+The recovery link must be visible **before** she fails, not revealed after. Someone who knows she has
+forgotten her password should not have to prove it first.
+
+### Forgot password — `/forgot-password`
+
+| | |
+|---|---|
+| **Comes off** | Nothing. One field. |
+| **Eye hits first** | The address field. |
+| **Reading order** | Explanation → address → submit → confirmation. |
+| **Per row** | — |
+
+**The confirmation is the design.** It says the same thing for a registered address, an unknown
+address, a student's account and a dead mail server (`AU-7`, `B-16`). The wording therefore has to be
+honest about being conditional — «אם הכתובת רשומה במערכת, נשלח אליה קישור» — and must not promise
+delivery, because it does not know and must not find out.
+
+⚠️ **A student who reaches this screen will never receive anything** (`AU-13`). The screen cannot tell
+her so without leaking, so the copy has to say up front, before she types, that students recover
+through their teacher. That is the one place on the flow where the honest message is free.
+
+### Reset password — `/reset-password`
+
+| | |
+|---|---|
+| **Comes off** | Nothing. |
+| **Eye hits first** | **The password checklist**, which fills in live as she types. |
+| **Reading order** | New password → the four rules updating → confirm → submit. |
+| **Per row** | — |
+
+The checklist is the rules made visible rather than a second copy of them (`SH-14`). Same single
+generic message for a missing, expired, superseded or used link (`AU-9`).
+
+### Profile — `/profile` and `/my/profile`
+
+One component, two shells.
+
+| | |
+|---|---|
+| **Comes off** | For a student: the name and email fields, which she may not change (`AU-16`). |
+| **Eye hits first** | Teacher: her details. Student: the password section, because it is the only thing on the page she can act on. |
+| **Reading order** | Identity → account → change password. |
+| **Per row** | — |
+
+**A student's version is not the teacher's version with fields greyed out — it is a shorter page.** A
+disabled field still reads as something she is failing to be allowed to do.
 
 ## Explicitly Not Supported
 

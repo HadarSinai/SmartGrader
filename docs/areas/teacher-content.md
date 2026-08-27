@@ -142,17 +142,96 @@ field, then an error appears beneath it and not as a toast.
 
 ## Screen Composition
 
-*Filled in phase A5.* The suspected problem is recorded now:
+Four questions per screen: **what comes off · what does the eye hit first · what is the reading order ·
+how much per row.**
 
-**The assignment form is the most crowded screen in the system** — 1,929 lines before its template was
-extracted, with roughly ten regions in one form: general fields, grading mode, bonus, expected files,
-the reference solution, test cases with two flags each, structural requirements with kind / construct /
-threshold / severity / points, the rubric total, and the AI test-case generator.
+### Courses — `/courses`
 
-Its template and styles were moved out in Plan B's B6; **the class was deliberately not split**,
-because the structural-rules block shares `FormArray` state with the rubric getters and splitting it
-blind is the line-count theatre the plan warns against. A5 decides what comes off the screen before A6
-decides what moves in the code.
+Three columns: name · lessons count · actions.
+
+| | |
+|---|---|
+| **Comes off** | Nothing. Three columns cannot be reduced. |
+| **Eye hits first** | The course name. |
+| **Reading order** | Name → how much is in it → act. |
+| **Per row** | Minimal already. |
+
+The lesson count is the only signal that distinguishes a real course from one created and abandoned.
+
+### Lessons — `/lessons`
+
+Eight columns: [☑] · קורס · נושא · כיתות · תאריך · תרגילים · תוצאות · פעולות. **The widest screen in
+the system.**
+
+| | |
+|---|---|
+| **Comes off** | **«תוצאות» — it is a destination, not a signal.** It moves into the ⋯ actions menu, where every other navigation lives. 8 → 7. |
+| **Stays, against the obvious cut** | **«תרגילים».** It looks like navigation too, but the count is a real signal: a lesson with 0 assignments is one she has not finished preparing. That is a decision she makes from this screen. |
+| **Stays** | «כיתות». A lesson can be assigned to several classes, and which ones changes who it is for. |
+| **Eye hits first** | **The date.** A teacher opens this screen to find *this week's* lesson. |
+| **Reading order** | Course → subject → classes → date → readiness → act. Identity, audience, time, state. |
+| **Per row** | Seven, of which two are controls. Five real columns is right for the busiest list a teacher uses. |
+
+**The rule this applies:** a column earns its place by informing a decision, not by saving a click. A
+count informs; a link does not.
+
+### Assignments in a lesson — `/lessons/:lessonId/assignments`
+
+Five columns: [☑] · כותרת · מקרי בדיקה · הגשות · פעולות.
+
+| | |
+|---|---|
+| **Comes off** | Nothing. |
+| **Eye hits first** | The title. |
+| **Reading order** | Title → is it testable → is anyone using it → act. |
+| **Per row** | Five, of which two are controls. |
+
+Both counts are signals, not decoration: 0 test cases means the assignment cannot be graded (`G-15`),
+and 0 submissions means it is safe to edit.
+
+⚠️ **The submissions count was 0 for every row until Plan B's B1** — the repository omitted the
+`.Include`, so AutoMapper's convention counted an unloaded collection. A column that is always zero is
+worse than a missing column: it reads as information.
+
+### The assignment form — `/lessons/:lessonId/assignments/new`
+
+**The most crowded screen in the system.** Roughly ten regions in one form: general fields, grading
+mode, bonus, expected files, the reference solution, test cases with two flags each, structural
+requirements with five fields each, the rubric total, and the AI test-case generator.
+
+**Decision: two steps, not tabs, not one long form.**
+
+| Step | Holds | The question it answers |
+|---|---|---|
+| **1 — התרגיל** | title · description · grading mode · method name · expected files · bonus and its value | *what does the student have to do* |
+| **2 — הניקוד** | test cases · structural requirements · the rubric total · the reference solution | *how is it graded* |
+
+**Why steps rather than tabs**, which was the obvious alternative: the rubric must sum to the
+assignment's ceiling (`G-14`), and **the ceiling is decided in step 1** — it is `100`, or
+`100 + BonusValue` (`G-17`). With free tab navigation a teacher can allocate points before declaring
+the bonus, and be told her rubric does not sum to a number the screen never showed her. Steps make the
+dependency the order.
+
+**Why not one long form:** she cannot see the rubric total and the points she is entering at the same
+time. Today the sum is at the bottom and the requirement rows are above it, so she edits a number,
+scrolls, checks, scrolls back. That is the single worst interaction in the system.
+
+| | |
+|---|---|
+| **Comes off** | Nothing is deleted — every region is required to author a gradeable assignment. |
+| **Eye hits first** | Step 1: the title. Step 2: **the rubric total**, pinned and always visible. |
+| **Reading order** | Step 1 top-to-bottom, then step 2 top-to-bottom, with the total present throughout step 2. |
+| **Per row** | A test-case row is input · expected · sample · core — four fields, and all four are needed. A requirement row is kind · construct · threshold · severity · points — five, and the threshold is meaningless for two of the four kinds, so **it hides unless the kind is «at least» or «at most»**. |
+
+**The reference solution sits in step 2, not step 1**, even though it is not a scoring field. It exists
+to verify the test cases against, so it belongs beside them — and it is the one field on this form that
+must never reach a student (`TC-14`).
+
+⚠️ **A6 must not split the component blindly.** The structural-rules block shares `FormArray` state
+with the rubric getters, so extracting it is a real refactor rather than a move. Plan B's B6 extracted
+the template and styles and deliberately stopped there. The two steps above are a *specification*; how
+the class is divided to serve them is a separate decision, verified by behaviour — create, edit,
+validation and test authoring — not by line count.
 
 ## Explicitly Not Supported
 

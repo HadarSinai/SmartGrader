@@ -148,10 +148,86 @@ each under its file name.
 
 ## Screen Composition
 
-*Filled in phase A5.* The suspected problem is recorded now so the pass has a starting point:
-**"my grades" puts two tables on one screen** — lessons above, submissions below, the second filtered by
-the first. Whether that is one screen doing two jobs, or the right screen for "explain my grade", is
-the question A5 must answer.
+Four questions per screen: **what comes off · what does the eye hit first · what is the reading order ·
+how much per row.** Written before the code changes, so it is specification rather than taste.
+
+### My lessons — `/my/lessons`
+
+Six columns: מקצוע · נושא · תאריך · סטטוס · ציון סופי · actions.
+
+| | |
+|---|---|
+| **Comes off** | **Nothing.** Every column answers "which lesson do I open next": what it was about, when, whether it is graded, and what I got. |
+| **Eye hits first** | **The status column.** She is here to find what is not finished. |
+| **Reading order** | Subject → date → status → score. Identity, then time, then state, then result. |
+| **Per row** | Six columns is right for a decision this simple. |
+
+**One change, and it is a copy change:** «ציון סופי» reads as a number that exists. When the lesson has
+no result the cell shows «בתהליך», which is correct (`S-4`) but sits under a heading that promises a
+grade. The heading should not claim more than the column delivers.
+
+### The assignments in one lesson — `/my/lessons/:lessonId/assignments`
+
+Four columns: תרגיל · בונוס · סטטוס · ציון.
+
+| | |
+|---|---|
+| **Comes off** | Nothing. Four columns. |
+| **Eye hits first** | **Status.** Same reason as above — she is looking for what she has not done. |
+| **Reading order** | Assignment → bonus → status → score. |
+| **Per row** | Four is already minimal. |
+
+The «בונוס» column earns its place: a bonus assignment is optional, and skipping it is never a penalty
+(`G-19`). Without the marker she cannot tell an optional exercise from one she missed.
+
+### My feedback — `/my/submissions/:submissionId`
+
+The panel stacks four regions: score tiles · requirements table · the model's prose · test results.
+See [shared-ui.md](shared-ui.md) for the panel itself; the **student's default state** is decided here.
+
+| | |
+|---|---|
+| **Comes off** | Nothing is removed. The requirements table and the test results are **collapsed by default** and open on click. |
+| **Eye hits first** | **The score, and the one sentence explaining it.** She arrived to understand one number. |
+| **Reading order** | Score → what it means → *(optional)* which requirement failed → *(optional)* which test failed. |
+| **Per row** | Test results: pass/fail plus the case name. Hidden cases show only the verdict (`S-8`). |
+
+⚠️ **Collapsed, never removed.** When a blocking requirement fails there is **no grade at all**
+(`G-1`), and the requirements table is the only thing on the screen that says *why*. Hiding it would
+leave a student looking at "no grade" with no reason given — the exact failure this area exists to
+prevent.
+
+### My grades — `/my/grades`
+
+**The two tables are already linked.** The lessons table is `selectionMode="single"`; clicking a lesson
+filters the submissions table beneath it to that lesson, hides its now-redundant «שיעור» column, and
+shows a hint naming the selection. That is the behaviour the screen was asked for, and it is what it
+does.
+
+| | |
+|---|---|
+| **Comes off** | Nothing. **The problem is not density, it is discoverability.** |
+| **Eye hits first** | The lessons table — the final grades are what she came for. |
+| **Reading order** | Final grades → pick one → its submissions. |
+| **Per row** | Lessons 4 columns, submissions 5 when a lesson is selected and 6 when it is not. Correct. |
+
+**The change is to make the link visible rather than to restructure.** Today a student learns the
+tables are connected by happening to click a row. The selected row needs an unmistakable selected
+state, the lower table needs a heading that names the selected lesson rather than a hint below it, and
+there must be a visible way back to "all submissions". A relationship the user has to discover by
+accident is a relationship most users never find.
+
+### Submit code — `/my/…/submit`
+
+| | |
+|---|---|
+| **Comes off** | Nothing yet — this screen is not crowded. |
+| **Eye hits first** | The editor. |
+| **Reading order** | What the exercise asks → sample cases → the editor → submit. |
+| **Per row** | — |
+
+The sample test cases must sit **above** the editor, not below it. They are the specification she is
+coding against, and specification below the work is specification read second.
 
 ## Explicitly Not Supported
 

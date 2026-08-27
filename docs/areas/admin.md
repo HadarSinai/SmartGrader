@@ -99,8 +99,45 @@ when she filters by status «Error», then only error rows remain.
 
 ## Screen Composition
 
-*Filled in phase A5.* No problem is suspected upfront for either screen — both are narrow, and the log
-screen's density is appropriate to its job.
+### Teachers — `/teachers`
+
+Six columns: שם מלא · שם משתמש · מייל · שיעורים · מקצועות · פעולות.
+
+| | |
+|---|---|
+| **Comes off** | Nothing. |
+| **Eye hits first** | **The missing-email marker.** A teacher without an address cannot recover her password (`B-24`, `AD-4`) — this is the one thing on the screen that is a problem waiting to happen. |
+| **Reading order** | Name → username → email → what she owns → act. |
+| **Per row** | Six, one of which is controls. |
+
+**The two counts are not decoration — they are the delete guard, shown in advance.** A teacher with
+lessons or courses cannot be deleted (`B-47`), and seeing "2 lessons" before clicking delete is better
+than being refused after. A guard whose reason is visible before the action is a guard people stop
+fighting.
+
+### System log — `/logs`
+
+Six columns: זמן · סוג פעולה · סטטוס · מקור · הקשר · הודעה. Pages at 25 with 25/50/100.
+
+| | |
+|---|---|
+| **Comes off** | Nothing. This is a diagnostic table, and diagnostic tables are allowed to be dense — the reader is looking for one row and needs every axis to narrow by. |
+| **Eye hits first** | **The status column**, filtered to «Error». Nobody opens the log to read successes. |
+| **Reading order** | When → what → did it work → where from → about whom → what happened. |
+| **Per row** | Six, and the message is the wide one. It takes the remaining width; the other five stay narrow and fixed. |
+
+**«הקשר» earns its place, and the argument was settled with evidence.** It was added in Plan B's B3
+after a real case: `ForgotPasswordHandler` logs a failure with a user id and **never names the user in
+the message text**, because the caller always sees "if the address is registered, a link was sent"
+(`B-16`). Without that column an admin sees that a reset email failed and has no way to learn whose
+account is stuck. The ids are not redundant with the message — the column is their only carrier.
+
+Exposure was checked at all three layers before adding it: `[Authorize(Roles = "Admin")]` on the
+controller, `adminGuard` on the route, and the topbar item rendered only for an admin. What is shown is
+internal row ids, not names.
+
+**The default view should be errors, not everything.** The screen is opened because something is
+wrong; opening on the full firehose makes the reader do the filtering the screen could have done.
 
 ## Explicitly Not Supported
 
