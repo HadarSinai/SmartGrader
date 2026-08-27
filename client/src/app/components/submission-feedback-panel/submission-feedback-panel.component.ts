@@ -1,6 +1,7 @@
 import { CommonModule } from "@angular/common";
 import { Component, Input } from "@angular/core";
 
+import { PanelModule } from "primeng/panel";
 import { TableModule } from "primeng/table";
 import { TabViewModule } from "primeng/tabview";
 import { TagModule } from "primeng/tag";
@@ -21,14 +22,44 @@ import {
 @Component({
   selector: "app-submission-feedback-panel",
   standalone: true,
-  imports: [CommonModule, TableModule, TabViewModule, TagModule],
+  imports: [CommonModule, PanelModule, TableModule, TabViewModule, TagModule],
   templateUrl: "./submission-feedback-panel.component.html",
   styleUrls: ["./submission-feedback-panel.component.css"],
 })
 export class SubmissionFeedbackPanelComponent {
   @Input() submission: SubmissionResponseDto | null = null;
 
+  /**
+   * מי מסתכל. אותו רכיב, אותו תוכן — שני מצבי פתיחה.
+   * <p>
+   * התלמידה הגיעה להבין מספר אחד, ולכן נפתחים לה הציון וההסבר בלבד; הדרישות
+   * והבדיקות מקופלות ונפתחות בקליק. המורה קוראת את המסך מלמעלה למטה כדי לאבחן,
+   * ולכן אצלה הכול פתוח.
+   * </p>
+   * <p>
+   * ⚠️ <b>מקופל, לעולם לא מוסר.</b> כשדרישה חוסמת נכשלת אין ציון כלל (‎G-1‎),
+   * וטבלת הדרישות היא הדבר היחיד במסך שאומר איזו. הסרתה הייתה משאירה את התלמידה
+   * מול «אין ציון» בלי סיבה — בדיוק הכישלון שהמסך הזה קיים כדי למנוע.
+   * </p>
+   */
+  @Input() viewer: "student" | "teacher" = "teacher";
+
   expandedRows: Record<number, boolean> = {};
+
+  /**
+   * ⚠️ החריג לברירת המחדל של התלמידה: כשדרישה חוסמת נכשלה, הטבלה אינה פרט —
+   * היא <i>ההסבר לציון</i>, ולכן נפתחת. לקפל אותה כאן היה מציג «אין ציון» בלי טעם.
+   */
+  get requirementsOpen(): boolean {
+    if (this.viewer === "teacher") return true;
+    return (this.submission?.structuralResults ?? []).some((r) =>
+      this.isBlockingFailure(r),
+    );
+  }
+
+  get testResultsOpen(): boolean {
+    return this.viewer === "teacher";
+  }
 
   severityLabel(severity: RuleSeverity): string {
     return RULE_SEVERITY_LABELS_HE[severity] ?? severity;

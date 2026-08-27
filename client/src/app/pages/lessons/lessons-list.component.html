@@ -121,7 +121,6 @@
                 תאריך <p-sortIcon field="lessonDate"></p-sortIcon>
               </th>
               <th class="text-center">תרגילים</th>
-              <th class="text-center" style="width: 5rem">תוצאות</th>
               <th class="text-center" style="width: 5rem">פעולות</th>
             </tr>
           </ng-template>
@@ -159,16 +158,6 @@
               </td>
               <td class="text-center">
                 <p-button
-                  icon="pi pi-chart-bar"
-                  [text]="true"
-                  pTooltip="תוצאות השיעור"
-                  tooltipPosition="top"
-                  [attr.aria-label]="'תוצאות שיעור: ' + lesson.courseName"
-                  (onClick)="viewResults(lesson.id)"
-                ></p-button>
-              </td>
-              <td class="text-center">
-                <p-button
                   icon="pi pi-ellipsis-h"
                   [text]="true"
                   [attr.aria-label]="
@@ -183,7 +172,7 @@
           <ng-template pTemplate="emptymessage">
             <tr>
               <td
-                colspan="8"
+                colspan="7"
                 class="text-center px-3 py-6 text-color-secondary"
               >
                 <div
@@ -246,12 +235,6 @@
                     icon="pi pi-file"
                     [outlined]="true"
                     (onClick)="viewAssignments(item.id)"
-                  ></p-button>
-                  <p-button
-                    label="תוצאות"
-                    icon="pi pi-chart-bar"
-                    [outlined]="true"
-                    (onClick)="viewResults(item.id)"
                   ></p-button>
                   <p-button
                     icon="pi pi-ellipsis-h"

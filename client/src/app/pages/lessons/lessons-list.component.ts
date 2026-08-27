@@ -134,7 +134,16 @@ export class LessonsListComponent implements OnInit {
   }
 
   openRowMenu(event: Event, menu: Menu, lesson: LessonResponseDto): void {
+    // ⚠️ «תוצאות» חי כאן ולא בעמודה. עמודה מרוויחה את מקומה כשהיא מוסרת מידע
+    // שמשנה החלטה, לא כשהיא חוסכת קליק — ותוצאות השיעור הן יעד, לא סימן.
+    // «תרגילים» נשאר עמודה בדיוק מהסיבה ההפוכה: אפס תרגילים אומר שהשיעור
+    // עדיין לא מוכן, וזו החלטה שנעשית מהמסך הזה.
     this.rowMenuItems = [
+      {
+        label: "תוצאות השיעור",
+        icon: "pi pi-chart-bar",
+        command: () => this.viewResults(lesson.id),
+      },
       {
         label: "עריכה",
         icon: "pi pi-pencil",

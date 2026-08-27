@@ -110,7 +110,8 @@
             <!-- נבדק -->
             <ng-container *ngSwitchCase="'Done'">
               <app-submission-feedback-panel
-                [submission]="submission"
+="submission"
+                viewer="student"
               ></app-submission-feedback-panel>
 
               <!-- הגשה שנבדקה ועדיין פתוחה — כלומר הציון מתחת לסף התרגיל, או שהמורה
@@ -125,7 +126,8 @@
             <ng-container *ngSwitchCase="'RequirementsNotMet'">
               <span>{{ requirementsNotMetNote }}</span>
               <app-submission-feedback-panel
-                [submission]="submission"
+="submission"
+                viewer="student"
               ></app-submission-feedback-panel>
               <ng-container *ngTemplateOutlet="fixAndResubmit"></ng-container>
             </ng-container>

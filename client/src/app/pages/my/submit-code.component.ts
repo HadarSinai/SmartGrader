@@ -130,9 +130,13 @@ export class SubmitCodeComponent implements OnInit {
     return this.gradingMode === "FullProgram" ? "קלט (stdin)" : "קלט";
   }
 
-  get exampleTest(): TestCaseDto | null {
-    const tests = this.assignment?.tests;
-    return tests && tests.length > 0 ? tests[0] : null;
+  /**
+   * כל מקרי הדוגמה, לא הראשון בלבד. השרת כבר סינן החוצה כל מקרה שאינו דוגמה
+   * (<c>TestVisibility</c>), ולכן מה שהגיע לכאן מותר להצגה — והצגת אחד מתוך
+   * שלושה הסתירה מהתלמידה שני שלישים מהמפרט שהיא אמורה לכתוב מולו.
+   */
+  get sampleTests(): TestCaseDto[] {
+    return this.assignment?.tests ?? [];
   }
 
   get isMultiFile(): boolean {

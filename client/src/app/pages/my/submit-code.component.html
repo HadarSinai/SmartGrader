@@ -24,6 +24,49 @@
         </div>
       </ng-template>
 
+      <!--
+        סדר הקריאה: מה התרגיל מבקש ← מקרי הדוגמה ← העורך ← הגשה.
+        המפרט קודם לעבודה. קודם ההוראות לא הופיעו כאן כלל, והדוגמאות ישבו
+        מתחת לעורך ומקופלות — כלומר נקראו אחרי שהקוד כבר נכתב, אם בכלל.
+      -->
+      <div class="sg-brief" *ngIf="assignment?.description">
+        <h2 class="sg-brief-title">
+          <i class="pi pi-align-right" aria-hidden="true"></i>
+          מה צריך לכתוב
+        </h2>
+        <p class="sg-brief-text">{{ assignment?.description }}</p>
+      </div>
+
+      <p-panel
+        *ngIf="sampleTests.length"
+        [header]="
+          sampleTests.length === 1
+            ? 'דוגמה: קלט והפלט הצפוי'
+            : 'דוגמאות: קלט והפלט הצפוי'
+        "
+        [toggleable]="true"
+        styleClass="mb-3"
+      >
+        <div class="sg-example-list">
+          <div
+            class="sg-example-test"
+            *ngFor="let test of sampleTests; let i = index"
+          >
+            <div class="sg-example-index" *ngIf="sampleTests.length > 1">
+              דוגמה {{ i + 1 }}
+            </div>
+            <div>
+              <strong>{{ inputLabel }}:</strong>
+              <code dir="ltr">{{ test.input }}</code>
+            </div>
+            <div>
+              <strong>פלט צפוי:</strong>
+              <code dir="ltr">{{ test.expected }}</code>
+            </div>
+          </div>
+        </div>
+      </p-panel>
+
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-fluid">
         <div class="field" *ngIf="!isMultiFile">
           <label class="sg-label block" for="sourceCode">הקוד שלך *</label>
@@ -60,25 +103,6 @@
           <small class="sg-hint block mt-1">
             לאחר ההגשה הקוד ייבדק אוטומטית ותתקבל התראה עם הפידבק.
           </small>
-
-          <p-panel
-            *ngIf="exampleTest"
-            header="דוגמה לפורמט טסט"
-            [toggleable]="true"
-            [collapsed]="true"
-            styleClass="mt-2"
-          >
-            <div class="sg-example-test">
-              <div>
-                <strong>{{ inputLabel }}:</strong>
-                <code dir="ltr">{{ exampleTest.input }}</code>
-              </div>
-              <div>
-                <strong>פלט צפוי:</strong>
-                <code dir="ltr">{{ exampleTest.expected }}</code>
-              </div>
-            </div>
-          </p-panel>
         </div>
 
         <div class="field" *ngIf="isMultiFile">

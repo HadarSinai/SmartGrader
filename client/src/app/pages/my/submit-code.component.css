@@ -1,9 +1,40 @@
 .sg-code-input {
-  font-family:
-    "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+  /* הטוקן המשותף, לא רשימת גופנים משלנו — הוא הוגדר בדיוק בשביל קוד */
+  font-family: var(--app-font-mono);
   font-size: 0.9rem;
   direction: ltr;
   text-align: left;
+}
+
+/* מה התרגיל מבקש — ראשון על המסך, לפני העורך */
+.sg-brief {
+  background: var(--app-surface-2);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.sg-brief-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--app-text-strong);
+}
+
+.sg-brief-text {
+  margin: 0;
+  white-space: pre-wrap;
+  color: var(--app-text);
+}
+
+.sg-example-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .sg-example-test {
@@ -11,6 +42,16 @@
   flex-direction: column;
   gap: var(--space-2);
   font-size: var(--text-sm);
+}
+
+.sg-example-test + .sg-example-test {
+  border-top: 1px solid var(--app-border);
+  padding-top: var(--space-3);
+}
+
+.sg-example-index {
+  font-weight: 700;
+  color: var(--app-muted);
 }
 
 .sg-example-test code {

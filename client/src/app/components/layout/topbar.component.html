@@ -13,6 +13,13 @@
 
   <div class="p-toolbar-group-center">
     @if (auth.isTeacher() || auth.isAdmin()) {
+      <!--
+        הסדר הוא שתי ההיררכיות של המערכת, ולא רשימה של מסכים:
+        מקצועות ← שיעורים ← תרגילים, וכיתות ← תלמידות ← הגשות.
+        התרגילים וההגשות אינם פריטים בסרגל כי אין להם מסך משלהם — הם תמיד
+        בתוך שיעור או בתוך תלמידה. הפריטים שהיו כאן הצביעו על redirectTo,
+        כלומר נחתו על מסך אחר והדליקו פריט אחר (SH-11).
+      -->
       <nav class="sg-nav" aria-label="ניווט ראשי">
         <a
           routerLink="/"
@@ -22,18 +29,6 @@
           <i class="pi pi-home" aria-hidden="true"></i>
           לוח בקרה
         </a>
-        <a routerLink="/students" routerLinkActive="active">
-          <i class="pi pi-users" aria-hidden="true"></i>
-          סטודנטים
-        </a>
-        <a routerLink="/classes" routerLinkActive="active">
-          <i class="pi pi-building" aria-hidden="true"></i>
-          כיתות
-        </a>
-        <a routerLink="/assignments" routerLinkActive="active">
-          <i class="pi pi-file-edit" aria-hidden="true"></i>
-          תרגילים
-        </a>
         <a routerLink="/courses" routerLinkActive="active">
           <i class="pi pi-bookmark" aria-hidden="true"></i>
           מקצועות
@@ -42,9 +37,13 @@
           <i class="pi pi-book" aria-hidden="true"></i>
           שיעורים
         </a>
-        <a routerLink="/submissions" routerLinkActive="active">
-          <i class="pi pi-inbox" aria-hidden="true"></i>
-          הגשות
+        <a routerLink="/classes" routerLinkActive="active">
+          <i class="pi pi-building" aria-hidden="true"></i>
+          כיתות
+        </a>
+        <a routerLink="/students" routerLinkActive="active">
+          <i class="pi pi-users" aria-hidden="true"></i>
+          סטודנטים
         </a>
         @if (auth.isAdmin()) {
           <a routerLink="/teachers" routerLinkActive="active">

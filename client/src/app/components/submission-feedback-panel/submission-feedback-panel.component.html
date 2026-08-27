@@ -44,8 +44,14 @@
   <!-- ══ דרישות התרגיל ═════════════════════════════════════════════════
        ⚠️ אין כאן מה להסתיר מהתלמידה, בניגוד למקרי הבדיקה: הדרישה נכתבה בניסוח
        המטלה מלכתחילה, והידיעה שהיא לא התקיימה היא בדיוק מה שהיא צריכה כדי לתקן. -->
-  <div *ngIf="submission?.structuralResults?.length" class="sg-requirements">
-    <div class="sg-label">דרישות התרגיל</div>
+  <p-panel
+    *ngIf="submission?.structuralResults?.length"
+    header="דרישות התרגיל"
+    [toggleable]="true"
+    [collapsed]="!requirementsOpen"
+    styleClass="sg-section-panel"
+  >
+    <div class="sg-requirements">
     <p-table
       [value]="submission!.structuralResults"
       [rowHover]="true"
@@ -76,7 +82,8 @@
         </tr>
       </ng-template>
     </p-table>
-  </div>
+    </div>
+  </p-panel>
 
   <ng-container *ngIf="submission?.feedback as feedback">
     <!-- גיבוי: המשוב לא פורש בהצלחה (הגשה ישנה או תשובת AI לא תקינה) -->
@@ -120,22 +127,32 @@
 </div>
 
 <!-- תוצאות טסטים -->
-<div *ngIf="submission?.testResults?.length" class="sg-test-results">
-  <!-- ניסוח מילולי במקום "(0/1)": צירוף סוגריים+ספרות+לוכסן מתהפך ויזואלית בהקשר RTL
-       ואי אפשר לדעת מהמסך איזה מספר הוא "עברו" ואיזה "סה"כ" -->
-  <div class="sg-test-summary">
-    <span class="sg-label">תוצאות הבדיקות</span>
-    <span class="sg-test-summary__counts">
-      <span class="sg-count sg-count--pass">
-        <i class="pi pi-check"></i> עברו: {{ passedCount }}
+<!-- ⚠️ הסיכום יושב ב<i>כותרת</i> הפאנל ולא בתוכו: כשהפאנל מקופל אצל התלמידה,
+     "עברו 4 נכשלו 1" עדיין נקרא. הפירוט מקרה-מקרה הוא מה שמתקפל, לא התוצאה. -->
+<p-panel
+  *ngIf="submission?.testResults?.length"
+  [toggleable]="true"
+  [collapsed]="!testResultsOpen"
+  styleClass="sg-section-panel"
+>
+  <ng-template pTemplate="header">
+    <!-- ניסוח מילולי במקום "(0/1)": צירוף סוגריים+ספרות+לוכסן מתהפך ויזואלית בהקשר RTL
+         ואי אפשר לדעת מהמסך איזה מספר הוא "עברו" ואיזה "סה"כ" -->
+    <div class="sg-test-summary">
+      <span class="sg-label">תוצאות הבדיקות</span>
+      <span class="sg-test-summary__counts">
+        <span class="sg-count sg-count--pass">
+          <i class="pi pi-check"></i> עברו: {{ passedCount }}
+        </span>
+        <span class="sg-count sg-count--fail" *ngIf="failedCount > 0">
+          <i class="pi pi-times"></i> נכשלו: {{ failedCount }}
+        </span>
+        <span class="sg-count sg-count--total">מתוך {{ totalCount }}</span>
       </span>
-      <span class="sg-count sg-count--fail" *ngIf="failedCount > 0">
-        <i class="pi pi-times"></i> נכשלו: {{ failedCount }}
-      </span>
-      <span class="sg-count sg-count--total">מתוך {{ totalCount }}</span>
-    </span>
-  </div>
+    </div>
+  </ng-template>
 
+  <div class="sg-test-results">
   <div
     class="sg-test-bar"
     role="img"
@@ -223,7 +240,8 @@
       </tr>
     </ng-template>
   </p-table>
-</div>
+  </div>
+</p-panel>
 
 <ng-template #emptyList>
   <div class="sg-empty-note">אין הערות בקטגוריה זו.</div>
