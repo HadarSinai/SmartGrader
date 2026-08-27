@@ -30,6 +30,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // סיכום רגיל: הציון הסופי והמחושב זהים, והשיעור נסגר
         [Fact]
+        [Trait("Rule", "G-18")]
         public void CompleteWith_SetsBothScoresAndCompletes()
         {
             var result = NewResult();
@@ -61,6 +62,7 @@ namespace SmartGrader.UnitTests.Domain
         [InlineData(-0.5, false)]
         [InlineData(100.5, false)]
         [InlineData(150.5, true)]
+        [Trait("Rule", "G-21")]
         public void CompleteWith_RejectsOutOfRange(double score, bool hasBonus)
         {
             var result = NewResult();
@@ -72,6 +74,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // עם בונוס אפשר להגיע עד 150
         [Fact]
+        [Trait("Rule", "G-21")]
         public void CompleteWith_AllowsBonusCeiling()
         {
             var result = NewResult();
@@ -85,6 +88,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // ⚠️ המחושב נשמר לצד הנדרס — בלעדיו אי אפשר לדעת בדיעבד ממה חרגו
         [Fact]
+        [Trait("Rule", "G-24")]
         public void CompleteWithOverride_KeepsComputedScoreAlongsideOverride()
         {
             var result = NewResult();
@@ -103,6 +107,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // אף תרגיל לא נבדק → אין מחושב, ובכל זאת אפשר לקבוע ציון מנומק
         [Fact]
+        [Trait("Rule", "G-20")]
         public void CompleteWithOverride_AllowsNullComputedScore()
         {
             var result = NewResult();
@@ -115,6 +120,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // דריסה בלי סיבה נדחית — הסיבה היא המעקב
         [Fact]
+        [Trait("Rule", "G-24")]
         public void CompleteWithOverride_RequiresReason()
         {
             var result = NewResult();

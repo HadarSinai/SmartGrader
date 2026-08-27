@@ -34,6 +34,7 @@ namespace SmartGrader.UnitTests.Validation
         // תרגיל מחלקות — "כתבי מחלקה עם בנאי ושתי תכונות" — אין לו מה להריץ, והוא מנוקד
         // על המבנה בלבד. דרישה בלי מקרי בדיקה היא תרגיל חוקי לגמרי.
         [Fact]
+        [Trait("Rule", "G-15")]
         public void IsGradeable_AcceptsStructuralRulesWithoutTests()
         {
             AssignmentGradeability.IsGradeable(Array.Empty<TestCaseDto>(), new[] { Blocking() })
@@ -42,6 +43,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // וגם ההפך — מקרי בדיקה בלי דרישות מבניות
         [Fact]
+        [Trait("Rule", "G-15")]
         public void IsGradeable_AcceptsTestsWithoutStructuralRules()
         {
             AssignmentGradeability.IsGradeable(new[] { Test() }, Array.Empty<StructuralRuleDto>())
@@ -50,6 +52,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // 🔴 רק תרגיל שאין לו לא זה ולא זה נפסל — זה המקרה שנותן 0 לכולן
         [Fact]
+        [Trait("Rule", "G-15")]
         public void IsGradeable_RejectsAnAssignmentWithNeither()
         {
             AssignmentGradeability.IsGradeable(Array.Empty<TestCaseDto>(), Array.Empty<StructuralRuleDto>())
@@ -67,6 +70,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // בלי דרישות מנוקדות הבדיקות מקבלות את כל 100 — תרגיל רגיל נשאר מהיר ליצירה
         [Fact]
+        [Trait("Rule", "G-14")]
         public void HasValidRubric_AcceptsTestsAloneAtFullAllocation()
         {
             AssignmentGradeability.HasValidRubric(100, 100, new[] { Test() }, Array.Empty<StructuralRuleDto>())
@@ -75,6 +79,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // בדיקות ודרישות מנוקדות שמסתכמות יחד בתקרה
         [Fact]
+        [Trait("Rule", "G-14")]
         public void HasValidRubric_AcceptsTestsAndScoredRulesThatSumToTheCeiling()
         {
             AssignmentGradeability.HasValidRubric(100, 80, new[] { Test() }, new[] { Scored(20) })
@@ -83,6 +88,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // סכום גבוה מהתקרה נפסל
         [Fact]
+        [Trait("Rule", "G-14")]
         public void HasValidRubric_RejectsAnOverAllocatedRubric()
         {
             AssignmentGradeability.HasValidRubric(100, 100, new[] { Test() }, new[] { Scored(10) })
@@ -91,6 +97,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // וגם סכום נמוך ממנה — "בדיוק", לא "לכל היותר"
         [Fact]
+        [Trait("Rule", "G-14")]
         public void HasValidRubric_RejectsAnUnderAllocatedRubric()
         {
             AssignmentGradeability.HasValidRubric(100, 70, new[] { Test() }, new[] { Scored(20) })
@@ -100,6 +107,7 @@ namespace SmartGrader.UnitTests.Validation
         // ⚠️ המקרה שקל לפספס: בלי בדיקות ובלי דרישות מנוקדות — רק חוסמות. אין לְמה
         // להקצות נקודות, וזו הצורה הטבעית של תרגיל מחלקות. חייב לעבור.
         [Fact]
+        [Trait("Rule", "G-9")]
         public void HasValidRubric_AcceptsBlockingRulesOnlyWithNothingToAllocate()
         {
             AssignmentGradeability.HasValidRubric(100, 0, Array.Empty<TestCaseDto>(), new[] { Blocking() })
@@ -108,6 +116,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // בלי בדיקות, הדרישות המנוקדות לבדן חייבות לכסות את התקרה
         [Fact]
+        [Trait("Rule", "G-14")]
         public void HasValidRubric_RequiresScoredRulesAloneToCoverTheCeiling()
         {
             AssignmentGradeability.HasValidRubric(100, 0, Array.Empty<TestCaseDto>(), new[] { Scored(90) })
@@ -117,6 +126,7 @@ namespace SmartGrader.UnitTests.Validation
         // ⚠️ יש בדיקות אך הוקצו להן 0 נקודות ואין דרישות מנוקדות: זו טעות הקלדה ולא
         // בחירה — התלמידה הייתה מריצה בדיקות שאינן שוות דבר
         [Fact]
+        [Trait("Rule", "G-14")]
         public void HasValidRubric_RejectsTestsWorthNothing()
         {
             AssignmentGradeability.HasValidRubric(100, 0, new[] { Test() }, Array.Empty<StructuralRuleDto>())
@@ -129,6 +139,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // הקצאה שלילית נפסלת גם כשהסכום הכולל מסתדר
         [Fact]
+        [Trait("Rule", "G-14")]
         public void HasValidRubric_RejectsANegativeTestsAllocation()
         {
             AssignmentGradeability.HasValidRubric(100, -1, new[] { Test() }, new[] { Scored(101) })
@@ -137,6 +148,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // וכך גם הקצאה מעל התקרה
         [Fact]
+        [Trait("Rule", "G-14")]
         public void HasValidRubric_RejectsAnAllocationAboveTheCeiling()
         {
             AssignmentGradeability.HasValidRubric(100, 101, new[] { Test() }, new[] { Scored(-1) })
@@ -145,6 +157,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // ⚠️ "התקרה", לא "100": בתרגיל בונוס הרובריקה מסתכמת גבוה יותר
         [Fact]
+        [Trait("Rule", "G-17")]
         public void HasValidRubric_UsesTheBonusCeiling()
         {
             AssignmentGradeability.HasValidRubric(120, 120, new[] { Test() }, Array.Empty<StructuralRuleDto>())
@@ -161,6 +174,7 @@ namespace SmartGrader.UnitTests.Validation
         [InlineData(true, 20)]
         [InlineData(true, -5)]
         [InlineData(true, 19.6)]
+        [Trait("Rule", "G-17")]
         public void MaxScoreOf_AgreesWithTheEntity(bool isBonus, double bonusValue)
         {
             var assignment = new TestAssignment(1, isBonus) { BonusValue = bonusValue };
@@ -172,12 +186,14 @@ namespace SmartGrader.UnitTests.Validation
 
         // דרישה מנוקדת בלי נקודות אינה עושה כלום — כנראה נשכח למלא את השדה
         [Fact]
+        [Trait("Rule", "G-16")]
         public void ScoredRulesCarryPoints_RejectsAScoredRuleWorthNothing()
         {
             AssignmentGradeability.ScoredRulesCarryPoints(new[] { Scored(0) }).Should().BeFalse();
         }
 
         [Fact]
+        [Trait("Rule", "G-16")]
         public void ScoredRulesCarryPoints_AcceptsAScoredRuleWithPoints()
         {
             AssignmentGradeability.ScoredRulesCarryPoints(new[] { Scored(10) }).Should().BeTrue();
@@ -185,6 +201,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // דרישה חוסמת היא שער ואינה נושאת ניקוד — 0 נקודות בה תקין
         [Fact]
+        [Trait("Rule", "G-16")]
         public void ScoredRulesCarryPoints_IgnoresBlockingRules()
         {
             AssignmentGradeability.ScoredRulesCarryPoints(new[] { Blocking() }).Should().BeTrue();
@@ -192,6 +209,7 @@ namespace SmartGrader.UnitTests.Validation
 
         // ⚠️ הדרגה מגיעה מהלקוח כמחרוזת, ולכן ההשוואה אינה תלוית רישיות
         [Fact]
+        [Trait("Rule", "G-16")]
         public void ScoredRulesCarryPoints_MatchesSeverityCaseInsensitively()
         {
             AssignmentGradeability.ScoredRulesCarryPoints(new[] { Rule("scored", points: 0) })

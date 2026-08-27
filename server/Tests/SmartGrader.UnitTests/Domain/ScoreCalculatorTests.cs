@@ -33,6 +33,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // תרגיל שכולו שערים: אפס טסטים ואפס דרישות מנוקדות → ציון מלא, לא אפס
         [Fact]
+        [Trait("Rule", "G-9")]
         public void Total_IsMaxScore_WhenNoTestsAndNoScoredRules()
         {
             var result = ScoreCalculator.Calculate(80, NoTests, NoRules);
@@ -44,6 +45,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // דרישות חוסמות בלבד הן עדיין "הכול שערים" — חוסמת אינה נושאת נקודות
         [Fact]
+        [Trait("Rule", "G-9")]
         public void Total_IsMaxScore_WhenOnlyBlockingRulesExist()
         {
             var rules = new[] { Rule(RuleSeverity.Blocking, 0, passed: true) };
@@ -55,6 +57,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // תרגיל בונוס שכולו שערים → התקרה המוגדלת, לא 100
         [Fact]
+        [Trait("Rule", "G-9")]
         public void Total_IsBonusMaxScore_WhenAllGatesAndMaxScoreAbove100()
         {
             var result = ScoreCalculator.Calculate(0, NoTests, NoRules, maxScore: 120);
@@ -75,6 +78,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // אין טסטים אבל יש דרישות מנוקדות → הציון מהדרישות בלבד, לא אפס גורף
         [Fact]
+        [Trait("Rule", "G-8")]
         public void Total_IsRulePointsOnly_WhenNoTestsRan()
         {
             var rules = new[] { Rule(RuleSeverity.Scored, 20, passed: true) };
@@ -90,6 +94,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // מקרה ליבה אחד נכשל → אפס נקודות טסטים, גם כשאחרים עברו
         [Fact]
+        [Trait("Rule", "G-7")]
         public void TestPoints_IsZero_WhenAnyCoreTestFails()
         {
             var tests = new[] { FailedTest(isCore: true), PassedTest(isCore: false), PassedTest(isCore: false) };
@@ -103,6 +108,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // כישלון במקרה שאינו ליבה לא סוגר את השער — ניקוד יחסי על כל המקרים
         [Fact]
+        [Trait("Rule", "G-6")]
         public void TestPoints_IsProportional_WhenOnlyNonCoreTestsFail()
         {
             var tests = new[]
@@ -121,6 +127,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // 2 מתוך 3 → 66.7, לא 66.66666666666666
         [Fact]
+        [Trait("Rule", "G-13")]
         public void Total_IsRoundedToOneDecimal()
         {
             var tests = new[] { PassedTest(), PassedTest(), FailedTest(isCore: false) };
@@ -135,6 +142,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // רובריקה עקומה שסוכמת מעל התקרה נחתכת בתקרה, לא זולגת מעליה
         [Fact]
+        [Trait("Rule", "G-12")]
         public void Total_IsCappedAtMaxScore()
         {
             var tests = new[] { PassedTest() };
@@ -147,6 +155,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // תרגיל בונוס: תקרה מעל 100 מכובדת — החיתוך הוא ב-maxScore, לא ב-100
         [Fact]
+        [Trait("Rule", "G-12")]
         public void Total_HonoursBonusMaxScore()
         {
             var tests = new[] { PassedTest() };
@@ -161,6 +170,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // דרישה מנוקדת שנכשלה מפסידה את כל הנקודות שלה — אין ניקוד חלקי
         [Fact]
+        [Trait("Rule", "G-10")]
         public void RulePoints_ExcludesFailedRules()
         {
             var rules = new[]
@@ -177,6 +187,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // רק דרישות מנוקדות נושאות נקודות — חוסמות והמלצות לא, גם אם מולאו להן נקודות בטעות
         [Fact]
+        [Trait("Rule", "G-11")]
         public void RulePoints_IgnoresBlockingAndAdvisoryRules()
         {
             var rules = new[]

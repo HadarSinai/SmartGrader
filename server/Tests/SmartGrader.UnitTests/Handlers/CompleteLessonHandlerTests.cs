@@ -121,6 +121,7 @@ namespace SmartGrader.UnitTests.Handlers
 
         // ההגשה המאוחרת לתרגיל היא הקובעת — ניסיון ישן שנתקע בבדיקה אינו חוסם לנצח
         [Fact]
+        [Trait("Rule", "G-25")]
         public async Task Handle_JudgesOnlyTheLatestSubmissionPerAssignment()
         {
             GivenAssignments(new TestAssignment(1));
@@ -138,6 +139,7 @@ namespace SmartGrader.UnitTests.Handlers
 
         // הציון נגזר מההגשות בשרת, גם כשהבקשה לא נשאה שום מספר
         [Fact]
+        [Trait("Rule", "G-18")]
         public async Task Handle_ComputesTheScoreOnTheServer_WhenNoScoreWasEntered()
         {
             GivenAssignments(new TestAssignment(1), new TestAssignment(2));
@@ -153,6 +155,7 @@ namespace SmartGrader.UnitTests.Handlers
 
         // מספר שזהה למחושב אינו דריסה — ואינו דורש סיבה
         [Fact]
+        [Trait("Rule", "G-22")]
         public async Task Handle_TreatsAMatchingScoreAsNoOverride()
         {
             GivenAssignments(new TestAssignment(1));
@@ -179,6 +182,7 @@ namespace SmartGrader.UnitTests.Handlers
 
         // דריסה מנומקת נרשמת במלואה — הציון, המחושב שלצידו, המנמקת והסיבה
         [Fact]
+        [Trait("Rule", "G-24")]
         public async Task Handle_RecordsTheOverride_WithBothScoresAndItsAuthor()
         {
             GivenAssignments(new TestAssignment(1));
@@ -197,6 +201,7 @@ namespace SmartGrader.UnitTests.Handlers
 
         // בלי תרגיל בונוס התקרה היא 100, וציון מעליה נדחה בהסבר במקום ב-500
         [Fact]
+        [Trait("Rule", "G-21")]
         public async Task Handle_Throws_WhenTheOverrideExceedsTheCeiling()
         {
             GivenAssignments(new TestAssignment(1));
@@ -211,6 +216,7 @@ namespace SmartGrader.UnitTests.Handlers
         // ⚠️ עם תרגיל בונוס בשיעור התקרה עולה ל-150 — מפני שכך התרגילים בנויים,
         // ולא מפני שתיבה סומנה בדפדפן
         [Fact]
+        [Trait("Rule", "G-21")]
         public async Task Handle_RaisesTheCeiling_WhenTheLessonHasABonusAssignment()
         {
             GivenAssignments(new TestAssignment(1), new TestAssignment(2, isBonus: true));
@@ -226,6 +232,7 @@ namespace SmartGrader.UnitTests.Handlers
 
         // אף תרגיל לא נבדק ולא הוזן ציון — נדחה, ולא נסגר על אפס
         [Fact]
+        [Trait("Rule", "G-20")]
         public async Task Handle_Throws_WhenNothingIsGradedAndNoScoreWasEntered()
         {
             GivenAssignments(new TestAssignment(1));
@@ -238,6 +245,7 @@ namespace SmartGrader.UnitTests.Handlers
 
         // אף תרגיל לא נבדק, אבל המורה קבעה ציון ונימקה — מותר
         [Fact]
+        [Trait("Rule", "G-20")]
         public async Task Handle_AllowsAReasonedScore_WhenNothingIsGraded()
         {
             GivenAssignments(new TestAssignment(1));

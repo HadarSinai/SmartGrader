@@ -1,3 +1,10 @@
+> ⛔ **SUPERSEDED — do not read as current.** This is a dated work plan from July 2026, and the work
+> it plans has shipped. The rules it established now live in [docs/business-rules.md](business-rules.md)
+> as `B-11` … `B-24`, `B-51` and `B-52`; who may call what is in [docs/permissions.md](permissions.md).
+> Most of its "Out of Scope" list has since been built — the student area, password recovery by email,
+> Excel import, and the `Lesson.TeacherId` link. **Still genuinely open and not yet moved to
+> `.github/prompts/`: SSO and refresh tokens.** Deleted in phase A7.
+
 # Work Plan — SmartGrader: Authentication & User Management (Auth)
 
 > Version 3 · 14.07.2026 · End-to-end: backend (.NET 8) + login screen (Angular)

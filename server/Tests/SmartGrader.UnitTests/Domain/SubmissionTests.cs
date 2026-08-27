@@ -212,6 +212,7 @@ namespace SmartGrader.UnitTests.Domain
         [InlineData(-0.5, 100)]
         [InlineData(100.5, 100)]
         [InlineData(121, 120)]
+        [Trait("Rule", "G-23")]
         public void OverrideScore_RejectsOutOfRange(double score, int maxScore)
         {
             var submission = new SubmissionBuilder(7, 1).Graded(64).Build();
@@ -223,6 +224,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // תקרת בונוס מכובדת: 120 מתוך 120 חוקי
         [Fact]
+        [Trait("Rule", "G-23")]
         public void OverrideScore_AllowsBonusMaxScore()
         {
             var submission = new SubmissionBuilder(7, 1).Graded(64).Build();
@@ -234,6 +236,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // ⚠️ הפירוק נמחק בדריסה: "בדיקות 64 · דרישות 0" ליד ציון ידני 90 משקר
         [Fact]
+        [Trait("Rule", "G-23")]
         public void OverrideScore_ClearsBreakdownAndRecordsAuditTrail()
         {
             var submission = new SubmissionBuilder(7, 1).Graded(64).Build();
@@ -249,6 +252,7 @@ namespace SmartGrader.UnitTests.Domain
 
         // דריסה בלי סיבה נדחית — הסיבה היא המעקב
         [Fact]
+        [Trait("Rule", "G-23")]
         public void OverrideScore_RequiresReason()
         {
             var submission = new SubmissionBuilder(7, 1).Graded(64).Build();

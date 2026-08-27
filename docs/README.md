@@ -15,8 +15,8 @@ wrong.
 | [glossary.md](glossary.md) | What does this Hebrew term mean, and which identifier in the code carries it? | ✅ |
 | [domain-model.md](domain-model.md) | What *is* this thing — its fields, its states, what is deliberately absent? | ✅ |
 | [permissions.md](permissions.md) | May this person do this, to whose data? | ✅ |
-| `grading-rules.md` | How is a grade produced, and how do I explain one to a parent? | phase A2 |
-| `business-rules.md` | What is the rule about resubmission / lockout / deletion, and where is it enforced? | phase A2 |
+| [grading-rules.md](grading-rules.md) | How is a grade produced, and how do I explain one to a parent? | ✅ |
+| [business-rules.md](business-rules.md) | What is the rule about resubmission / lockout / deletion, and where is it enforced? | ✅ |
 | `design-system.md` | What makes every screen one system — templates, states, statuses, accessibility? | phase A3 |
 | `areas/teacher-content.md` | Courses, lessons, assignments — authoring what students will do | phase A4 |
 | `areas/teacher-classroom.md` | Classes, students, submissions, lesson results, dashboard — running a class | phase A4 |
@@ -38,6 +38,8 @@ Prose cannot be verified, so it is not asserted. Everything derived from code is
 | `GlossaryConformanceTests` | the glossary names an identifier the code no longer has |
 | `EnumTableConformanceTests` | an enum table drifts from the enum |
 | `PermissionsMatrixConformanceTests` | an endpoint or client route has no row, or its roles disagree |
+| `GradingRuleCoverageTests` | a `G-N` loses the test that proves it, or a test cites a rule that does not exist |
+| `BusinessRuleAnchorTests` | a `B-N` cites a file that no longer exists, or the ids stop being unique |
 
 Tables inside an invisible `<!-- gen: … -->` marker are the machine-checked ones. Meaning and rationale
 columns are prose and are deliberately left alone — asserting them would make ordinary editing hostile,
