@@ -15,7 +15,39 @@
       </ng-template>
 
       <form class="px-4 pb-4" [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div class="formgrid grid">
+        <!--
+          שני שלבים ולא טאבים: תקרת הניקוד נקבעת בשלב 1 (בונוס), והרובריקה
+          בשלב 2 חייבת להסתכם בה. ניווט חופשי היה מאפשר לחלק נקודות מול תקרה
+          שעוד לא הוצהרה. ר' ההערה על step ברכיב.
+        -->
+        <ol class="sg-steps" aria-label="שלבי יצירת התרגיל">
+          <li
+            class="sg-step"
+            [class.sg-step--current]="step === 1"
+            [class.sg-step--done]="step === 2"
+            [attr.aria-current]="step === 1 ? 'step' : null"
+          >
+            <span class="sg-step__num" aria-hidden="true">1</span>
+            <span class="sg-step__label">
+              התרגיל
+              <small>מה התלמידה צריכה לעשות</small>
+            </span>
+          </li>
+          <li
+            class="sg-step"
+            [class.sg-step--current]="step === 2"
+            [attr.aria-current]="step === 2 ? 'step' : null"
+          >
+            <span class="sg-step__num" aria-hidden="true">2</span>
+            <span class="sg-step__label">
+              הניקוד
+              <small>איך הוא נבדק ומנוקד</small>
+            </span>
+          </li>
+        </ol>
+
+        <!-- ══ שלב 1 — התרגיל ══════════════════════════════════════════════ -->
+        <div class="formgrid grid" *ngIf="step === 1">
           <div class="field col-12 md:col-6">
             <label class="block font-bold mb-2" for="title">כותרת *</label>
             <input
@@ -206,9 +238,36 @@
             </div>
           </div>
 
+        </div>
+
+        <!-- ══ שלב 2 — הניקוד ══════════════════════════════════════════════ -->
+        <div class="formgrid grid" *ngIf="step === 2">
+          <!-- ⚠️ סכום הרובריקה נעוץ בראש השלב ונשאר גלוי בגלילה. קודם הוא ישב
+               בתחתית הטופס, מתחת לשורות שמזינות אליו נקודות — כלומר המורה הקלידה
+               מספר, גללה למטה לבדוק, וגללה בחזרה. זו הייתה האינטראקציה הגרועה
+               ביותר במערכת. -->
+          <div class="col-12 sg-rubric-pin" *ngIf="showRubric">
+            <span class="sg-rubric-pin__label">סך הרובריקה</span>
+            <span
+              class="sg-rubric-pin__value"
+              [class.sg-rubric-pin__value--bad]="!rubricValid"
+            >
+              {{ rubricTotal }} מתוך {{ maxScore }}
+            </span>
+            <i
+              class="pi"
+              [class.pi-check-circle]="rubricValid"
+              [class.pi-exclamation-triangle]="!rubricValid"
+              aria-hidden="true"
+            ></i>
+          </div>
+
           <!-- הפתרון לדוגמה — מקופל כברירת מחדל: הוא הבסיס לשתי התכונות אבל אינו
                שדה שממלאים בכל תרגיל, ופתוח כברירת מחדל הוא היה דוחף את מקרי הבדיקה
-               אל מתחת לקיפול. -->
+               אל מתחת לקיפול.
+               ⚠️ הוא יושב בשלב הניקוד ולא בשלב התרגיל, למרות שאינו שדה ניקוד: הוא
+               קיים כדי לאמת מולו את מקרי הבדיקה, ולכן מקומו לצדם. זהו גם השדה היחיד
+               בטופס שאסור שיגיע לתלמידה לעולם (TC-14). -->
           <div class="field col-12">
             <!-- ⚠️ נכס נפרד ולא [collapsed]="!hasReferenceSolution": ביטוי שנגזר מהטופס
                  נדרס בכל שינוי, וכשהמורה מוחקת את תוכן הפתרון הפאנל היה נסגר לה
@@ -758,7 +817,37 @@
             (onClick)="onCancel()"
             type="button"
           ></p-button>
+
+          <!-- ⚠️ type="button" ולא submit: כפתור בתוך form ללא type שולח אותו,
+               ו-Enter בשלב 1 היה יוצר תרגיל בלי מקרי בדיקה. -->
           <p-button
+            *ngIf="step === 1"
+            label="המשך לניקוד"
+            icon="pi pi-arrow-left"
+            iconPos="left"
+            type="button"
+            styleClass="sg-btn-primary"
+            (onClick)="goToScoring()"
+          ></p-button>
+
+          <p-button
+            *ngIf="step === 2"
+            label="חזרה לפרטי התרגיל"
+            icon="pi pi-arrow-right"
+            [text]="true"
+            type="button"
+            (onClick)="backToDetails()"
+          ></p-button>
+          <!-- ⚠️ בלי זה כפתור השמירה מושבת בשלב 2 בגלל שדה שנשאר ריק בשלב 1,
+               והשדה עצמו אינו על המסך — כפתור אפור בלי סיבה נראית לעין. -->
+          <small class="p-error" *ngIf="step === 2 && !stepOneValid">
+            חסר משהו בפרטי התרגיל.
+            <button type="button" class="sg-link-button" (click)="backToDetails()">
+              חזרה לשלב 1
+            </button>
+          </small>
+          <p-button
+            *ngIf="step === 2"
             [label]="isEditMode ? 'שמירה' : 'יצירה'"
             type="submit"
             styleClass="sg-btn-primary"

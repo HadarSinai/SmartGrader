@@ -1387,6 +1387,19 @@ body.a11y-reduce-motion * {
   color: var(--status-success-ink);
 }
 
+/* פעולה שנראית כמו קישור אבל אינה ניווט. כפתור ולא <a href="javascript:...">:
+   אלמנט שמפעיל פעולה בעמוד הוא כפתור, וכך הוא גם מוכרז לקוראי מסך. */
+.sg-link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* Screen reader only */
 .sr-only {
   position: absolute;

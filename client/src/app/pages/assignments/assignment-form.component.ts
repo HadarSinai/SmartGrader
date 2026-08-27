@@ -141,6 +141,26 @@ export class AssignmentFormComponent implements OnInit {
   lessonId!: number;
   assignmentId: number | null = null;
 
+  /**
+   * שני שלבים, לא טאבים ולא טופס אחד ארוך.
+   * <p>
+   * <b>למה לא טאבים:</b> הרובריקה חייבת להסתכם בתקרת התרגיל (‎G-14‎), והתקרה
+   * נקבעת בשלב 1 — היא ‎100‎ או ‎100 + bonusValue‎ (‎G-17‎). בניווט חופשי בין
+   * טאבים מורה יכולה לחלק נקודות לפני שהצהירה על הבונוס, ואז להישפט מול מספר
+   * שהמסך מעולם לא הראה לה. שלבים הופכים את התלות לסדר.
+   * </p>
+   * <p>
+   * <b>למה לא טופס אחד ארוך:</b> אי אפשר לראות בו-זמנית את סכום הרובריקה ואת
+   * הנקודות שמקלידים — הסכום למטה, השורות מעליו, וכל בדיקה היא גלילה הלוך ושוב.
+   * </p>
+   * <p>
+   * ⚠️ הרכיב <i>לא</i> פוצל לשני רכיבים: בלוק הדרישות חולק מצב ‎FormArray‎ עם
+   * הגטרים של הרובריקה, והפרדה שלו היא ריפקטור אמיתי ולא העברה. השלבים הם
+   * הצגה, והטופס אחד.
+   * </p>
+   */
+  step: 1 | 2 = 1;
+
   /** כמה מקרים מבקשים מה-AI. תואם ל-SuggestTestCasesLimits בשרת, שאוכף את התקרה. */
   private static readonly SuggestCount = 5;
 
@@ -1029,6 +1049,44 @@ export class AssignmentFormComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  /** שדות שלב 1 בלבד. שלב 2 אינו נפתח לפני שהתקרה ידועה. */
+  private static readonly StepOneControls = [
+    "title",
+    "description",
+    "gradingMode",
+    "methodName",
+    "isBonus",
+    "bonusValue",
+  ];
+
+  /**
+   * ⚠️ בודק רק את שדות שלב 1. ‎form.invalid‎ כולל את מקרי הבדיקה והדרישות, שהמורה
+   * עוד לא הגיעה אליהם — חסימה עליהם הייתה מונעת ממנה להתקדם אל המסך שבו ממלאים
+   * אותם.
+   */
+  get stepOneValid(): boolean {
+    return AssignmentFormComponent.StepOneControls.every(
+      (name) => this.form.get(name)?.valid !== false,
+    );
+  }
+
+  goToScoring(): void {
+    if (!this.stepOneValid) {
+      // בלי הסימון השגיאות אינן מוצגות: הן תלויות ב-touched, והמורה לא נגעה בשדה
+      for (const name of AssignmentFormComponent.StepOneControls) {
+        this.form.get(name)?.markAsTouched();
+      }
+      return;
+    }
+    this.step = 2;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  backToDetails(): void {
+    this.step = 1;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   onCancel(): void {
