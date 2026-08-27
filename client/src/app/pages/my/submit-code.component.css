@@ -1,0 +1,19 @@
+.sg-code-input {
+  font-family:
+    "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+  font-size: 0.9rem;
+  direction: ltr;
+  text-align: left;
+}
+
+.sg-example-test {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.sg-example-test code {
+  direction: ltr;
+  display: inline-block;
+}

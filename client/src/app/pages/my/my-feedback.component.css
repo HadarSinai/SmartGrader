@@ -1,0 +1,16 @@
+.sg-big-score {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.sg-extra-attempt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--status-info-bg);
+  color: var(--status-info-ink);
+  font-size: var(--text-sm);
+}

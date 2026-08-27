@@ -1,0 +1,14 @@
+.sg-code-textarea {
+  font-family: "Consolas", "Courier New", monospace;
+  direction: ltr;
+  text-align: left;
+  resize: vertical;
+}
+
+.sg-readonly-field {
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--app-surface-2);
+  border: 1px solid var(--app-border);
+  font-weight: 600;
+}

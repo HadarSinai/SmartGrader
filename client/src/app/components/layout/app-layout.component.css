@@ -1,0 +1,46 @@
+/* ‎.sg-shell‎ ו-‎.sg-header‎ משותפים לשני ה-layouts ויושבים ב-styles.css. */
+
+.sg-welcome {
+  padding-block: var(--space-4) 0;
+}
+
+.sg-welcome-card {
+  background: var(--app-surface-2);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-6);
+}
+
+.sg-welcome-card--hero {
+  position: relative;
+  overflow: hidden;
+  /* השכבה שמעל התמונה נגזרת מצבע המשטח ולא מקבועה בהיר: בערכת הכהה
+     הצבע הקשיח היה מדפיס פס קרם על גבי הרקע הכהה. */
+  background:
+    linear-gradient(
+      to left,
+      color-mix(in srgb, var(--app-surface) 95%, transparent) 35%,
+      color-mix(in srgb, var(--app-surface) 55%, transparent)
+    ),
+    url("/assets/hero-classroom.jpg") center / cover no-repeat;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+}
+
+.sg-welcome-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--app-text-strong);
+}
+
+.sg-welcome-sub {
+  font-size: var(--text-sm);
+  color: var(--app-muted);
+  margin-top: var(--space-1);
+}
+
+.sg-footer-links a {
+  color: var(--app-text-strong);
+  font-weight: 600;
+}

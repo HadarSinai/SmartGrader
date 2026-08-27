@@ -1,0 +1,167 @@
+.sg-feedback-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sg-score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-3);
+}
+
+.sg-score-tile {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-2);
+  text-align: center;
+}
+
+.sg-score-tile--final {
+  border-color: var(--accent);
+}
+
+.sg-score-tile__label {
+  font-size: var(--text-sm);
+  color: var(--app-muted);
+}
+
+.sg-score-tile__value {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.sg-score-tile__sub {
+  font-size: var(--text-sm);
+  color: var(--app-muted);
+}
+
+.sg-requirements {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* דרישה חוסמת שנכשלה היא הסיבה שאין ציון — היא לא עוד שורה בטבלה */
+tr.sg-requirement--blocked > td {
+  background: var(--status-error-bg);
+}
+
+.sg-score-note {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--app-muted);
+  line-height: 1.5;
+}
+
+.sg-feedback-list {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sg-empty-note {
+  color: var(--app-muted);
+  font-size: var(--text-sm);
+  padding: var(--space-2) 0;
+}
+
+.sg-test-results {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sg-test-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.sg-test-summary__counts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sg-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-md);
+}
+
+.sg-count--pass {
+  color: var(--status-success-ink);
+  background: var(--status-success-bg);
+}
+
+.sg-count--fail {
+  color: var(--status-error-ink);
+  background: var(--status-error-bg);
+}
+
+.sg-count--total {
+  color: var(--app-muted);
+}
+
+.sg-test-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--status-error-bg);
+  overflow: hidden;
+}
+
+.sg-test-bar__fill {
+  height: 100%;
+  background: var(--status-success);
+  transition: width 0.3s ease;
+}
+
+.sg-single-test-note {
+  font-size: var(--text-sm);
+  color: var(--status-warn-ink);
+  background: var(--status-warn-bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+}
+
+.sg-row-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--app-muted);
+  padding: 0.25rem;
+}
+
+.sg-failure-reason {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--status-error-ink);
+}
+
+.sg-hidden-test {
+  color: var(--app-muted);
+  font-style: italic;
+}
+
+.sg-test-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+}

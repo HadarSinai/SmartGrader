@@ -64,6 +64,18 @@ export class LessonsService {
 
 ## Components
 
+- **Three files per component**, always: `x.component.ts` · `x.component.html` · `x.component.css`.
+  The decorator declares `templateUrl: "./x.component.html"` and `styleUrls: ["./x.component.css"]`.
+  A component with no styles of its own declares nothing — not an empty `styles: []`.
+  Enforced by `ComponentFileLayoutTests`.
+- **A style rule has one home.** If two components need the same rule, it belongs in
+  `client/src/styles.css`, not copied. A component that must differ adds a **modifier** class; it never
+  redefines a base class the global sheet already defines. Enforced by `DesignTokenTests`.
+- **No literal colours.** No `#hex`, no `rgb()/rgba()/hsl()`, and no `var(--token, fallback)` — the
+  fallback is what hides a misspelled token name for months. Tokens are listed in
+  [docs/design-system.md](../docs/design-system.md). Enforced, ratcheted at 0.
+- **Status presentation comes from `STATUS_PRESENTATION`** in `models/submission.model.ts` — never a
+  local `switch` on the status string. Five copies of that mapping already contradicted each other.
 - Inject `MessageService` (from PrimeNG) for all user-facing notifications.
 - Use `severity: 'success' | 'error' | 'warn' | 'info'` for toasts.
 - Always handle observable errors in `.subscribe({ error: (err) => ... })`.

@@ -1,0 +1,14 @@
+.sg-log-message {
+  max-width: 32rem;
+  word-break: break-word;
+}
+
+.sg-log-refs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: var(--text-xs);
+  color: var(--app-muted);
+  white-space: nowrap;
+}

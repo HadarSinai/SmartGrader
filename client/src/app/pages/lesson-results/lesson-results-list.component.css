@@ -1,0 +1,49 @@
+.sg-override-mark {
+  margin-inline-start: var(--space-1);
+  color: var(--app-muted);
+  font-size: 0.85em;
+}
+
+.sg-suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-md);
+  background: var(--app-surface-2);
+}
+
+.sg-suggestion__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.sg-suggestion__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sg-suggestion__score {
+  font-weight: 700;
+}
+
+/* תרגיל שאינו נכנס לממוצע — מוצג מעומעם ובטקסט, לא כמספר */
+.sg-suggestion__missing {
+  font-size: var(--text-sm);
+  color: var(--app-muted);
+}
+
+.sg-suggestion__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--app-border);
+  font-weight: 800;
+}

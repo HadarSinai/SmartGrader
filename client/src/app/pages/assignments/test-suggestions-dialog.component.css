@@ -1,0 +1,83 @@
+.sg-suggest-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  justify-content: center;
+  color: var(--text-color-secondary);
+}
+
+.sg-suggest-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.sg-suggest-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--app-surface-2) 40%, transparent);
+}
+
+.sg-suggest-row--flagged {
+  border-color: var(--status-warn);
+}
+
+.sg-suggest-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.sg-suggest-values {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sg-suggest-values code,
+.sg-suggest-note code {
+  background: var(--surface-100);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* ⚠️ החץ הפוך ל-RTL: "קלט ← פלט" נקרא נכון מימין לשמאל. */
+.sg-suggest-arrow {
+  color: var(--text-color-secondary);
+}
+
+.sg-suggest-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  color: var(--text-color-secondary);
+}
+
+.sg-suggest-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.sg-suggest-note--warn {
+  color: var(--status-warn-ink);
+}

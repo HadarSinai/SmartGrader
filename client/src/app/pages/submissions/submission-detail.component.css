@@ -1,0 +1,59 @@
+.sg-lock-note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--app-surface-2);
+  color: var(--app-muted);
+  font-size: var(--text-sm);
+}
+
+.sg-attempts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sg-attempts__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--app-surface-2);
+}
+
+.sg-attempts__item--current {
+  border: 1px solid var(--accent);
+}
+
+.sg-attempts__no {
+  font-weight: 700;
+  min-width: 5rem;
+}
+
+.sg-attempts__score {
+  font-weight: 800;
+  color: var(--accent);
+  min-width: 2.5rem;
+}
+
+.sg-attempts__meta {
+  font-size: var(--text-sm);
+  color: var(--app-muted);
+}
+
+.sg-status-box pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.875rem;
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  direction: ltr;
+  text-align: left;
+}

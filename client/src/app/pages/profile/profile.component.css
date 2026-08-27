@@ -1,0 +1,5 @@
+/* מקטע פרטי הכניסה המשותף לשלושת הטפסים יושב ב-styles.css. */
+
+:host ::ng-deep .p-password {
+  width: 100%;
+}

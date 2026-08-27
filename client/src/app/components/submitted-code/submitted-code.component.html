@@ -1,0 +1,22 @@
+<ng-container *ngIf="submission">
+  <!-- הגשה רב-קובצית -->
+  <ng-container *ngIf="submission.sourceFiles?.length; else singleFile">
+    <div class="sg-file" *ngFor="let file of submission.sourceFiles">
+      <div class="sg-file__name">
+        <i class="pi pi-file" aria-hidden="true"></i>
+        {{ file.fileName }}
+      </div>
+      <pre class="sg-code-box">{{ file.content }}</pre>
+    </div>
+  </ng-container>
+
+  <!-- הגשה חד-קובצית -->
+  <ng-template #singleFile>
+    <pre class="sg-code-box">{{ submission.sourceCode }}</pre>
+    <!-- ⚠️ בלי המשפט הזה תיבה ריקה נראית זהה לתקלת טעינה. זה קורה כשתרגיל שינה
+         את ExpectedFiles אחרי שהוגש, והקבצים נשמרו תחת שמות שכבר לא נדרשים. -->
+    <div class="sg-file__empty" *ngIf="!submission.sourceCode">
+      לא נשמר קוד בהגשה הזו.
+    </div>
+  </ng-template>
+</ng-container>

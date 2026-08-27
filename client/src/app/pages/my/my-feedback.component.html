@@ -1,0 +1,189 @@
+<section class="sg-page">
+  <div class="pt-3 pb-5">
+    <p-card styleClass="sg-card">
+      <ng-template pTemplate="header">
+        <div class="px-4 pt-4 pb-2">
+          <a
+            class="sg-breadcrumb-link"
+            *ngIf="lessonId !== null"
+            [routerLink]="['/my', 'lessons', lessonId, 'assignments']"
+          >
+            <i class="pi pi-arrow-right" aria-hidden="true"></i>
+            חזרה לתרגילים
+          </a>
+          <a
+            class="sg-breadcrumb-link"
+            *ngIf="lessonId === null"
+            [routerLink]="['/my', 'lessons']"
+          >
+            <i class="pi pi-arrow-right" aria-hidden="true"></i>
+            חזרה לשיעורים שלי
+          </a>
+          <div class="sg-title mt-2">
+            <div class="sg-h1">פידבק על ההגשה</div>
+            <div class="sg-h2" *ngIf="submission?.assignmentName">
+              {{ submission!.assignmentName }}
+            </div>
+          </div>
+        </div>
+      </ng-template>
+
+      <div *ngIf="loading" class="flex justify-content-center py-6">
+        <i class="pi pi-spin pi-spinner text-3xl" aria-hidden="true"></i>
+      </div>
+
+      <div *ngIf="!loading && submission" class="grid p-4">
+        <!-- Key-value grid -->
+        <div class="col-12 md:col-6">
+          <div class="sg-label">תרגיל</div>
+          <div>{{ submission.assignmentName || "—" }}</div>
+        </div>
+        <div class="col-12 md:col-6">
+          <div class="sg-label">הוגש בתאריך</div>
+          <div>{{ submission.submittedAt | date: "dd.MM.yy HH:mm" }}</div>
+        </div>
+        <div class="col-12 md:col-6">
+          <div class="sg-label">ציון</div>
+          <div class="sg-big-score">
+            {{ submission.score !== null ? submission.score : "—" }}
+          </div>
+          <!-- ⚠️ "אין ציון" ולא "0": דרישה חוסמת שלא התקיימה היא דחייה, לא ציון נמוך -->
+          <div
+            class="sg-hint"
+            *ngIf="submission.status === 'RequirementsNotMet'"
+          >
+            לא ניתן ציון — התרגיל לא נבדק מול מקרי הבדיקה.
+          </div>
+          <div class="sg-hint" *ngIf="submission.attemptNumber > 1">
+            ניסיון {{ submission.attemptNumber }}. רק הניסיון האחרון נחשב.
+          </div>
+        </div>
+
+        <!-- אישור המורה גובר על סף הציון. נאמר לתלמידה במפורש, אחרת כפתור שנפתח
+             בלי הסבר נראה כמו תקלה -->
+        <div class="col-12" *ngIf="submission.hasUnusedExtraAttempt">
+          <div class="sg-extra-attempt">
+            <i class="pi pi-unlock" aria-hidden="true"></i>
+            <span>
+              המורה אישרה לך הגשה נוספת<ng-container
+                *ngIf="submission.extraAttemptReason"
+                >: {{ submission.extraAttemptReason }}</ng-container
+              >
+            </span>
+          </div>
+        </div>
+
+        <!-- Unified status area -->
+        <div class="col-12">
+          <div
+            class="sg-status-box"
+            [class.sg-status-box--error]="
+              submission.status === 'CompilationFailed' ||
+              submission.status === 'AiFailed'
+            "
+            [class.sg-status-box--warn]="
+              submission.status === 'JudgeUnavailable'
+            "
+            [ngSwitch]="submission.status"
+          >
+            <!-- ⚠️ תגית אחת מתוך STATUS_PRESENTATION. ה-switch שלמטה נושא תוכן שונה לכל
+                 סטטוס — משפט הסבר, פאנל, כפתור תיקון — ולכן הוא נשאר; רק שבע הגדרות
+                 התגית הכפולות ירדו. אחת מהן נתנה ל-CompilationFailed אייקון אחר. -->
+            <p-tag
+              [severity]="statusOf(submission.status).severity"
+              [icon]="statusOf(submission.status).icon"
+              [value]="statusOf(submission.status).label"
+            ></p-tag>
+            <!-- בבדיקה -->
+            <ng-container *ngSwitchCase="'PendingAi'">
+              <span aria-live="polite">
+                ההגשה ממתינה לבדיקה אוטומטית — העמוד מתעדכן מעצמו.
+              </span>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'ProcessingAi'">
+              <span aria-live="polite">
+                הקוד נבדק כעת — העמוד מתעדכן מעצמו.
+              </span>
+            </ng-container>
+
+            <!-- נבדק -->
+            <ng-container *ngSwitchCase="'Done'">
+              <app-submission-feedback-panel
+                [submission]="submission"
+              ></app-submission-feedback-panel>
+
+              <!-- הגשה שנבדקה ועדיין פתוחה — כלומר הציון מתחת לסף התרגיל, או שהמורה
+                   אישרה ניסיון נוסף. ⚠️ הכלל מגיע מהשרת (canResubmit) ולא מחושב כאן:
+                   הוא מערב את סף הציון של התרגיל ואת נעילת השיעור. -->
+              <span *ngIf="submission.canResubmit">{{ improvableNote }}</span>
+              <ng-container *ngTemplateOutlet="fixAndResubmit"></ng-container>
+            </ng-container>
+
+            <!-- דרישה חוסמת שלא התקיימה. Judge0 לא רץ בכלל, ולכן אין כאן תוצאות
+                 בדיקות — רק טבלת הדרישות וההסבר. -->
+            <ng-container *ngSwitchCase="'RequirementsNotMet'">
+              <span>{{ requirementsNotMetNote }}</span>
+              <app-submission-feedback-panel
+                [submission]="submission"
+              ></app-submission-feedback-panel>
+              <ng-container *ngTemplateOutlet="fixAndResubmit"></ng-container>
+            </ng-container>
+
+            <!-- שגיאת קומפילציה -->
+            <ng-container *ngSwitchCase="'CompilationFailed'">
+              <div *ngIf="submission.compileError">
+                <strong>פלט הקומפיילר:</strong>
+                <pre class="sg-code-box">{{ submission.compileError }}</pre>
+              </div>
+              <span>{{ compilationFailedNote }}</span>
+              <ng-container *ngTemplateOutlet="fixAndResubmit"></ng-container>
+            </ng-container>
+
+            <!-- שגיאת בדיקה -->
+            <ng-container *ngSwitchCase="'AiFailed'">
+              <div *ngIf="submission.aiError">
+                <strong>פרטי השגיאה:</strong>
+                <pre class="sg-code-box">{{ submission.aiError }}</pre>
+              </div>
+              <span>{{ aiFailedNote }}</span>
+              <ng-container *ngTemplateOutlet="fixAndResubmit"></ng-container>
+            </ng-container>
+
+            <!-- תקלת מערכת הבדיקה — לא קשורה לקוד של התלמיד -->
+            <ng-container *ngSwitchCase="'JudgeUnavailable'">
+              <span>{{ judgeUnavailableNote }}</span>
+            </ng-container>
+
+            <ng-container *ngSwitchDefault>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- Submitted code -->
+        <div class="col-12">
+          <div class="sg-label">הקוד שהוגש</div>
+          <app-submitted-code [submission]="submission"></app-submitted-code>
+        </div>
+      </div>
+    </p-card>
+  </div>
+</section>
+
+<!-- הכשל הוא בקוד של התלמידה, ולכן יש לה מה לתקן.
+     ⚠️ ההחלטה מרוכזת כאן ולא בכל ענף סטטוס בנפרד: canResubmit מגיע מהשרת אחרי
+     שהנעילה כבר הוחלה עליו (SubmissionLock.ApplyAsync), וכל ענף שהציג את הכפתור
+     ללא תנאי הבטיח לתלמידה תיקון ששיעור שסוכם יסרב לו בלחיצה. -->
+<ng-template #fixAndResubmit>
+  <div class="mt-2" *ngIf="submission?.canResubmit">
+    <p-button
+      label="תיקון והגשה מחדש"
+      icon="pi pi-pencil"
+      styleClass="sg-btn-primary"
+      [routerLink]="['/my', 'submissions', submissionId, 'edit']"
+    ></p-button>
+  </div>
+
+  <!-- בלי המשפט הזה מסך של שיעור שסוכם היה שותק לגמרי: לא כפתור, לא הסבר. -->
+  <span *ngIf="submission?.lockReason">{{ submission!.lockReason }}</span>
+</ng-template>

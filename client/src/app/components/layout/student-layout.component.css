@@ -1,0 +1,27 @@
+/* ‎.sg-shell‎ ו-‎.sg-header‎ משותפים לשני ה-layouts ויושבים ב-styles.css. */
+
+.sg-topbar-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  padding: 0.25rem;
+}
+
+.sg-topbar-identity:hover .sg-topbar-user,
+.sg-topbar-identity.active .sg-topbar-user {
+  color: var(--accent);
+}
+
+.sg-topbar-user {
+  font-weight: 600;
+  color: var(--app-text-strong);
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .sg-topbar-user {
+    display: none;
+  }
+}

@@ -1,0 +1,51 @@
+<div class="sg-shell min-h-screen relative overflow-x-hidden">
+  <header class="sg-header">
+    <div class="sg-page">
+      <app-topbar></app-topbar>
+    </div>
+  </header>
+
+  <!-- Compact welcome strip — Dashboard only -->
+  <section *ngIf="isDashboard" class="sg-welcome" aria-label="קבלת פנים">
+    <div class="sg-page">
+      <div class="sg-welcome-card sg-welcome-card--hero">
+        <div class="sg-welcome-content">
+          <div class="sg-welcome-title">שלום, טוב לראות אותך שוב</div>
+          <div class="sg-welcome-sub">
+            הנה תמונת המצב העדכנית של הכיתה שלך
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="p-0" aria-label="תוכן">
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer class="sg-footer" aria-label="פוטר">
+    <div class="sg-footer-inner">
+      <div class="sg-footer-brand flex align-items-center gap-2">
+        <img
+          src="assets/favicon.png"
+          alt=""
+          class="sg-brand-logo"
+          aria-hidden="true"
+        />
+        SmartGrader
+      </div>
+      <nav class="sg-footer-links" aria-label="קישורי פוטר">
+        <a routerLink="/">לוח בקרה</a>
+        <a routerLink="/courses">מקצועות</a>
+        <a routerLink="/lessons">שיעורים</a>
+        <a routerLink="/students">סטודנטים</a>
+        <a routerLink="/classes">כיתות</a>
+      </nav>
+      <div class="sg-footer-copyright">
+      
+        <a href="mailto:hsh3273454@gmail.com">hsh3273454&#64;gmail.com</a>
+         © 2026 SmartGrader. כל הזכויות שמורות.
+      </div>
+    </div>
+  </footer>
+</div>

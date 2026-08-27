@@ -1,0 +1,104 @@
+<section class="sg-page">
+  <div class="pt-3 pb-5">
+    <p-card styleClass="sg-card">
+      <ng-template pTemplate="header">
+        <div class="px-4 pt-4 pb-2">
+          <a class="sg-breadcrumb-link" [routerLink]="['/my', 'lessons']">
+            <i class="pi pi-arrow-right" aria-hidden="true"></i>
+            חזרה לשיעורים שלי
+          </a>
+          <div class="sg-title mt-2">
+            <div class="sg-h1">
+              התרגילים שלי{{
+                lesson?.courseName ? " — " + lesson!.courseName : ""
+              }}
+            </div>
+            <div class="sg-h2">הסטטוס האישי שלך בכל תרגיל בשיעור זה</div>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="sg-table-wrap">
+        <p-table
+          [value]="rows"
+          [loading]="loading"
+          dataKey="assignment.id"
+          responsiveLayout="stack"
+          [breakpoint]="'768px'"
+          styleClass="sg-table"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th scope="col">תרגיל</th>
+              <th scope="col">בונוס</th>
+              <th scope="col">סטטוס</th>
+              <th scope="col">ציון</th>
+              <th scope="col"><span class="sr-only">פעולה</span></th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td>{{ row.assignment.title || "—" }}</td>
+              <td>
+                <span *ngIf="row.assignment.isBonus" class="sg-bonus-chip"
+                  >בונוס +{{ row.assignment.bonusValue }}</span
+                >
+                <span *ngIf="!row.assignment.isBonus">—</span>
+              </td>
+              <td>
+                <p-tag
+                  [severity]="row.statusSeverity"
+                  [icon]="row.statusIcon"
+                  [value]="row.statusLabel"
+                ></p-tag>
+              </td>
+              <td>
+                <span
+                  *ngIf="row.submission?.score !== null && row.submission"
+                  class="sg-score"
+                  >{{ row.submission.score }}</span
+                >
+                <span
+                  *ngIf="!row.submission || row.submission.score === null"
+                  >—</span
+                >
+              </td>
+              <td>
+                <p-button
+                  *ngIf="!row.submission"
+                  label="הגשת קוד"
+                  icon="pi pi-upload"
+                  styleClass="sg-btn-primary"
+                  (onClick)="submitCode(row.assignment.id)"
+                ></p-button>
+                <p-button
+                  *ngIf="row.submission"
+                  label="צפייה בפידבק"
+                  icon="pi pi-comments"
+                  [text]="true"
+                  (onClick)="viewFeedback(row.submission.id)"
+                ></p-button>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="5">
+                <div class="flex flex-column align-items-center gap-2 py-5">
+                  <i
+                    class="pi pi-inbox text-3xl"
+                    style="color: var(--app-muted)"
+                    aria-hidden="true"
+                  ></i>
+                  <span>אין תרגילים בשיעור זה.</span>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </p-card>
+  </div>
+</section>

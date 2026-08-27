@@ -1,0 +1,8 @@
+.sg-row-archived {
+  opacity: 0.6;
+}
+
+:host ::ng-deep .sg-tag-archived {
+  background: var(--app-surface-2);
+  color: var(--app-muted);
+}

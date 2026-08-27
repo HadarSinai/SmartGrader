@@ -1,0 +1,86 @@
+<section class="sg-page">
+  <div class="pt-3 pb-5">
+    <p-card styleClass="sg-card sg-form-card">
+      <ng-template pTemplate="header">
+        <div
+          class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
+        >
+          <div class="sg-title">
+            <div class="sg-h1">
+              {{ isEditMode ? "עריכת כיתה" : "כיתה חדשה" }}
+            </div>
+            <div class="sg-h2">שם הכיתה ושנת הלימודים שלה</div>
+          </div>
+        </div>
+      </ng-template>
+
+      <form class="px-4 pb-4" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="formgrid grid">
+          <div class="field col-12 md:col-6">
+            <label class="block font-bold mb-2" for="name"
+              >שם הכיתה *</label
+            >
+            <input
+              pInputText
+              class="w-full"
+              id="name"
+              formControlName="name"
+              placeholder="לדוגמה: י׳1"
+            />
+            <small
+              class="p-error"
+              *ngIf="form.get('name')?.invalid && form.get('name')?.touched"
+            >
+              שם הכיתה הוא שדה חובה (עד 50 תווים)
+            </small>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <label class="block font-bold mb-2" for="academicYear"
+              >שנת לימודים *</label
+            >
+            <p-dropdown
+              inputId="academicYear"
+              styleClass="w-full"
+              [options]="yearOptions"
+              formControlName="academicYear"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="בחירת שנה"
+            ></p-dropdown>
+            <small
+              class="p-error"
+              *ngIf="
+                form.get('academicYear')?.invalid &&
+                form.get('academicYear')?.touched
+              "
+            >
+              שנת לימודים היא שדה חובה
+            </small>
+          </div>
+        </div>
+
+        <div class="sg-form-actions">
+          <p-button
+            label="ביטול"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+            type="button"
+          >
+          </p-button>
+          <p-button
+            [label]="isEditMode ? 'שמירה' : 'יצירה'"
+            type="submit"
+            styleClass="sg-btn-primary"
+            [loading]="loading"
+            [disabled]="form.invalid"
+          >
+          </p-button>
+        </div>
+      </form>
+    </p-card>
+  </div>
+</section>
+
+<p-confirmDialog></p-confirmDialog>

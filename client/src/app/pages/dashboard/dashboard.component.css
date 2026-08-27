@@ -1,0 +1,17 @@
+.sg-kpi-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.sg-kpi-iconWrap {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-lg);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+}
+
+.sg-kpi-icon {
+  color: var(--accent);
+}

@@ -1,0 +1,71 @@
+<p-button
+  icon="pi pi-bell"
+  [text]="true"
+  [rounded]="true"
+  severity="secondary"
+  ariaLabel="התראות"
+  [badge]="
+    notifications.unreadCount() > 0
+      ? notifications.unreadCount().toString()
+      : undefined
+  "
+  badgeClass="p-badge-danger"
+  (onClick)="toggleNotifications($event)"
+>
+</p-button>
+
+<p-overlayPanel
+  #notifPanel
+  (onShow)="notifications.markAllRead()"
+  styleClass="sg-notif-panel"
+>
+  @if (auth.isStudent()) {
+    @if (notifications.graded().length === 0) {
+      <div class="sg-notif-empty">אין התראות חדשות</div>
+    } @else {
+      <ul class="sg-notif-list" role="list">
+        @for (n of notifications.graded(); track n.id) {
+          <li class="sg-notif-item">
+            <a
+              [routerLink]="['/my', 'submissions', n.id]"
+              (click)="notifPanel.hide()"
+            >
+              <span class="sg-notif-text">
+                ההגשה שלך בתרגיל "{{ n.assignmentName }}" נבדקה
+              </span>
+              <span class="sg-notif-time">
+                {{ n.submittedAt | date: "dd.MM.yy HH:mm" }}
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  } @else {
+    @if (notifications.signals().length === 0) {
+      <div class="sg-notif-empty">אין ממצאים מאתמול</div>
+    } @else {
+      <ul class="sg-notif-list" role="list">
+        @for (s of notifications.signals(); track s.key) {
+          <li class="sg-notif-item">
+            <a
+              class="sg-notif-signal"
+              [routerLink]="['/lessons', s.lessonId, 'assignments']"
+              (click)="notifPanel.hide()"
+            >
+              <i
+                class="sg-notif-icon pi"
+                [ngClass]="iconClass(s.type)"
+                aria-hidden="true"
+              ></i>
+              <span class="sg-notif-body">
+                <span class="sg-notif-text">{{ s.message }}</span>
+                <span class="sg-notif-time">{{ s.lessonSubject }}</span>
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  }
+</p-overlayPanel>

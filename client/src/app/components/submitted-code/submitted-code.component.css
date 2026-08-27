@@ -1,0 +1,20 @@
+.sg-file + .sg-file {
+  margin-top: var(--space-3);
+}
+
+.sg-file__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--app-font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+  direction: ltr;
+  text-align: left;
+}
+
+.sg-file__empty {
+  font-size: var(--text-sm);
+  color: var(--app-muted);
+}

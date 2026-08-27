@@ -32,68 +32,7 @@ import { CoursesService } from "@services/courses.service";
     ConfirmDialogModule,
   ],
   providers: [ConfirmationService],
-  template: `
-    <section class="sg-page">
-      <div class="pt-3 pb-5">
-        <p-card styleClass="sg-card sg-form-card">
-          <ng-template pTemplate="header">
-            <div
-              class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
-            >
-              <div class="sg-title">
-                <div class="sg-h1">
-                  {{ isEditMode ? "עריכת מקצוע" : "מקצוע חדש" }}
-                </div>
-                <div class="sg-h2">לדוגמה: C#, ג׳אווה, אלגוריתמיקה</div>
-              </div>
-            </div>
-          </ng-template>
-
-          <form class="px-4 pb-4" [formGroup]="form" (ngSubmit)="onSubmit()">
-            <div class="formgrid grid">
-              <div class="field col-12 md:col-6">
-                <label class="block font-bold mb-2" for="name"
-                  >שם המקצוע *</label
-                >
-                <input
-                  pInputText
-                  class="w-full"
-                  id="name"
-                  formControlName="name"
-                  placeholder="לדוגמה: C#"
-                />
-                <small
-                  class="p-error"
-                  *ngIf="form.get('name')?.invalid && form.get('name')?.touched"
-                >
-                  שם המקצוע הוא שדה חובה (עד 100 תווים)
-                </small>
-              </div>
-            </div>
-
-            <div class="sg-form-actions">
-              <p-button
-                label="ביטול"
-                severity="secondary"
-                [outlined]="true"
-                (onClick)="onCancel()"
-                type="button"
-              ></p-button>
-              <p-button
-                [label]="isEditMode ? 'שמירה' : 'יצירה'"
-                type="submit"
-                styleClass="sg-btn-primary"
-                [loading]="loading"
-                [disabled]="form.invalid"
-              ></p-button>
-            </div>
-          </form>
-        </p-card>
-      </div>
-    </section>
-
-    <p-confirmDialog></p-confirmDialog>
-  `,
+  templateUrl: "./course-form.component.html",
 })
 export class CourseFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);

@@ -1,0 +1,11 @@
+.hdp {
+  display: flex;
+  gap: 0.5rem;
+}
+.hdp__part {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.hdp__month {
+  flex: 1.4 1 0;
+}

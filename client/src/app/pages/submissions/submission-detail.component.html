@@ -1,0 +1,389 @@
+<section class="sg-page">
+  <div class="pt-3 pb-5">
+    <p-card styleClass="sg-card">
+      <ng-template pTemplate="header">
+        <div
+          class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
+        >
+          <div class="sg-title">
+            <a
+              class="sg-breadcrumb-link"
+              role="link"
+              tabindex="0"
+              (click)="navigateToList()"
+              (keydown.enter)="navigateToList()"
+            >
+              <i class="pi pi-arrow-right" aria-hidden="true"></i>
+              חזרה להגשות
+            </a>
+            <div class="sg-h1">פרטי הגשה</div>
+            <div class="sg-h2">צפייה בפרטים, סטטוס וקוד</div>
+          </div>
+
+          <div class="flex align-items-center gap-2 flex-wrap">
+            <!-- ⚠️ כפתור ולא קוד משותף: קוד עובר בין תלמידות ומנטרל את הכלל בשקט.
+                 ההגנה כאן היא ההזדהות הקיימת, וכל אישור נרשם ביומן ביקורת.
+                 ⚠️ lockReason מוציא מכלל זה שיעור שסוכם או כיתה בארכיון: שם האישור
+                 לא יפתח דבר (נעילה גוברת גם עליו — ר' Submission.MarkPendingAi),
+                 והצעתו הייתה מבטיחה למורה פעולה שתחזור כשגיאה. -->
+            <p-button
+              *ngIf="submission && !submission.canResubmit && !submission.lockReason"
+              label="אישור הגשה נוספת"
+              icon="pi pi-unlock"
+              [outlined]="true"
+              (onClick)="openGrantExtraAttempt()"
+            ></p-button>
+
+            <span
+              *ngIf="submission?.lockReason"
+              class="sg-lock-note"
+              ><i class="pi pi-lock" aria-hidden="true"></i>
+              {{ submission!.lockReason }}</span
+            >
+            <p-button
+              *ngIf="canOverrideScore"
+              label="דריסת ציון"
+              icon="pi pi-sliders-h"
+              [outlined]="true"
+              (onClick)="openOverrideScore()"
+            ></p-button>
+            <!-- ⚠️ "עריכה" מוליכה ל-UpdateSubmission, וזה זורק על הגשה נעולה
+                 (SubmissionLock.Message). המסך הסביר כבר למה — אין להציע פעולה
+                 שהמסך עצמו הרגע פסל. -->
+            <p-button
+              *ngIf="!submission?.lockReason"
+              label="עריכה"
+              icon="pi pi-pencil"
+              styleClass="sg-btn-primary"
+              (onClick)="navigateToEdit()"
+            >
+            </p-button>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="px-4 pb-4" *ngIf="submission">
+        <div class="grid">
+          <div class="col-12 md:col-6">
+            <div class="text-xs font-bold text-color-secondary mb-1">
+              סטודנט
+            </div>
+            <div class="text-color font-semibold">
+              {{ submission.studentName || "—" }}
+            </div>
+          </div>
+
+          <div class="col-12 md:col-6">
+            <div class="text-xs font-bold text-color-secondary mb-1">
+              תרגיל
+            </div>
+            <div class="text-color font-semibold">
+              {{ submission.assignmentName || "—" }}
+            </div>
+          </div>
+
+          <div class="col-12 md:col-6">
+            <div class="text-xs font-bold text-color-secondary mb-1">
+              נשלח
+            </div>
+            <div class="text-color">
+              {{ submission.submittedAt | date: "dd.MM.yy HH:mm" }}
+            </div>
+          </div>
+
+          <div class="col-12 md:col-6">
+            <div class="text-xs font-bold text-color-secondary mb-1">
+              ציון
+            </div>
+            <div
+              class="text-3xl font-bold"
+              [class.opacity-70]="submission.score === null"
+              style="color: var(--accent)"
+            >
+              {{ submission.score ?? "—" }}
+            </div>
+            <div
+              class="text-color-secondary text-sm"
+              *ngIf="submission.score === null"
+            >
+              {{
+                submission.status === "RequirementsNotMet"
+                  ? "לא ניתן ציון — דרישה חוסמת לא התקיימה"
+                  : "עדיין לא נבדק"
+              }}
+            </div>
+            <!-- ציון שנדרס נראה זהה לציון מחושב, ולכן הסיבה מוצגת לצידו תמיד -->
+            <div
+              class="text-color-secondary text-sm"
+              *ngIf="submission.scoreOverrideReason"
+            >
+              <i class="pi pi-sliders-h" aria-hidden="true"></i>
+              ציון שנקבע ידנית: {{ submission.scoreOverrideReason }}
+            </div>
+            <div
+              class="text-color-secondary text-sm"
+              *ngIf="submission.hasUnusedExtraAttempt"
+            >
+              <i class="pi pi-unlock" aria-hidden="true"></i>
+              אושרה הגשה נוספת<ng-container
+                *ngIf="submission.extraAttemptReason"
+                >: {{ submission.extraAttemptReason }}</ng-container
+              >
+            </div>
+          </div>
+
+          <!-- ציר הניסיונות. ⚠️ רק האחרון נחשב כציון — עד שנוסף הארכיון, הגשה חוזרת
+               דרסה את הקודמת במקום והמידע נעלם. -->
+          <div class="col-12" *ngIf="submission.attempts?.length">
+            <div class="text-xs font-bold text-color-secondary mb-2">
+              ניסיונות
+            </div>
+            <ol class="sg-attempts">
+              <li class="sg-attempts__item sg-attempts__item--current">
+                <span class="sg-attempts__no"
+                  >ניסיון {{ submission.attemptNumber }}</span
+                >
+                <span class="sg-attempts__score">{{
+                  submission.score ?? "—"
+                }}</span>
+                <span class="sg-attempts__meta">
+                  {{ submission.submittedAt | date: "dd.MM.yy HH:mm" }} ·
+                  נוכחי, זה הציון שנחשב
+                </span>
+              </li>
+              <li
+                class="sg-attempts__item"
+                *ngFor="let attempt of submission.attempts"
+              >
+                <span class="sg-attempts__no"
+                  >ניסיון {{ attempt.attemptNumber }}</span
+                >
+                <span class="sg-attempts__score">{{
+                  attempt.score ?? "—"
+                }}</span>
+                <span class="sg-attempts__meta">
+                  {{ attempt.submittedAt | date: "dd.MM.yy HH:mm" }} ·
+                  {{ statusLabels[attempt.status] || attempt.status }}
+                  <ng-container *ngIf="attempt.isCollapsed"
+                    >· הפרטים המלאים נגזמו</ng-container
+                  >
+                </span>
+              </li>
+            </ol>
+          </div>
+
+          <!-- Unified status area -->
+          <div class="col-12">
+            <div
+              class="sg-status-box"
+              [class.sg-status-box--error]="
+                submission.status === 'CompilationFailed' ||
+                submission.status === 'AiFailed'
+              "
+              [class.sg-status-box--warn]="
+                submission.status === 'JudgeUnavailable'
+              "
+            >
+              <div class="flex align-items-center gap-2 flex-wrap">
+                <!-- ⚠️ תגית אחת מתוך STATUS_PRESENTATION, במקום שבעה ngSwitchCase.
+                     העותק שישב כאן נתן ל-CompilationFailed את pi-times-circle בעוד
+                     שמסכים אחרים נתנו לו pi-exclamation-triangle. -->
+                <p-tag
+                  [severity]="statusOf(submission.status).severity"
+                  [value]="statusOf(submission.status).label"
+                  [icon]="statusOf(submission.status).icon"
+                />
+
+                <span
+                  class="text-color-secondary text-sm"
+                  *ngIf="isPolling"
+                  aria-live="polite"
+                >
+                  מתעדכן אוטומטית...
+                </span>
+              </div>
+
+              <div
+                *ngIf="
+                  submission.status === 'CompilationFailed' &&
+                  submission.compileError
+                "
+              >
+                <strong>שגיאת קומפילציה:</strong>
+                <pre>{{ submission.compileError }}</pre>
+              </div>
+
+              <div
+                *ngIf="
+                  submission.status === 'JudgeUnavailable' &&
+                  submission.aiError
+                "
+              >
+                <strong>פרטי התקלה (לא קשורה לקוד של התלמיד):</strong>
+                <pre>{{ submission.aiError }}</pre>
+              </div>
+
+              <div
+                *ngIf="
+                  submission.status !== 'JudgeUnavailable' &&
+                  submission.aiError
+                "
+              >
+                <strong>שגיאת AI:</strong>
+                <pre>{{ submission.aiError }}</pre>
+              </div>
+
+              <!-- ⚠️ גם ב-RequirementsNotMet: שם אין תוצאות בדיקות (Judge0 לא רץ),
+                   אבל טבלת הדרישות היא כל ההסבר לְמה שקרה. -->
+              <app-submission-feedback-panel
+                *ngIf="
+                  submission.status === 'Done' ||
+                  submission.status === 'RequirementsNotMet'
+                "
+                [submission]="submission"
+              ></app-submission-feedback-panel>
+
+              <!-- ⚠️ אותה נעילה כמו ב-"עריכה" שבכותרת: שיעור שסוכם דוחה גם הגשה
+                   חוזרת אחרי כשל קומפילציה. -->
+              <div
+                *ngIf="
+                  !submission.lockReason &&
+                  (submission.status === 'CompilationFailed' ||
+                    submission.status === 'AiFailed' ||
+                    submission.status === 'JudgeUnavailable')
+                "
+              >
+                <p-button
+                  label="עריכה והגשה מחדש"
+                  icon="pi pi-refresh"
+                  styleClass="sg-btn-primary"
+                  (onClick)="navigateToEdit()"
+                ></p-button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="text-xs font-bold text-color-secondary mb-2">
+              קוד
+            </div>
+            <app-submitted-code
+              [submission]="submission"
+            ></app-submitted-code>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="flex align-items-center justify-content-center py-6"
+        *ngIf="loading"
+      >
+        <i class="pi pi-spin pi-spinner text-3xl" aria-hidden="true"></i>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- אישור הגשה נוספת. ⚠️ הסיבה היא שדה חובה — היא מה שמחליף את "לראות מי
+       השתמשה בקוד המשותף", ובלעדיה ליומן הביקורת אין ערך. -->
+  <p-dialog
+    header="אישור הגשה נוספת"
+    [(visible)]="grantDialogOpen"
+    [modal]="true"
+    [style]="{ width: '28rem' }"
+    [draggable]="false"
+    [resizable]="false"
+  >
+    <div class="flex flex-column gap-3">
+      <div>
+        האישור גובר על סף הציון של התרגיל ומאפשר לתלמידה להגיש פעם נוספת. הוא
+        חד-פעמי ונצרך בהגשה הבאה.
+      </div>
+      <div>
+        <label class="sg-label" for="grantReason">סיבה *</label>
+        <textarea
+          pInputTextarea
+          class="w-full"
+          id="grantReason"
+          rows="3"
+          [(ngModel)]="grantReason"
+          placeholder="לדוגמה: תקלה בהגשה בשיעור"
+        ></textarea>
+        <small class="p-error block" *ngIf="grantAttempted && !grantReason.trim()">
+          יש לציין סיבה — היא נשמרת ביומן הביקורת.
+        </small>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <p-button
+        label="ביטול"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="grantDialogOpen = false"
+      ></p-button>
+      <p-button
+        label="אישור"
+        styleClass="sg-btn-primary"
+        [loading]="grantSaving"
+        (onClick)="saveGrantExtraAttempt()"
+      ></p-button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- דריסת ציון — רשת ביטחון, לא חלק מהמסלול הרגיל -->
+  <p-dialog
+    header="דריסת ציון"
+    [(visible)]="overrideDialogOpen"
+    [modal]="true"
+    [style]="{ width: '28rem' }"
+    [draggable]="false"
+    [resizable]="false"
+  >
+    <div class="flex flex-column gap-3">
+      <div>
+        הציון שיוזן יחליף את הציון המחושב, והסיבה תישמר לצידו ותוצג במסך הזה.
+      </div>
+      <div>
+        <label class="sg-label" for="overrideScore">ציון *</label>
+        <p-inputNumber
+          inputId="overrideScore"
+          [(ngModel)]="overrideScore"
+          [min]="0"
+          [showButtons]="true"
+          styleClass="w-full"
+        ></p-inputNumber>
+      </div>
+      <div>
+        <label class="sg-label" for="overrideReason">סיבה *</label>
+        <textarea
+          pInputTextarea
+          class="w-full"
+          id="overrideReason"
+          rows="3"
+          [(ngModel)]="overrideReason"
+          placeholder="לדוגמה: הפלט הצפוי בבדיקה 2 היה שגוי"
+        ></textarea>
+        <small
+          class="p-error block"
+          *ngIf="overrideAttempted && !overrideReason.trim()"
+        >
+          יש לציין סיבה — היא נשמרת ביומן הביקורת.
+        </small>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <p-button
+        label="ביטול"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="overrideDialogOpen = false"
+      ></p-button>
+      <p-button
+        label="שמירה"
+        styleClass="sg-btn-primary"
+        [loading]="overrideSaving"
+        [disabled]="overrideScore === null"
+        (onClick)="saveOverrideScore()"
+      ></p-button>
+    </ng-template>
+  </p-dialog>
+</section>

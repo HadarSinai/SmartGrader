@@ -184,58 +184,8 @@ export function getHebrewToday(): HebrewDateValue | null {
       multi: true,
     },
   ],
-  template: `
-    <div class="hdp" dir="rtl">
-      <p-dropdown
-        class="hdp__part"
-        styleClass="w-full"
-        [options]="dayOptions"
-        [(ngModel)]="day"
-        (onChange)="onDayChange()"
-        [disabled]="disabled"
-        placeholder="יום"
-        ariaLabel="יום"
-        appendTo="body"
-      ></p-dropdown>
-      <p-dropdown
-        class="hdp__part hdp__month"
-        styleClass="w-full"
-        [options]="monthOptions"
-        [(ngModel)]="month"
-        (onChange)="onMonthChange()"
-        [disabled]="disabled"
-        placeholder="חודש"
-        ariaLabel="חודש"
-        appendTo="body"
-      ></p-dropdown>
-      <p-dropdown
-        class="hdp__part"
-        styleClass="w-full"
-        [options]="yearOptions"
-        [(ngModel)]="year"
-        (onChange)="onYearChange()"
-        [disabled]="disabled"
-        placeholder="שנה"
-        ariaLabel="שנה"
-        appendTo="body"
-      ></p-dropdown>
-    </div>
-  `,
-  styles: [
-    `
-      .hdp {
-        display: flex;
-        gap: 0.5rem;
-      }
-      .hdp__part {
-        flex: 1 1 0;
-        min-width: 0;
-      }
-      .hdp__month {
-        flex: 1.4 1 0;
-      }
-    `,
-  ],
+  templateUrl: "./hebrew-date-picker.component.html",
+  styleUrls: ["./hebrew-date-picker.component.css"],
 })
 export class HebrewDatePickerComponent implements ControlValueAccessor {
   readonly yearOptions: DropdownOption[];

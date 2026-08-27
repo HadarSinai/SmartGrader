@@ -8,12 +8,7 @@ import { AccessibilityService } from './services/accessibility.service';
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, ToastModule, AccessibilityWidgetComponent],
-  template: `
-    <router-outlet></router-outlet>
-    <p-toast position="top-right"></p-toast>
-    <app-accessibility-widget></app-accessibility-widget>
-  `,
-  styles: []
+  templateUrl: "./app.component.html",
 })
 export class AppComponent {
   constructor(private a11y: AccessibilityService) {

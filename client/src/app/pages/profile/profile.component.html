@@ -1,0 +1,279 @@
+<section class="sg-page">
+  <div class="pt-3 pb-5">
+    <p-card styleClass="sg-card sg-form-card">
+      <ng-template pTemplate="header">
+        <div
+          class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
+        >
+          <div class="sg-title">
+            <div class="sg-h1">החשבון שלי</div>
+            <div class="sg-h2">
+              {{
+                auth.isStudent()
+                  ? "החלפת הסיסמה של החשבון"
+                  : "עדכון פרטי החשבון והחלפת הסיסמה"
+              }}
+            </div>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="px-4 pb-4" *ngIf="loading">
+        <p-skeleton height="2.5rem" styleClass="mb-3"></p-skeleton>
+        <p-skeleton height="2.5rem" styleClass="mb-3"></p-skeleton>
+        <p-skeleton height="2.5rem"></p-skeleton>
+      </div>
+
+      <ng-container *ngIf="!loading && profile">
+        <!-- ── פרטי החשבון ── -->
+        <form class="px-4 pb-4" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+          <div class="formgrid grid">
+            <!-- שם המשתמש מוצג כטקסט ולא כשדה: הוא מזהה ההתחברות, ואין לו
+                 SetUsername בשרת. שינוי שלו היה מנתק את המשתמשת מהחשבון שלה. -->
+            <div class="field col-12 md:col-6">
+              <label class="block font-bold mb-2">שם משתמש</label>
+              <div class="sg-readonly-value">{{ profile.username }}</div>
+              <small class="block mt-1 text-color-secondary">
+                שם המשתמש נקבע ביצירת החשבון ואינו ניתן לשינוי
+              </small>
+            </div>
+
+            <!-- לתלמידה מוצג השם לקריאה בלבד, כדי שהמסך לא ייראה ריק ותדע
+                 למי לפנות כדי לתקן אותו. -->
+            <div class="field col-12 md:col-6" *ngIf="auth.isStudent()">
+              <label class="block font-bold mb-2">שם מלא</label>
+              <div class="sg-readonly-value">{{ profile.fullName }}</div>
+              <small class="block mt-1 text-color-secondary">
+                השם מתוחזק בידי המורה שלך. אם הוא שגוי, יש לפנות אליה.
+              </small>
+            </div>
+
+            <ng-container *ngIf="!auth.isStudent()">
+              <div class="field col-12 md:col-6">
+                <label class="block font-bold mb-2" for="fullName"
+                  >שם מלא *</label
+                >
+                <input
+                  pInputText
+                  class="w-full"
+                  id="fullName"
+                  formControlName="fullName"
+                  placeholder="לדוגמה: מרים לוי"
+                />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    profileForm.get('fullName')?.invalid &&
+                    profileForm.get('fullName')?.touched
+                  "
+                >
+                  שם מלא הוא שדה חובה
+                </small>
+              </div>
+
+              <div class="field col-12 md:col-6">
+                <label class="block font-bold mb-2" for="email">מייל *</label>
+                <input
+                  pInputText
+                  sgNoHebrew
+                  class="w-full"
+                  id="email"
+                  type="email"
+                  formControlName="email"
+                  autocomplete="off"
+                  placeholder="teacher@example.com"
+                />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    profileForm.get('email')?.hasError('required') &&
+                    profileForm.get('email')?.touched
+                  "
+                >
+                  מייל הוא שדה חובה
+                </small>
+                <small
+                  class="p-error"
+                  *ngIf="
+                    profileForm.get('email')?.hasError('email') &&
+                    profileForm.get('email')?.touched
+                  "
+                >
+                  כתובת המייל אינה תקינה
+                </small>
+                <small class="block mt-1 text-color-secondary">
+                  זו הכתובת שדרכה תשוחזר הסיסמה של החשבון
+                </small>
+              </div>
+            </ng-container>
+          </div>
+
+          <div class="sg-account-error" *ngIf="profileError" role="alert">
+            <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+            <span>{{ profileError }}</span>
+          </div>
+
+          <div class="sg-form-actions" *ngIf="!auth.isStudent()">
+            <p-button
+              label="ביטול שינויים"
+              severity="secondary"
+              [outlined]="true"
+              type="button"
+              [disabled]="profileForm.pristine || profileSaving"
+              (onClick)="resetProfileForm()"
+            >
+            </p-button>
+            <p-button
+              label="שמירה"
+              type="submit"
+              styleClass="sg-btn-primary"
+              [loading]="profileSaving"
+              [disabled]="profileForm.invalid || profileForm.pristine"
+            >
+            </p-button>
+          </div>
+        </form>
+
+        <!-- ── החלפת סיסמה — בלוק נפרד עם כפתור משלו, כמו במסך עריכת מורה:
+             זו פעולה שנשמרת מיד ואינה חלק משמירת הפרטים. ── -->
+        <div class="px-4 pb-4">
+          <form
+            class="sg-account-section"
+            [formGroup]="passwordForm"
+            (ngSubmit)="changePassword()"
+          >
+            <div class="sg-account-title">
+              <i class="pi pi-key" aria-hidden="true"></i>
+              החלפת סיסמה
+            </div>
+
+            <div class="text-color-secondary mb-3">
+              הסיסמה החדשה נכנסת לתוקף מיד. אין צורך להתחבר מחדש.
+            </div>
+
+            <div class="formgrid grid">
+              <div class="field col-12 md:col-4">
+                <label class="block font-bold mb-2" for="currentPassword"
+                  >הסיסמה הנוכחית *</label
+                >
+                <p-password
+                  sgNoHebrew
+                  inputId="currentPassword"
+                  formControlName="currentPassword"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  autocomplete="current-password"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    passwordForm.get('currentPassword')?.invalid &&
+                    passwordForm.get('currentPassword')?.touched
+                  "
+                >
+                  נדרשת הסיסמה הנוכחית
+                </small>
+                <small class="block mt-1 text-color-secondary">
+                  נדרשת כדי שמי שמתיישבת מול מחשב שנשאר מחובר לא תוכל להחליף
+                  את הסיסמה שלך
+                </small>
+              </div>
+
+              <div class="field col-12 md:col-4">
+                <label class="block font-bold mb-2" for="password"
+                  >סיסמה חדשה *</label
+                >
+                <p-password
+                  sgNoHebrew
+                  inputId="password"
+                  formControlName="password"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  autocomplete="new-password"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                />
+                <app-password-checklist
+                  *ngIf="passwordForm.get('password')?.value"
+                  [password]="passwordForm.get('password')?.value"
+                />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    passwordForm.get('password')?.hasError('required') &&
+                    passwordForm.get('password')?.touched
+                  "
+                >
+                  נדרשת סיסמה
+                </small>
+                <small
+                  class="p-error"
+                  *ngIf="
+                    passwordForm.hasError('sameAsCurrent') &&
+                    passwordForm.get('password')?.touched
+                  "
+                >
+                  הסיסמה החדשה זהה לנוכחית
+                </small>
+              </div>
+
+              <div class="field col-12 md:col-4">
+                <label class="block font-bold mb-2" for="confirmPassword"
+                  >אימות הסיסמה החדשה *</label
+                >
+                <p-password
+                  sgNoHebrew
+                  inputId="confirmPassword"
+                  formControlName="confirmPassword"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  autocomplete="new-password"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                />
+                <small
+                  class="p-error"
+                  *ngIf="
+                    passwordForm
+                      .get('confirmPassword')
+                      ?.hasError('required') &&
+                    passwordForm.get('confirmPassword')?.touched
+                  "
+                >
+                  נדרש אימות של הסיסמה
+                </small>
+                <small
+                  class="p-error"
+                  *ngIf="
+                    passwordForm.hasError('passwordsMismatch') &&
+                    passwordForm.get('confirmPassword')?.touched
+                  "
+                >
+                  הסיסמאות אינן תואמות
+                </small>
+              </div>
+            </div>
+
+            <div class="sg-account-error" *ngIf="passwordError" role="alert">
+              <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+              <span>{{ passwordError }}</span>
+            </div>
+
+            <p-button
+              label="החלפת הסיסמה"
+              icon="pi pi-key"
+              severity="secondary"
+              [outlined]="true"
+              type="submit"
+              [loading]="passwordSaving"
+              [disabled]="passwordForm.invalid"
+            >
+            </p-button>
+          </form>
+        </div>
+      </ng-container>
+    </p-card>
+  </div>
+</section>

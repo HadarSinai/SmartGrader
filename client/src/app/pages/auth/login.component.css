@@ -1,0 +1,21 @@
+/* המשותף לשלושת מסכי ה-auth יושב ב-styles.css. כאן רק מה שייחודי לכניסה. */
+
+/* מיושר לקצה ההתחלה של השורה — בעברית זהו הצד הימני, ולכן start ולא right:
+   ערך קשיח היה מציב את הקישור בצד הלא נכון אם הממשק יוצג אי-פעם ב-LTR. */
+.sg-auth-forgot {
+  align-self: flex-start;
+  margin-top: 0.15rem;
+  font-size: var(--text-sm);
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sg-auth-forgot:hover {
+  text-decoration: underline;
+}
+
+:host ::ng-deep .w-full,
+:host ::ng-deep .p-password {
+  width: 100%;
+}

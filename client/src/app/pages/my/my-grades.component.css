@@ -1,0 +1,33 @@
+.sg-section-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--app-text-strong);
+  margin: 0;
+}
+
+.sg-section-hint {
+  font-size: var(--text-sm);
+  color: var(--app-muted);
+  margin: 0.25rem 0 0;
+}
+
+.sg-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* Selectable lesson rows — affordance + selected state */
+:host ::ng-deep .sg-table-selectable tbody tr {
+  cursor: pointer;
+}
+
+:host ::ng-deep
+  .sg-table-selectable
+  tbody
+  tr.p-highlight
+  > td:first-child {
+  box-shadow: inset -3px 0 0 0 var(--status-success-ink);
+}

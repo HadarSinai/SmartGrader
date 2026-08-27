@@ -265,6 +265,7 @@ Plan B's B3; the requirement is what stops it recurring.
 | the status table matches the enum | `EnumTableConformanceTests` |
 | hardcoded colours in `client/src/app` do not increase | `DesignTokenTests`, ratcheted |
 | no component redefines a selector `styles.css` already defines | `DesignTokenTests` |
+| every component keeps its template and styles in files of their own | `ComponentFileLayoutTests` |
 
 **The colour ratchet is currently 0 files.** A6 converted all fourteen. From here on, one hardcoded
 colour anywhere under `client/src/app` is a failing test — and the failure names the file.
