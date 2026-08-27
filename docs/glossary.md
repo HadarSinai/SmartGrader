@@ -113,3 +113,15 @@ Real product terms that no one symbol carries. Listed so they are not invented t
 | סיום שנה | Archiving every active class at once | `POST /api/classes/finish-year` — admin only |
 | המסע שלי | The student area | the `/my/*` routes |
 | סיגנל כיתתי | A pattern across several students in a window, computed on demand | `ClassSignalDetector`; **there is no notification entity** |
+
+## One term the interface says two ways
+
+`Student` is «תלמיד/ה» in the routes, the models, the student area and the feedback panel — and
+«סטודנט» in the students list, the students form, the dashboard and the submissions list. Both are in
+the shipped interface today, on screens a teacher moves between in one session.
+
+It is recorded here rather than fixed in passing, because picking one is a product decision and the
+change touches roughly a dozen screens' copy. **«תלמידה» is the better default** — the system is a
+school grading system, not a university one, and the rest of the copy is already gender-neutral in the
+feminine (`design-system.md`, Copy). Whoever makes that call should change every occurrence in one
+commit; changing one label at a time is how a system ends up with two vocabularies in the first place.

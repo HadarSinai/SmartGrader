@@ -233,6 +233,19 @@ the template and styles and deliberately stopped there. The two steps above are 
 the class is divided to serve them is a separate decision, verified by behaviour — create, edit,
 validation and test authoring — not by line count.
 
+**As built (A6).** One component, one `FormGroup`, one `step: 1 | 2` field; the two steps are two
+`*ngIf` blocks over the same form. Nothing was extracted. Three consequences worth stating:
+
+- **"המשך לניקוד" validates step 1's controls only.** `form.invalid` covers test cases and
+  requirements the teacher has not reached yet, so gating the step on it would refuse to open the
+  screen where those get filled in.
+- **The save button lives in step 2 only** — including in edit mode. A teacher fixing a typo in the
+  title clicks through. Accepted: one behaviour for both modes beats two, and the ceiling dependency
+  is the same when editing.
+- **When the save button is disabled by a step-1 field, step 2 says so and offers the way back.** A
+  greyed button whose cause is on another screen is the failure this split could most easily have
+  introduced.
+
 ## Explicitly Not Supported
 
 - **An assignment cannot exist outside a lesson.** There is no flat assignments screen and no flat API

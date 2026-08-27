@@ -179,6 +179,18 @@ area exists to prevent. Collapsing costs her one click; removing costs her the e
 shape that produced the multi-file bug: both detail screens forgot `sourceFiles` and each showed an
 empty box, independently. One implementation, two default states.
 
+**Two refinements the implementation added, both to keep "collapsed" honest.**
+
+1. **The pass/fail counts live in the panel's header, not inside it.** Collapsed, a student still
+   reads «עברו 4 · נכשלו 1 · מתוך 5». What folds away is the case-by-case table — the detail — not
+   the result. A collapsed section that hides its own headline is a section that was removed.
+2. **The requirements table opens for a student too, when a blocking requirement failed.** In that
+   state `G-1` means there is no grade at all, and the table stops being detail: it *is* the
+   explanation for the number she came to understand. Collapsing it there would produce exactly the
+   «אין ציון» with no reason that the rule above forbids.
+
+Implemented as one `viewer: "student" | "teacher"` input on the panel, defaulting to `teacher`.
+
 **The score tile must render `null` and `0` differently** (`SH-9`). «אין ציון» and «0» mean opposite
 things — one is a rejection, the other is a grade — and a tile that shows «0» for both tells a student
 she failed when she was never assessed.

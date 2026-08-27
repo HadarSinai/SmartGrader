@@ -162,9 +162,10 @@ Six columns: מקצוע · נושא · תאריך · סטטוס · ציון סו
 | **Reading order** | Subject → date → status → score. Identity, then time, then state, then result. |
 | **Per row** | Six columns is right for a decision this simple. |
 
-**One change, and it is a copy change:** «ציון סופי» reads as a number that exists. When the lesson has
-no result the cell shows «בתהליך», which is correct (`S-4`) but sits under a heading that promises a
-grade. The heading should not claim more than the column delivers.
+**No change, and the reason is worth recording.** A5 flagged «ציון סופי» as a heading promising a
+number that may not exist, on the reading that the cell falls back to «בתהליך». **Checking the code
+before changing it, it does not** — the cell renders «—» and «בתהליך» lives in the «סטטוס» column
+beside it, where it belongs (`S-4`). The heading and the column agree, so the copy stays.
 
 ### The assignments in one lesson — `/my/lessons/:lessonId/assignments`
 
