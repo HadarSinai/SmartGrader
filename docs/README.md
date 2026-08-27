@@ -18,12 +18,12 @@ wrong.
 | [grading-rules.md](grading-rules.md) | How is a grade produced, and how do I explain one to a parent? | ✅ |
 | [business-rules.md](business-rules.md) | What is the rule about resubmission / lockout / deletion, and where is it enforced? | ✅ |
 | [design-system.md](design-system.md) | What makes every screen one system — templates, states, statuses, accessibility? | ✅ |
-| `areas/teacher-content.md` | Courses, lessons, assignments — authoring what students will do | phase A4 |
-| `areas/teacher-classroom.md` | Classes, students, submissions, lesson results, dashboard — running a class | phase A4 |
-| `areas/student.md` | The `/my` area — what a student sees of her own work | phase A4 |
-| `areas/admin.md` | Teachers and the system log | phase A4 |
-| `areas/auth-account.md` | Login, password recovery, profile, lockout | phase A4 |
-| `areas/shared-ui.md` | The components every area uses — topbar, shells, notifications bell, feedback panel, form controls, accessibility widget | phase A4 |
+| [areas/teacher-content.md](areas/teacher-content.md) | Courses, lessons, assignments — authoring what students will do | ✅ |
+| [areas/teacher-classroom.md](areas/teacher-classroom.md) | Classes, students, submissions, lesson results, dashboard — running a class | ✅ |
+| [areas/student.md](areas/student.md) | The `/my` area — what a student sees of her own work | ✅ |
+| [areas/admin.md](areas/admin.md) | Teachers and the system log | ✅ |
+| [areas/auth-account.md](areas/auth-account.md) | Login, password recovery, profile, lockout | ✅ |
+| [areas/shared-ui.md](areas/shared-ui.md) | The components every area uses — topbar, shells, notifications bell, feedback panel, form controls, accessibility widget | ✅ |
 
 Thirteen files including this one. A document not listed above does not belong in `docs/`.
 
@@ -41,6 +41,7 @@ Prose cannot be verified, so it is not asserted. Everything derived from code is
 | `GradingRuleCoverageTests` | a `G-N` loses the test that proves it, or a test cites a rule that does not exist |
 | `BusinessRuleAnchorTests` | a `B-N` cites a file that no longer exists, or the ids stop being unique |
 | `DesignTokenTests` | the design system names a token `styles.css` does not define, or hardcoded colours increase |
+| `AreaRouteCoverageTests` | a client route is claimed by no area document, or by two |
 
 Tables inside an invisible `<!-- gen: … -->` marker are the machine-checked ones. Meaning and rationale
 columns are prose and are deliberately left alone — asserting them would make ordinary editing hostile,

@@ -1,3 +1,5 @@
+> ⛔ **SUPERSEDED — do not read as current.** Replaced by [docs/areas/teacher-content.md](../areas/teacher-content.md). ⚠️ Every `[Fix]` below was implemented months ago and is written in the imperative, so it reads like open work — that is the specific failure the rewrite exists to end. Deleted in phase A7.
+
 # Lessons — User Journey Map
 
 **Persona**: Teacher (see [personas.md](./personas.md)).

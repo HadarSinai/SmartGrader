@@ -1,3 +1,5 @@
+> ⛔ **SUPERSEDED — do not read as current.** Replaced by [docs/areas/teacher-classroom.md](../areas/teacher-classroom.md). ⚠️ Its `[Fix]` items are written in the imperative and read like open work, but were implemented months ago. Deleted in phase A7.
+
 # Submissions — Flow Specification
 
 **Scope**: Add missing Delete UX, fix status-label localization, and add lightweight async-grading

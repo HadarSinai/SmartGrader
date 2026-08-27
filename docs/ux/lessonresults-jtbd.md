@@ -1,3 +1,5 @@
+> ⛔ **SUPERSEDED — do not read as current.** Replaced by [docs/areas/teacher-classroom.md](../areas/teacher-classroom.md). ⚠️ Its `[Fix]` items are written in the imperative and read like open work, but were implemented months ago. Deleted in phase A7.
+
 # LessonResults — Jobs-to-be-Done
 
 **Personas**: Both — **Teacher** (finalizes a student's lesson score) and **Student** (views their own

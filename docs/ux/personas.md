@@ -1,3 +1,5 @@
+> ⛔ **SUPERSEDED — do not read as current.** A persona used by every document belongs inside each of them as three lines, which is where it now is: the `Who Uses This` section of each doc under [docs/areas/](../areas/). Deleted in phase A7.
+
 # SmartGrader — UX Personas
 
 These two personas ground every JTBD, journey map, and flow spec produced for the SmartGrader client
