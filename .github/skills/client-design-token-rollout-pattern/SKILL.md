@@ -1,44 +1,50 @@
 ---
 name: client-design-token-rollout-pattern
-description: "Use when extending the Students-list pilot's design tokens (--radius-*, --shadow-*, --space-*, --text-*, sg-* classes) from client/spec.md to another SmartGrader list/form page: what to check (RTL, 360/768/1280px breakpoints, no new parallel colors) and what NOT to do (no new ad-hoc classes/colors). USE FOR: 'roll out the design tokens to X page', 'make the Assignments/Lessons/Submissions page match the Students pilot styling', 'apply spec.md tokens'. NOT for functional/copy fixes (see client-flow-fix-implementation-pattern) or defining the tokens themselves (already defined in src/styles.css per the pilot)."
+description: "Use when styling a new or existing SmartGrader list/form page against the design system in docs/design-system.md: the --radius-*/--shadow-*/--space-*/--text-* tokens and sg-* classes, what to check (RTL, 360/768/1280px breakpoints, no parallel colours, no var(--token, fallback)) and what NOT to do (no ad-hoc classes or colours, no rule a component redefines from styles.css). USE FOR: 'style a new page', 'make this page match the rest of the app', 'review a PR that touches page styles', 'apply the design tokens'. NOT for functional/copy fixes (see client-flow-fix-implementation-pattern) or for introducing a new token (that is one commit touching docs/design-system.md and styles.css together, not a component)."
 ---
 
 # Client Design Token Rollout Pattern
 
-Extends the design-token work already piloted on the Students list (per
-[client/spec.md](../../../client/spec.md)) to another screen, without introducing a second, parallel
-design system.
+Styles a screen against the one design system, without introducing a second, parallel one. The
+contract is [docs/design-system.md](../../../docs/design-system.md); the tokens themselves are defined
+once in `client/src/styles.css`.
+
+⚠️ **This is no longer a rollout.** Phase A6 converted every file, and `DesignTokenTests` now fails on
+a literal colour anywhere under `client/src/app` — `#hex`, `rgb()`, `rgba()`, `hsl()` alike — on a
+`var(--token, fallback)` pair, and on a component that redefines a base class selector the global
+sheet already defines. What follows is how to satisfy those guards, not how to migrate towards them.
 
 ## When to Use
 
-- A list or form page (Lessons, Assignments, Submissions, or a new page) still uses ad-hoc
-  spacing/colors/shadows instead of the `sg-*` classes and `--radius-*`/`--shadow-*`/`--space-*`/
-  `--text-*` tokens already standardized on `students-list.component`.
+- Styling a new page, or a page that still uses ad-hoc spacing/colours/shadows instead of the `sg-*`
+  classes and the `--radius-*`/`--shadow-*`/`--space-*`/`--text-*` tokens.
 - Reviewing a PR that touches page-level styles, to confirm it didn't introduce new parallel tokens.
-- Rolling out the pilot's card/button/table/toolbar/toast conventions one screen at a time.
+- Working out where a rule belongs: `styles.css` if two screens need it, the component if one does.
 
 ## Workflow
 
-1. **Re-read the pilot spec**: [client/spec.md](../../../client/spec.md) — constraints are locked
-   (PrimeNG + PrimeFlex only, no feature/flow changes, RTL/Hebrew must stay correct, don't touch
-   services/API).
+1. **Re-read the contract**: [docs/design-system.md](../../../docs/design-system.md) — the three
+   mother templates, the token table, the seven status presentations, and the `D-N` accessibility
+   requirements. Constraints are locked: PrimeNG + PrimeFlex only, no feature/flow changes, RTL/Hebrew
+   must stay correct, don't touch services/API.
 2. **Inventory existing tokens** in `client/src/styles.css`: `--radius-sm/md/lg`, `--shadow-sm/md`,
    `--space-1/2/3/4/6`, `--text-sm/base/lg/xl`, and the `sg-*` classes (`sg-page`, `sg-card`,
-   `sg-form-card`, `sg-title`, `sg-h1`, `sg-h2`, etc.) — these must already exist from the Students
-   pilot. If a token you need doesn't exist yet, check whether it can be **derived** from an existing
-   `--app-*`/theme variable before adding anything new (per the mapping rule in `spec.md`).
-3. **Diff against the pilot**: open `students-list.component` (list) and/or its form counterpart side by
-   side with the target page. Identify every place the target page uses a raw pixel value, an inline
-   color, or a bespoke class where the pilot uses a token/`sg-*` class instead.
+   `sg-form-card`, `sg-title`, `sg-h1`, `sg-h2`, etc.). If a token you need doesn't exist yet, check
+   whether it can be **derived** from an existing `--app-*`/theme variable before adding anything new
+   — and a genuinely new token is one commit touching `docs/design-system.md` and `styles.css`
+   together, never a value written into a component.
+3. **Diff against a page that already conforms**: open one and put it beside the target. Identify every
+   place the target uses a raw pixel value, a literal colour, or a bespoke class where the conforming
+   page uses a token or an `sg-*` class.
 4. **Apply, don't invent**: replace ad-hoc styles with the existing token/class. Examples already seen
    in the codebase: `sg-page` wrapping the section, `p-card` with `styleClass="sg-card sg-form-card"`,
    title blocks using `sg-title` / `sg-h1` / `sg-h2` (see
-   [assignment-form.component.ts](../../../client/src/app/pages/assignments/assignment-form.component.ts)
+   [assignment-form.component.html](../../../client/src/app/pages/assignments/assignment-form.component.html)
    header template for a reference implementation already following this convention).
-5. **Component-level styles only if needed**: per `spec.md`, prefer fixing things globally in
-   `src/styles.css`; only add scoped component-level CSS for a layout issue that's genuinely specific to
-   that one page.
-6. **Verify the checklist from spec.md** on the touched page:
+5. **Component-level styles only when the rule is genuinely local.** A rule two screens need belongs in
+   `src/styles.css` — and `DesignTokenTests` fails a component that redefines a base class selector the
+   global sheet already defines, so this is enforced rather than advised.
+6. **Verify on the touched page:**
    - RTL sanity: icons, paddings, and action columns still align correctly (this is a Hebrew RTL app).
    - Responsive sanity at 360px / 768px / 1280px — no broken layout.
    - Empty/loading states for tables follow the same pattern as the pilot (`emptymessage`, `[loading]`).
@@ -51,8 +57,8 @@ design system.
   already covers — this creates a second, parallel design system.
 - Do not add a new `--radius-*`/`--shadow-*`/`--space-*`/`--text-*` token unless it truly cannot be
   derived from an existing token or `--app-*`/theme variable.
-- Do not change any feature behavior, route, or API call while doing a visual rollout — this is a
-  styling-only pass (per the locked constraints in `spec.md`).
+- Do not change any feature behavior, route, or API call while doing a styling pass — a visual change
+  and a behavioural change in one commit are two changes nobody can review.
 - Do not replace PrimeNG components with custom markup — keep using `p-card`, `p-table`, `p-button`,
   etc.; only the classes/tokens applied to them change.
 - Do not skip the RTL check — a token that looks right in an LTR mental model can still break icon/
@@ -60,15 +66,17 @@ design system.
 
 ## Real Examples
 
-Reference "already-correct" usage to copy from (not students-list, since that's the pilot itself, but a
-page that has already adopted the same header/card convention):
-[assignment-form.component.ts](../../../client/src/app/pages/assignments/assignment-form.component.ts) —
+Reference usage to copy from:
+[assignment-form.component.html](../../../client/src/app/pages/assignments/assignment-form.component.html) —
 `class="sg-page"` wrapper, `p-card styleClass="sg-card sg-form-card"`, and `sg-title`/`sg-h1`/`sg-h2`
 inside the `pTemplate="header"` block.
 
+**Every component is three files** — `x.component.ts`, `x.component.html`, `x.component.css` — and a
+test enforces it. Styling work therefore lands in the `.css` file, never in a string inside the `.ts`.
+
 ## See Also
 
-- [client/spec.md](../../../client/spec.md) — the authoritative source for tokens, constraints, and the
-  verification checklist.
+- [docs/design-system.md](../../../docs/design-system.md) — the authoritative source for tokens,
+  the three mother templates, the `D-N` accessibility requirements, and what is machine-verified.
 - [client-flow-fix-implementation-pattern](../client-flow-fix-implementation-pattern/SKILL.md) — the
   sibling skill for copy/validation fixes (functional, not visual).

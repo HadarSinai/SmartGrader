@@ -15,7 +15,15 @@ namespace SmartGrader.UnitTests.Docs
         private static readonly Regex MarkdownLink =
             new(@"\[[^\]]*\]\((?<target>[^)\s]+)\)", RegexOptions.Compiled);
 
-        // כל קובץ md תחת docs/ מוזכר במפה — כולל הסט הישן, שמופיע כ"מוחלף"
+        /// <summary>
+        /// כל קובץ md תחת <c>docs/</c> מוזכר במפה.
+        /// <para>
+        /// ⚠️ הרף למטה הוא <b>שומר שפיות בלבד</b> — הוא נועד לתפוס סריקה שהחזירה כלום
+        /// (נתיב שגוי) ולא לקבע את מספר המסמכים. הוא היה 15 כשעוד היו 20 קבצים תחת
+        /// <c>docs/ux/</c>, ו-A7 מחק אותם — כלומר הרף נכשל על מחיקה מתוכננת ולא על באג.
+        /// אם הוא נכשל שוב, לבדוק קודם מה נמחק ורק אז להוריד אותו.
+        /// </para>
+        /// </summary>
         [Fact]
         public void EveryDocument_IsMentionedInTheIndex()
         {
@@ -28,7 +36,7 @@ namespace SmartGrader.UnitTests.Docs
                 .OrderBy(rel => rel, StringComparer.Ordinal)
                 .ToList();
 
-            all.Should().HaveCountGreaterThan(15,
+            all.Should().HaveCountGreaterThan(9,
                 "אם הסריקה מצאה כמעט כלום, הנתיב שגוי ולא המפה");
 
             var unmentioned = all

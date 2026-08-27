@@ -1,6 +1,6 @@
 ---
 name: client-flow-fix-implementation-pattern
-description: "Use when turning a **[Fix]** step from a docs/ux/{feature}-flow.md spec into real Angular code in the SmartGrader client: Hebrew-only gender-neutral copy replacement, ConfirmationService.confirm() config, or replicating the inline-validation pattern (from assignment-form.component.ts's methodName field) onto other required form fields. USE FOR: 'implement the [Fix] steps for X', 'apply the flow spec to the list/form component', 'add inline validation like methodName does'. NOT for writing the flow spec itself (see ux-flow-spec-pattern) or design-token/visual rollout (see client-design-token-rollout-pattern)."
+description: "Use when changing user-facing behaviour or copy in a SmartGrader Angular list/form component: Hebrew-only gender-neutral copy, the one ConfirmationService.confirm() shape used for every destructive action, the inline-validation pattern (a p-error message under a required field instead of a silently disabled button), and the unsaved-changes guard on Cancel. USE FOR: 'fix the copy on this screen', 'add a delete confirmation', 'add inline validation to this field', 'warn before discarding unsaved changes'. NOT for visual/token work (see client-design-token-rollout-pattern) or for deciding what a screen should show (that is docs/areas/ and docs/design-system.md)."
 ---
 
 # Client Flow-Fix Implementation Pattern
@@ -11,9 +11,9 @@ code change, instead of a repository/handler.
 
 ## When to Use
 
-- A `docs/ux/{feature}-flow.md` file has one or more `**[Fix]**` markers (e.g. Lessons, Students,
-  Assignments, Submissions) and you need to apply them to the real `{feature}-list.component.ts` /
-  `{feature}-form.component.ts`.
+- Applying a decision from [docs/areas/](../../../docs/areas/) or the **Shared patterns** section of
+  [docs/design-system.md](../../../docs/design-system.md) to a real `{feature}-list.component` /
+  `{feature}-form.component`.
 - Replacing hardcoded English or gendered Hebrew toast/dialog copy with gender-neutral Hebrew.
 - Adding an inline "שדה חובה"-style validation message under a required field that currently only
   disables the Save button silently.
@@ -21,11 +21,14 @@ code change, instead of a repository/handler.
 
 ## Workflow
 
-1. **Read the flow spec**: open `docs/ux/{feature}-flow.md` and list every `**[Fix]**` bullet — each one
-   is a discrete, independently-verifiable change. Do not touch anything not marked `[Fix]`.
-2. **Locate the real files**: `client/src/app/pages/{feature}/{feature}-list.component.ts` and
-   `{feature}-form.component.ts` (check both the `.ts` inline template and any sibling `.html`/`.css` —
-   this codebase mixes both styles).
+1. **Read the specification first**: the screen's entry in [docs/areas/](../../../docs/areas/) says what
+   it is for and what it shows; **Shared patterns** in
+   [docs/design-system.md](../../../docs/design-system.md) fixes the exact shape of toasts, delete
+   confirmations, empty/loading states, dates and copy. List the discrete changes before touching code,
+   and make only those.
+2. **Locate the real files**: `client/src/app/pages/{feature}/{feature}-list.component.{ts,html,css}`
+   and `{feature}-form.component.{ts,html,css}` — **every component is three files**, and
+   `ComponentFileLayoutTests` fails a template or stylesheet written inline in the `.ts`.
 3. **Copy replacement** — Hebrew-only, gender-neutral:
    - Replace any English toast string (`'Error'`, `'Success'`, `'Lesson created successfully'`) with
      Hebrew equivalents already used elsewhere in the same file/feature for consistency.
@@ -49,7 +52,7 @@ code change, instead of a repository/handler.
    For a "discard unsaved changes" guard on Cancel, use the same shape with a header like
    `"שינויים שלא נשמרו"` and only navigate away inside `accept`.
 5. **Inline validation** — replicate the exact pattern already proven on `methodName` in
-   [assignment-form.component.ts](../../../client/src/app/pages/assignments/assignment-form.component.ts)
+   [assignment-form.component.html](../../../client/src/app/pages/assignments/assignment-form.component.html)
    onto every other required field that's currently only silently disabling Save:
 
    ```html
@@ -81,12 +84,13 @@ code change, instead of a repository/handler.
      `window.confirm`.
    - Navigation via `Router.navigate([...])`, never `location.href`.
    - No new hardcoded English strings introduced.
-7. **Mark off `[Fix]` bullets** mentally (or in your summary) as you complete each one — a flow file is
-   only "done" when every `[Fix]` marker in it has a corresponding code change.
+7. **Account for every change you listed in step 1** — the work is done when each one has a
+   corresponding code change, and nothing else was touched.
 
 ## Real Examples
 
-Gender-neutral delete confirm (from [lessons-flow.md](../../../docs/ux/lessons-flow.md)):
+Gender-neutral delete confirm — the one shape, from
+[docs/design-system.md](../../../docs/design-system.md) § Toasts and delete confirmations:
 
 ```
 message: "בטוחה שברצונך למחוק את..."  →  "האם למחוק את \"{{lesson.name}}\"? לא ניתן לשחזר פעולה זו."
@@ -95,26 +99,26 @@ rejectLabel: "ביטול"  (already neutral, keep)
 ```
 
 Inline validation reference implementation —
-[assignment-form.component.ts](../../../client/src/app/pages/assignments/assignment-form.component.ts)
-lines ~112–131 (the `methodName` field): label with `*`, `pInputText` bound via `formControlName`, and a
+[assignment-form.component.html](../../../client/src/app/pages/assignments/assignment-form.component.html)
+(the `methodName` field): label with `*`, `pInputText` bound via `formControlName`, and a
 `<small class="p-error" *ngIf="...invalid && ...touched">` message directly beneath the input.
 
 ## Pitfalls
 
-- Don't fix things that aren't marked `[Fix]` in the flow doc — scope creep makes the change harder to
+- Don't fix things the specification did not ask for — scope creep makes the change impossible to
   review against the spec.
 - Don't invent new Hebrew copy from scratch when equivalent phrasing already exists elsewhere in the
   same feature — reuse it for consistency.
 - Don't replace `ConfirmationService`/`MessageService` calls with `alert`/`window.confirm` even
   temporarily.
-- Don't change validator logic (`Validators.required`, etc.) when the `[Fix]` is only about showing the
+- Don't change validator logic (`Validators.required`, etc.) when the task is only about showing the
   existing error visibly — the bug is UX visibility, not validation correctness.
 - Don't forget `touched` in the `*ngIf` — showing the error before the user has interacted with the
   field is itself a UX regression.
 
 ## See Also
 
-- [ux-flow-spec-pattern](../ux-flow-spec-pattern/SKILL.md) — how the `{feature}-flow.md` this skill
-  consumes was written.
+- [spec-feature-area-doc](../spec-feature-area-doc/SKILL.md) — how the specification this skill
+  consumes is written.
 - [client-design-token-rollout-pattern](../client-design-token-rollout-pattern/SKILL.md) — the sibling
   skill for visual/design-token changes (as opposed to copy/validation fixes).

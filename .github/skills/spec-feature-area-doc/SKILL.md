@@ -41,7 +41,7 @@ component.
 
 ## The grounding pass — before a word is written
 
-`docs/ux/assignments-jtbd.md` devotes 28 of its 55 lines to "Current Solution & Pain Points". That is
+The superseded `assignments-jtbd.md` devoted 28 of its 55 lines to "Current Solution & Pain Points". That is
 what happens when someone opens a document and starts writing from a screenshot: what comes out is
 whatever they noticed, in the order they noticed it. **The grounding pass is what stops that.**
 

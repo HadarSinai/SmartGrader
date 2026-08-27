@@ -53,35 +53,58 @@ and the markers would be deleted within a month.
   translation is a second string that will drift.
 - **As-built.** These documents describe what exists. Desired-but-unbuilt work lives in
   `.github/prompts/`.
-- **Stable rule ids** — `G-N` grading, `B-N` business, `D-N` design and accessibility. A rule is stated once and referenced
-  everywhere else by id.
+- **Stable rule ids** — `G-N` grading, `B-N` business, `D-N` design and accessibility. A rule is stated
+  once and referenced everywhere else by id.
+
+  `D-N` is a **third** prefix, added during A3 and approved by the owner. It exists because
+  accessibility is neither a grading rule nor a business rule, and folding it into `B-N` would have put
+  "4.5:1 contrast" in the same numbering as "a submission locks at the retry threshold". The `D-N`
+  requirements are the only ones in the set that are **not** machine-verified — each needs a person with
+  a keyboard, a screen reader or a contrast meter — and a separate prefix is what keeps that distinction
+  visible instead of hiding it inside a list that is otherwise tested.
+
+  The area docs carry their own local prefixes for screen-level rules (`S-N` student, `SH-N` shared UI,
+  `AU-N` auth, `AD-N` admin, `TC-N` teacher content), scoped to their document.
 - Written with the [spec-requirement-writing](../.claude/skills/spec-requirement-writing/SKILL.md),
   [spec-domain-doc-conformance](../.claude/skills/spec-domain-doc-conformance/SKILL.md) and
   [spec-feature-area-doc](../.claude/skills/spec-feature-area-doc/SKILL.md) skills.
 
 ---
 
-## Superseded documents
+## Deleted documents
 
-These are still on disk and still readable. **Each is replaced by a document above, and each is deleted
-in phase A7** once every reference to it has been retargeted. Until its replacing phase runs, the old
-file is still the only description of its subject.
+Phase A7 deleted the previous specification set — 20 files under `docs/ux/`, `docs/auth-plan.md` and
+`client/spec.md`. **They are gone from the working tree, not from history**: `git log --follow` on any
+path below still shows every version. This table is what replaced each one, so that a reference found
+in an old commit message, PR or prompt can still be resolved.
 
-| File | Replaced by | Phase |
-|---|---|---|
-| [auth-plan.md](auth-plan.md) | `business-rules.md` (what shipped) and `.github/prompts/` (what did not) | A2 |
-| [ux/master-spec.md](ux/master-spec.md) | `design-system.md` | A3 |
-| [ux/accessibility-checklist.md](ux/accessibility-checklist.md) | `design-system.md` — accessibility becomes numbered requirements with acceptance criteria | A3 |
-| [ux/personas.md](ux/personas.md) | the three-line persona inside each area doc | A4 |
-| [ux/redesign-plan.md](ux/redesign-plan.md) | nothing — a dated work plan belongs in `.github/prompts/` | A7 |
-| [ux/README.md](ux/README.md) | this file | A7 |
-| [ux/lessons-jtbd.md](ux/lessons-jtbd.md) · [ux/lessons-journey.md](ux/lessons-journey.md) · [ux/lessons-flow.md](ux/lessons-flow.md) | `areas/teacher-content.md` | A4 |
-| [ux/assignments-jtbd.md](ux/assignments-jtbd.md) · [ux/assignments-journey.md](ux/assignments-journey.md) · [ux/assignments-flow.md](ux/assignments-flow.md) | `areas/teacher-content.md` | A4 |
-| [ux/students-jtbd.md](ux/students-jtbd.md) · [ux/students-journey.md](ux/students-journey.md) · [ux/students-flow.md](ux/students-flow.md) | `areas/teacher-classroom.md` | A4 |
-| [ux/submissions-jtbd.md](ux/submissions-jtbd.md) · [ux/submissions-journey.md](ux/submissions-journey.md) · [ux/submissions-flow.md](ux/submissions-flow.md) | `areas/teacher-classroom.md` | A4 |
-| [ux/lessonresults-jtbd.md](ux/lessonresults-jtbd.md) · [ux/lessonresults-journey.md](ux/lessonresults-journey.md) · [ux/lessonresults-flow.md](ux/lessonresults-flow.md) | `areas/teacher-classroom.md` | A4 |
+| Deleted file | Replaced by |
+|---|---|
+| `auth-plan.md` | [business-rules.md](business-rules.md) `B-11` … `B-24` for what shipped; [.github/prompts/plan-authOpenWork.prompt.md](../.github/prompts/plan-authOpenWork.prompt.md) for what did not |
+| `client/spec.md` | [design-system.md](design-system.md) — every token it named is in the token table, and `DesignTokenTests` proves each one exists |
+| `ux/master-spec.md` | [design-system.md](design-system.md) |
+| `ux/accessibility-checklist.md` | [design-system.md](design-system.md) — a checklist became numbered `D-1` … `D-15` requirements with acceptance criteria |
+| `ux/personas.md` | the three-line persona inside each [area doc](areas/) |
+| `ux/redesign-plan.md` | nothing. A dated work plan is not a specification |
+| `ux/README.md` | this file |
+| `ux/lessons-*.md` · `ux/assignments-*.md` (jtbd · journey · flow) | [areas/teacher-content.md](areas/teacher-content.md) |
+| `ux/students-*.md` · `ux/submissions-*.md` · `ux/lessonresults-*.md` (jtbd · journey · flow) | [areas/teacher-classroom.md](areas/teacher-classroom.md) |
 
-⚠️ **Read the old set with the date in mind.** Its `[Fix]` items are written in the imperative and read
-like open work, but they were implemented months ago — every one in `assignments-flow.md` is already in
-the code. That is the specific failure this rewrite exists to end, and it is why the replacement is
-tested rather than merely rewritten.
+**Why they were deleted rather than left in place.** Their `[Fix]` items are written in the imperative
+and read like open work, but they were implemented months ago — every one in `assignments-flow.md` was
+already in the code. **A document that describes a finished job as a pending one is worse than no
+document**, because it is read as instructions. That is the specific failure this rewrite exists to
+end, and it is why the replacement is tested rather than merely rewritten.
+
+Deleted alongside them: four `ux-*` skills (their methodology lives in
+[spec-feature-area-doc](../.claude/skills/spec-feature-area-doc/SKILL.md) and
+[spec-requirement-writing](../.claude/skills/spec-requirement-writing/SKILL.md)) and seven agents whose
+only input was a `docs/ux/` file. `phase-client-flow-fix-implementation` was deleted rather than
+retargeted: it existed to walk `**[Fix]**` markers, the area docs have none, and pointing it at a
+document of a different shape would have been a worse lie than removing it.
+
+**Three feature plans still cite the deleted paths and were deliberately kept:**
+`plan-clientUxScreensSpec`, `plan-notifications-bell` and `plan-studentAreaMyJourney` (in
+`.github/prompts/` and `.claude/commands/`). Each now opens with a ⛔ banner saying it is a historical
+record of how a feature was built and must not be read as instructions. They are the only files in the
+repository where `docs/ux` and `client/spec.md` still appear.

@@ -4,7 +4,7 @@
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0 | 2026-08-27 | First edition. Absorbs `ux/master-spec.md` §4–§6, `ux/accessibility-checklist.md` and `client/spec.md`. |
+| 1.0 | 2026-08-27 | First edition. Absorbs the superseded `master-spec.md` §4–§6, `accessibility-checklist.md` and the client pilot spec — all three deleted in A7. |
 
 **What this document answers:** what makes every screen one system rather than eleven screens that
 happen to share a font.
@@ -119,7 +119,7 @@ negotiable per screen — that is what "one system" means in practice.
 
 ### Deliberately dropped
 
-`ux/master-spec.md` specified pixel values like "compact fields (~38px)". **That kind of precision was
+The superseded `master-spec.md` specified pixel values like "compact fields (~38px)". **That kind of precision was
 never enforceable and never enforced** — nothing checked it, and a tilde in a specification is an
 admission that it will not be. Height comes from the spacing scale and the component library. What is
 specified here is what can be verified.

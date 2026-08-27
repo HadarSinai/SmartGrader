@@ -11,11 +11,13 @@ One sentence at a time. This skill is about the sentence — not the document th
 
 ## Why this skill exists — three failures this repo already produced
 
-Not hypothetical. All three are quoted from `docs/ux/`, the set being replaced.
+Not hypothetical. All three are transcribed verbatim from the superseded UX document set — the one
+this skill's output replaced. Those files were deleted in Plan A's phase A7, so the quotations below
+are the surviving record of them; [docs/README.md](../../../docs/README.md) maps what replaced what.
 
 ### 1. A defect list filed as specification
 
-`docs/ux/assignments-jtbd.md` gives **3 lines** to the Job Statement and **28 lines** to
+The superseded `assignments-jtbd.md` gave **3 lines** to the Job Statement and **28 lines** to
 "Current Solution & Pain Points":
 
 > **Most severe language-consistency finding across the whole audit**: […] the **entire Assignments
@@ -47,7 +49,7 @@ are allowed **only** in a code-anchor field, where they are pointing at code on 
 
 ### 3. A `[Fix]` that outlived its fix
 
-`docs/ux/assignments-flow.md:35`:
+The superseded `assignments-flow.md`, line 35:
 
 > 2. **[Fix]** Add the same inline-error pattern already used for `methodName` to the `title` field
 >    too […] `<small class="p-error" *ngIf="form.get('title')?.invalid && …">כותרת היא שדה חובה</small>`

@@ -4,7 +4,7 @@
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0 | 2026-08-26 | First edition. Replaces the entity content scattered across `docs/ux/`. |
+| 1.0 | 2026-08-26 | First edition. Replaces the entity content that was scattered across the superseded UX set, deleted in A7. |
 
 **What this document answers:** what the things in this system *are* — their meaningful fields, their
 enums, the states a submission moves through, and what is deliberately absent.
@@ -249,7 +249,7 @@ overwritten once set.
 
 <!-- /gen -->
 
-**Seven, not four.** `docs/ux/master-spec.md` lists four; that gap is why this table is machine-checked.
+**Seven, not four.** The superseded `master-spec.md` listed four; that gap is why this table is machine-checked.
 
 ### `UserRole`
 

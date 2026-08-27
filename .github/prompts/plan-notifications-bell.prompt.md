@@ -1,6 +1,12 @@
 # תוכנית מימוש: פעמון התראות
 
 > זו תוכנית שלמה למימוש פיצ'ר התראות (Notifications Bell) בפעמון ב-topbar, לפי האפיון ב-master-spec §7.
+> ⛔ **Historical document — a record of how this feature was built, not instructions to follow.**
+> It cites `docs/ux/**` and `client/spec.md`, which were **deleted in Plan A phase A7**. What replaced
+> them is mapped in [docs/README.md](../../docs/README.md); the design contract is
+> [docs/design-system.md](../../docs/design-system.md) and the functional specs are
+> [docs/areas/](../../docs/areas/). Read this file for *why* a decision was made, never for *what to do next*.
+
 > משדה יום: 2026-07-14 | ארכיטקטורה: Clean Architecture + CQRS (שרת), standalone components + signals (קליינט)
 > **עודכן 2026-07-19**: נבדק מול הקוד בפועל לפני מימוש — 9 סטיות מהמוסכמות הקיימות תוקנו (ראה סימוני "**תוקן**" בהמשך): שם שדה ה-repository (`_context`), שם קובץ ה-handler, roles ב-`[Authorize]`, שימור לוגו/ניווט-Admin בטופבר, טוקני CSS אמיתיים, פורמט תאריך אחיד, flags לפקודת המיגרציה, וקריאה שגויה ש-`getRecent()` לא בשימוש (בפועל `dashboard.component.ts` תלוי בו — **אין** למחוק).
 

@@ -1,6 +1,12 @@
 ---
 description: "Feature plan: Student Area \"המסע שלי\" — 5 Screens Wired to the Real API"
 ---
+> ⛔ **Historical document — a record of how this feature was built, not instructions to follow.**
+> It cites `docs/ux/**` and `client/spec.md`, which were **deleted in Plan A phase A7**. What replaced
+> them is mapped in [docs/README.md](../../docs/README.md); the design contract is
+> [docs/design-system.md](../../docs/design-system.md) and the functional specs are
+> [docs/areas/](../../docs/areas/). Read this file for *why* a decision was made, never for *what to do next*.
+
 # Plan: Student Area "המסע שלי" — 5 Screens Wired to the Real API
 
 ## TL;DR

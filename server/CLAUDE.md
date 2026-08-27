@@ -146,6 +146,7 @@ Task<IReadOnlyList<Lesson>> GetAllAsync(CancellationToken ct = default);
 ## Secrets
 
 - Never put real credentials (admin password, SMTP credentials, API keys) in `appsettings.json` — it's committed to git. Use `appsettings.Development.json` (gitignored) or user-secrets for real local values; keep `appsettings.json` placeholders empty.
+- ⚠️ **A key that has ever been committed is compromised, and removing it from the file does not remove it from the history** — rotate it at the provider. Tracked as open work in [.github/prompts/plan-authOpenWork.prompt.md](../.github/prompts/plan-authOpenWork.prompt.md), along with the `Jwt__Key` environment variable the API will need once it is containerized.
 
 ---
 

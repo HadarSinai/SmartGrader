@@ -5,8 +5,8 @@ description: "Use when applying the unified SmartGrader list/table pattern to an
 
 # Client List/Table Pattern
 
-The unified table pattern for all SmartGrader list pages, per the "Warm Minimal" redesign plan
-([docs/ux/redesign-plan.md](../../../docs/ux/redesign-plan.md), Phase 2). Every list screen
+The unified table pattern for all SmartGrader list pages, per the **List** mother template in
+[docs/design-system.md](../../../docs/design-system.md). Every list screen
 (Students, Lessons, Assignments, Submissions, LessonResults) must be an instance of this one
 pattern — no per-page variations.
 
@@ -88,6 +88,6 @@ pattern — no per-page variations.
 
 ## See Also
 
-- [docs/ux/redesign-plan.md](../../../docs/ux/redesign-plan.md) — Phase 2 definition + decisions.
+- [docs/design-system.md](../../../docs/design-system.md) — the List mother template, the design tokens, and the accessibility requirements this pattern has to satisfy.
 - [client-design-token-rollout-pattern](../client-design-token-rollout-pattern/SKILL.md) — tokens/visual rollout.
 - [client-flow-fix-implementation-pattern](../client-flow-fix-implementation-pattern/SKILL.md) — copy/validation fixes.

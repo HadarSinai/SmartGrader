@@ -6,7 +6,7 @@ description: "Use when adding or reviewing screens in the SmartGrader student ar
 # Client Student Area Pattern
 
 The pattern for every screen in the SmartGrader student-facing area ("המסע שלי"), built per
-[docs/ux/master-spec.md](../../../docs/ux/master-spec.md) §3. The area lives under the `/my/...`
+[docs/areas/student.md](../../../docs/areas/student.md). The area lives under the `/my/...`
 route branch, wrapped by `StudentLayoutComponent` and protected by `studentGuard`.
 
 Existing screens (reference implementations, all under `client/src/app/pages/my/`):
@@ -107,4 +107,4 @@ Existing screens (reference implementations, all under `client/src/app/pages/my/
 - [client-design-token-rollout-pattern](../client-design-token-rollout-pattern/SKILL.md) — tokens.
 - [client-flow-fix-implementation-pattern](../client-flow-fix-implementation-pattern/SKILL.md) —
   copy/validation conventions.
-- [docs/ux/master-spec.md](../../../docs/ux/master-spec.md) §3 — the student-area UX spec.
+- [docs/areas/student.md](../../../docs/areas/student.md) — what each of the five screens is for, what it shows and in what order, and the rules it has to obey (`S-N`).

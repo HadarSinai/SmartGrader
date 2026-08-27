@@ -1,6 +1,12 @@
 # Plan: Full UX Spec for SmartGrader Client Screens
 
 ## Goal
+> ⛔ **Historical document — a record of how this feature was built, not instructions to follow.**
+> It cites `docs/ux/**` and `client/spec.md`, which were **deleted in Plan A phase A7**. What replaced
+> them is mapped in [docs/README.md](../../docs/README.md); the design contract is
+> [docs/design-system.md](../../docs/design-system.md) and the functional specs are
+> [docs/areas/](../../docs/areas/). Read this file for *why* a decision was made, never for *what to do next*.
+
 
 Produce comprehensive UX research artifacts (JTBD, User Journey Maps, Flow Specs, Accessibility
 requirements) per the se-ux-ui-designer.agent.md methodology, in English, saved under `docs/ux/`,
