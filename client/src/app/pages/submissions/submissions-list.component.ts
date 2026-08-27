@@ -20,6 +20,8 @@ import {
     STATUS_LABELS_HE,
     SubmissionResponseDto,
     SubmissionStatus,
+    SubmissionStatusSeverity,
+    statusPresentation,
 } from "@models/submission.model";
 import { SubmissionsService } from "@services/submissions.service";
 import { ConfirmationService, MenuItem, MessageService } from "primeng/api";
@@ -145,36 +147,19 @@ export class SubmissionsListComponent implements OnInit {
     ]);
   }
 
-  statusSeverity(
-    status?: string | null,
-  ): "success" | "info" | "warning" | "danger" {
-    // ⚠️ מפורש ולא לפי תת-מחרוזת: "RequirementsNotMet" אינו מכיל fail/error, והתאמת
-    // התת-מחרוזות הייתה מציגה דחייה כתגית מידע ניטרלית.
-    if (status === "RequirementsNotMet") return "danger";
-
-    const s = (status ?? "").toLowerCase();
-    if (s.includes("pass") || s.includes("success") || s.includes("done"))
-      return "success";
-    if (s.includes("run") || s.includes("progress")) return "info";
-    if (s.includes("warn") || s.includes("pending")) return "warning";
-    if (s.includes("fail") || s.includes("error")) return "danger";
-    return "info";
+  // ⚠️ מיפוי משותף אחד (STATUS_PRESENTATION), ולא נגזרת מקומית. כאן ישבה גזירה לפי התאמת
+  // תת-מחרוזת, ו-"judgeunavailable" לא הכיל אף אחת מהן — כך שתקלת תשתית הוצגה כתגית מידע
+  // ניטרלית במסך הזה בלבד, בעוד שבכל מסך אחר היא ענבר.
+  statusSeverity(status?: string | null): SubmissionStatusSeverity {
+    return statusPresentation(status).severity;
   }
 
   statusIcon(status?: string | null): string {
-    // דחייה על דרישה חוסמת — לא תקלה טכנית, ולכן אייקון אחר
-    if (status === "RequirementsNotMet") return "pi pi-ban";
+    return statusPresentation(status).icon;
+  }
 
-    switch (this.statusSeverity(status)) {
-      case "success":
-        return "pi pi-check-circle";
-      case "warning":
-        return "pi pi-clock";
-      case "danger":
-        return "pi pi-times-circle";
-      default:
-        return "pi pi-info-circle";
-    }
+  statusLabel(status?: string | null): string {
+    return statusPresentation(status).label;
   }
 
   openRowMenu(event: Event, menu: Menu, submission: SubmissionResponseDto): void {

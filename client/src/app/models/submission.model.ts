@@ -19,6 +19,94 @@ export const STATUS_LABELS_HE: Record<string, string> = {
   RequirementsNotMet: "הדרישות לא התקיימו",
 };
 
+/** חומרת התגית, בשמות ש-PrimeNG מכיר. */
+export type SubmissionStatusSeverity =
+  | "success"
+  | "info"
+  | "warning"
+  | "danger"
+  | "secondary";
+
+export interface SubmissionStatusPresentation {
+  label: string;
+  severity: SubmissionStatusSeverity;
+  icon: string;
+}
+
+/**
+ * המראה של כל אחד משבעת הסטטוסים — תווית, חומרה ואייקון — במקום אחד.
+ *
+ * ⚠️ נגזר מהטבלה ב-docs/design-system.md, וזו הטבלה שנבדקת מול ה-enum. סטטוס = צבע
+ * **וגם** אייקון **וגם** תווית, לעולם לא צבע לבדו (D-9).
+ *
+ * 🔴 המיפוי הזה היה כתוב חמש פעמים בנפרד, ואחד מהעותקים היה שגוי: submissions-list גזרה
+ * חומרה לפי התאמת תת-מחרוזת, ו-"judgeunavailable" אינו מכיל fail/error/pending, ולכן נפל
+ * לברירת המחדל "info". תקלת תשתית הוצגה כתגית מידע ניטרלית במסך המורה, בעוד שבכל מסך אחר
+ * היא ענבר. ההערה מעל אותו קוד כבר הזהירה מהכשל הזה עבור RequirementsNotMet, שקיבל טיפול
+ * מיוחד — המקרה השני פוספס. **מיפוי מפורש ולא נגזר: אין כאן תת-מחרוזות.**
+ */
+export const STATUS_PRESENTATION: Record<
+  SubmissionStatus,
+  SubmissionStatusPresentation
+> = {
+  PendingAi: {
+    label: STATUS_LABELS_HE["PendingAi"],
+    severity: "warning",
+    icon: "pi pi-clock",
+  },
+  ProcessingAi: {
+    label: STATUS_LABELS_HE["ProcessingAi"],
+    severity: "info",
+    icon: "pi pi-spinner",
+  },
+  Done: {
+    label: STATUS_LABELS_HE["Done"],
+    severity: "success",
+    icon: "pi pi-check-circle",
+  },
+  AiFailed: {
+    label: STATUS_LABELS_HE["AiFailed"],
+    severity: "danger",
+    icon: "pi pi-exclamation-triangle",
+  },
+  CompilationFailed: {
+    label: STATUS_LABELS_HE["CompilationFailed"],
+    severity: "danger",
+    icon: "pi pi-exclamation-triangle",
+  },
+  // ⚠️ ענבר ולא אדום: תקלת תשתית. התלמידה לא עשתה שום דבר רע ואין לה מה לתקן, ואדום היה
+  // שולח אותה לנפות באג שאין לה.
+  JudgeUnavailable: {
+    label: STATUS_LABELS_HE["JudgeUnavailable"],
+    severity: "warning",
+    icon: "pi pi-exclamation-circle",
+  },
+  // ⚠️ pi-ban ולא משולש השגיאה המשותף: הקוד רץ מצוין, הוא פשוט לא עשה את מה שהתרגיל ביקש.
+  // אייקון של תקלה היה קורא כמו תקלה.
+  RequirementsNotMet: {
+    label: STATUS_LABELS_HE["RequirementsNotMet"],
+    severity: "danger",
+    icon: "pi pi-ban",
+  },
+};
+
+/** ברירת מחדל להגשה שעדיין לא קיימת, או לסטטוס שאינו מוכר. */
+export const NO_SUBMISSION_PRESENTATION: SubmissionStatusPresentation = {
+  label: "טרם הוגש",
+  severity: "secondary",
+  icon: "pi pi-minus-circle",
+};
+
+/** המראה של סטטוס, בלי להניח שהוא מוכר. */
+export function statusPresentation(
+  status?: string | null,
+): SubmissionStatusPresentation {
+  if (!status) return NO_SUBMISSION_PRESENTATION;
+  return (
+    STATUS_PRESENTATION[status as SubmissionStatus] ?? NO_SUBMISSION_PRESENTATION
+  );
+}
+
 /**
  * כל כמה זמן מסך פרטים מרענן הגשה שנמצאת ב-PendingAi/ProcessingAi.
  *

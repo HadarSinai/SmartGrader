@@ -13,8 +13,9 @@ import { AssignmentResponseDto } from "@models/assignment.model";
 import { LessonResultResponseDto } from "@models/lesson-result.model";
 import { LessonResponseDto } from "@models/lesson.model";
 import {
-    STATUS_LABELS_HE,
     SubmissionResponseDto,
+    SubmissionStatusSeverity,
+    statusPresentation,
 } from "@models/submission.model";
 import { AssignmentsService } from "@services/assignments.service";
 import { AuthService } from "@services/auth.service";
@@ -344,47 +345,18 @@ export class MyGradesComponent implements OnInit {
     );
   }
 
+  // ⚠️ מיפוי משותף אחד (STATUS_PRESENTATION). כאן ישב עותק שלישי, והוא נבדל מהאחרים:
+  // CompilationFailed קיבל pi-times-circle בעוד ששאר המסכים נתנו לו pi-exclamation-triangle.
   statusLabel(status: string | null): string {
-    return (status && STATUS_LABELS_HE[status]) || "ממתין לבדיקה";
+    return statusPresentation(status).label;
   }
 
-  statusSeverity(
-    status: string | null,
-  ): "success" | "warning" | "danger" | "info" {
-    switch (status) {
-      case "Done":
-        return "success";
-      case "ProcessingAi":
-        return "info";
-      case "CompilationFailed":
-      case "AiFailed":
-      case "RequirementsNotMet":
-        return "danger";
-      case "JudgeUnavailable":
-        return "warning";
-      default:
-        return "warning";
-    }
+  statusSeverity(status: string | null): SubmissionStatusSeverity {
+    return statusPresentation(status).severity;
   }
 
   statusIcon(status: string | null): string {
-    switch (status) {
-      case "Done":
-        return "pi pi-check-circle";
-      case "ProcessingAi":
-        return "pi pi-spinner";
-      case "CompilationFailed":
-        return "pi pi-times-circle";
-      case "AiFailed":
-        return "pi pi-exclamation-triangle";
-      // דחייה על דרישה חוסמת — לא תקלה טכנית, ולכן אייקון אחר
-      case "RequirementsNotMet":
-        return "pi pi-ban";
-      case "JudgeUnavailable":
-        return "pi pi-exclamation-circle";
-      default:
-        return "pi pi-clock";
-    }
+    return statusPresentation(status).icon;
   }
 
   private load(): void {

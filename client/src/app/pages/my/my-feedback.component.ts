@@ -7,9 +7,10 @@ import { CardModule } from "primeng/card";
 import { TagModule } from "primeng/tag";
 
 import {
-    STATUS_LABELS_HE,
     SUBMISSION_POLL_INTERVAL_MS,
     SubmissionResponseDto,
+    SubmissionStatusPresentation,
+    statusPresentation,
 } from "@models/submission.model";
 import { AuthService } from "@services/auth.service";
 import { SubmissionsService } from "@services/submissions.service";
@@ -117,24 +118,22 @@ import { SubmittedCodeComponent } from "@components/submitted-code/submitted-cod
                 "
                 [ngSwitch]="submission.status"
               >
+                <!-- ⚠️ תגית אחת מתוך STATUS_PRESENTATION. ה-switch שלמטה נושא תוכן שונה לכל
+                     סטטוס — משפט הסבר, פאנל, כפתור תיקון — ולכן הוא נשאר; רק שבע הגדרות
+                     התגית הכפולות ירדו. אחת מהן נתנה ל-CompilationFailed אייקון אחר. -->
+                <p-tag
+                  [severity]="statusOf(submission.status).severity"
+                  [icon]="statusOf(submission.status).icon"
+                  [value]="statusOf(submission.status).label"
+                ></p-tag>
                 <!-- בבדיקה -->
                 <ng-container *ngSwitchCase="'PendingAi'">
-                  <p-tag
-                    severity="warning"
-                    icon="pi pi-clock"
-                    [value]="statusLabel"
-                  ></p-tag>
                   <span aria-live="polite">
                     ההגשה ממתינה לבדיקה אוטומטית — העמוד מתעדכן מעצמו.
                   </span>
                 </ng-container>
 
                 <ng-container *ngSwitchCase="'ProcessingAi'">
-                  <p-tag
-                    severity="info"
-                    icon="pi pi-spinner pi-spin"
-                    [value]="statusLabel"
-                  ></p-tag>
                   <span aria-live="polite">
                     הקוד נבדק כעת — העמוד מתעדכן מעצמו.
                   </span>
@@ -142,11 +141,6 @@ import { SubmittedCodeComponent } from "@components/submitted-code/submitted-cod
 
                 <!-- נבדק -->
                 <ng-container *ngSwitchCase="'Done'">
-                  <p-tag
-                    severity="success"
-                    icon="pi pi-check-circle"
-                    [value]="statusLabel"
-                  ></p-tag>
                   <app-submission-feedback-panel
                     [submission]="submission"
                   ></app-submission-feedback-panel>
@@ -161,11 +155,6 @@ import { SubmittedCodeComponent } from "@components/submitted-code/submitted-cod
                 <!-- דרישה חוסמת שלא התקיימה. Judge0 לא רץ בכלל, ולכן אין כאן תוצאות
                      בדיקות — רק טבלת הדרישות וההסבר. -->
                 <ng-container *ngSwitchCase="'RequirementsNotMet'">
-                  <p-tag
-                    severity="danger"
-                    icon="pi pi-ban"
-                    [value]="statusLabel"
-                  ></p-tag>
                   <span>{{ requirementsNotMetNote }}</span>
                   <app-submission-feedback-panel
                     [submission]="submission"
@@ -175,11 +164,6 @@ import { SubmittedCodeComponent } from "@components/submitted-code/submitted-cod
 
                 <!-- שגיאת קומפילציה -->
                 <ng-container *ngSwitchCase="'CompilationFailed'">
-                  <p-tag
-                    severity="danger"
-                    icon="pi pi-times-circle"
-                    [value]="statusLabel"
-                  ></p-tag>
                   <div *ngIf="submission.compileError">
                     <strong>פלט הקומפיילר:</strong>
                     <pre class="sg-code-box">{{ submission.compileError }}</pre>
@@ -190,11 +174,6 @@ import { SubmittedCodeComponent } from "@components/submitted-code/submitted-cod
 
                 <!-- שגיאת בדיקה -->
                 <ng-container *ngSwitchCase="'AiFailed'">
-                  <p-tag
-                    severity="danger"
-                    icon="pi pi-exclamation-triangle"
-                    [value]="statusLabel"
-                  ></p-tag>
                   <div *ngIf="submission.aiError">
                     <strong>פרטי השגיאה:</strong>
                     <pre class="sg-code-box">{{ submission.aiError }}</pre>
@@ -205,20 +184,10 @@ import { SubmittedCodeComponent } from "@components/submitted-code/submitted-cod
 
                 <!-- תקלת מערכת הבדיקה — לא קשורה לקוד של התלמיד -->
                 <ng-container *ngSwitchCase="'JudgeUnavailable'">
-                  <p-tag
-                    severity="warning"
-                    icon="pi pi-exclamation-circle"
-                    [value]="statusLabel"
-                  ></p-tag>
                   <span>{{ judgeUnavailableNote }}</span>
                 </ng-container>
 
                 <ng-container *ngSwitchDefault>
-                  <p-tag
-                    severity="warning"
-                    icon="pi pi-clock"
-                    [value]="statusLabel"
-                  ></p-tag>
                 </ng-container>
               </div>
             </div>
@@ -296,9 +265,14 @@ export class MyFeedbackComponent implements OnInit, OnDestroy {
   submissionId!: number;
   private pollHandle: ReturnType<typeof setInterval> | null = null;
 
+  /** המראה של סטטוס — מקור אחד לכל המסכים. */
+  statusOf(status?: string | null): SubmissionStatusPresentation {
+    return statusPresentation(status);
+  }
+
   get statusLabel(): string {
     const status = this.submission?.status;
-    return (status && STATUS_LABELS_HE[status]) || "ממתין לבדיקה";
+    return statusPresentation(status).label;
   }
 
   constructor(

@@ -12,8 +12,9 @@ import { TooltipModule } from "primeng/tooltip";
 import { AssignmentResponseDto } from "@models/assignment.model";
 import { LessonResponseDto } from "@models/lesson.model";
 import {
-    STATUS_LABELS_HE,
+    NO_SUBMISSION_PRESENTATION,
     SubmissionResponseDto,
+    statusPresentation,
 } from "@models/submission.model";
 import { AssignmentsService } from "@services/assignments.service";
 import { AuthService } from "@services/auth.service";
@@ -237,71 +238,18 @@ export class MyAssignmentsListComponent implements OnInit {
       );
     const submission = mine[0] ?? null;
 
-    if (!submission) {
-      return {
-        assignment,
-        submission: null,
-        statusLabel: "לא הוגש",
-        statusSeverity: "secondary",
-        statusIcon: "pi pi-minus-circle",
-      };
-    }
+    // ⚠️ מיפוי משותף אחד (STATUS_PRESENTATION) במקום switch מקומי. חמישה עותקים של אותו
+    // מיפוי הם חמישה מקומות שיסתרו זה את זה בשינוי הבא — וכבר סתרו.
+    const presentation = submission
+      ? statusPresentation(submission.status)
+      : { ...NO_SUBMISSION_PRESENTATION, label: "לא הוגש" };
 
-    const status = submission.status;
-    const label = (status && STATUS_LABELS_HE[status]) || "ממתין לבדיקה";
-    switch (status) {
-      case "Done":
-        return {
-          assignment,
-          submission,
-          statusLabel: label,
-          statusSeverity: "success",
-          statusIcon: "pi pi-check-circle",
-        };
-      case "ProcessingAi":
-        return {
-          assignment,
-          submission,
-          statusLabel: label,
-          statusSeverity: "info",
-          statusIcon: "pi pi-spinner",
-        };
-      case "CompilationFailed":
-      case "AiFailed":
-        return {
-          assignment,
-          submission,
-          statusLabel: label,
-          statusSeverity: "danger",
-          statusIcon: "pi pi-exclamation-triangle",
-        };
-      // דרישה חוסמת שלא התקיימה — דחייה, לא ציון נמוך. אייקון נפרד מכשל טכני:
-      // כאן אין תקלה, יש פתרון שלא עשה את מה שהתרגיל ביקש.
-      case "RequirementsNotMet":
-        return {
-          assignment,
-          submission,
-          statusLabel: label,
-          statusSeverity: "danger",
-          statusIcon: "pi pi-ban",
-        };
-      // תקלת תשתית — ענבר ולא אדום: לא אשמת התלמיד
-      case "JudgeUnavailable":
-        return {
-          assignment,
-          submission,
-          statusLabel: label,
-          statusSeverity: "warning",
-          statusIcon: "pi pi-exclamation-circle",
-        };
-      default:
-        return {
-          assignment,
-          submission,
-          statusLabel: label,
-          statusSeverity: "warning",
-          statusIcon: "pi pi-clock",
-        };
-    }
+    return {
+      assignment,
+      submission,
+      statusLabel: presentation.label,
+      statusSeverity: presentation.severity,
+      statusIcon: presentation.icon,
+    };
   }
 }

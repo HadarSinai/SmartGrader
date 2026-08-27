@@ -6,6 +6,8 @@ import {
   STATUS_LABELS_HE,
   SUBMISSION_POLL_INTERVAL_MS,
   SubmissionResponseDto,
+  SubmissionStatusPresentation,
+  statusPresentation,
 } from "@models/submission.model";
 import { SubmissionsService } from "@services/submissions.service";
 import { MessageService } from "primeng/api";
@@ -221,55 +223,14 @@ import { SubmittedCodeComponent } from "@components/submitted-code/submitted-cod
                   "
                 >
                   <div class="flex align-items-center gap-2 flex-wrap">
-                    <ng-container [ngSwitch]="submission.status">
-                      <p-tag
-                        *ngSwitchCase="'Done'"
-                        severity="success"
-                        [value]="statusLabels['Done']"
-                        icon="pi pi-check-circle"
-                      />
-                      <p-tag
-                        *ngSwitchCase="'PendingAi'"
-                        severity="warning"
-                        [value]="statusLabels['PendingAi']"
-                        icon="pi pi-clock"
-                      />
-                      <p-tag
-                        *ngSwitchCase="'ProcessingAi'"
-                        severity="info"
-                        [value]="statusLabels['ProcessingAi']"
-                        icon="pi pi-spinner pi-spin"
-                      />
-                      <p-tag
-                        *ngSwitchCase="'AiFailed'"
-                        severity="danger"
-                        [value]="statusLabels['AiFailed']"
-                        icon="pi pi-exclamation-triangle"
-                      />
-                      <p-tag
-                        *ngSwitchCase="'CompilationFailed'"
-                        severity="danger"
-                        [value]="statusLabels['CompilationFailed']"
-                        icon="pi pi-times-circle"
-                      />
-                      <p-tag
-                        *ngSwitchCase="'JudgeUnavailable'"
-                        severity="warning"
-                        [value]="statusLabels['JudgeUnavailable']"
-                        icon="pi pi-exclamation-circle"
-                      />
-                      <p-tag
-                        *ngSwitchCase="'RequirementsNotMet'"
-                        severity="danger"
-                        [value]="statusLabels['RequirementsNotMet']"
-                        icon="pi pi-ban"
-                      />
-                      <p-tag
-                        *ngSwitchDefault
-                        [value]="submission.status || 'לא ידוע'"
-                        severity="secondary"
-                      />
-                    </ng-container>
+                    <!-- ⚠️ תגית אחת מתוך STATUS_PRESENTATION, במקום שבעה ngSwitchCase.
+                         העותק שישב כאן נתן ל-CompilationFailed את pi-times-circle בעוד
+                         שמסכים אחרים נתנו לו pi-exclamation-triangle. -->
+                    <p-tag
+                      [severity]="statusOf(submission.status).severity"
+                      [value]="statusOf(submission.status).label"
+                      [icon]="statusOf(submission.status).icon"
+                    />
 
                     <span
                       class="text-color-secondary text-sm"
@@ -543,6 +504,11 @@ export class SubmissionDetailComponent implements OnInit, OnDestroy {
   studentId!: number;
   submissionId!: number;
   readonly statusLabels = STATUS_LABELS_HE;
+
+  /** המראה של סטטוס — מקור אחד לכל המסכים. */
+  statusOf(status?: string | null): SubmissionStatusPresentation {
+    return statusPresentation(status);
+  }
 
   // ── דריסות המורה ──────────────────────────────────────────────────────
   grantDialogOpen = false;
