@@ -34,23 +34,26 @@ on the question "who is stuck". Also an admin, who sees everything unfiltered.
 | `students/new` | `/students/new` | Student form — create |
 | `students/:id/edit` | `/students/:id/edit` | Student form — edit |
 | `lessons/:lessonId/results` | `/lessons/:lessonId/results` | Lesson results — the finalisation screen |
-| `students/:studentId/lessons/:lessonId/result` | `/students/…/result` | ⚠️ orphaned — linked from nowhere |
 | `students/:studentId/submissions` | `/students/:studentId/submissions` | One student's submissions |
 | `students/:studentId/submissions/:submissionId` | `/students/…/:submissionId` | Submission detail |
 | `students/:studentId/submissions/:submissionId/edit` | `/students/…/edit` | Submission edit |
-| `submissions` | `/submissions` → redirects to `students` | ⚠️ a stub, and the topbar links to it |
 
 <!-- /gen -->
 
-⚠️ **Two defects are visible in this table, and hiding them would make it describe a system that does
-not exist.**
+**Two screens that used to appear in this table are gone, and their absence is the point.**
 
-`students/:studentId/lessons/:lessonId/result` is **linked from nowhere** — no screen navigates to it —
-and its copy is written in the first person («התוצאה שלי») on a teacher-only route. Deletion is Plan
-B's B4.
+`students/:studentId/lessons/:lessonId/result` was linked from nowhere — no screen navigated to it —
+and its copy was written in the first person («התוצאה שלי») on a teacher-only route. A teacher reads a
+student's lesson result on the finalisation screen, which is reachable and says «ה» rather than «שלי».
+Deleted in Plan B's B4.
 
-`/submissions` is a `redirectTo` stub that the topbar links to, so «הגשות» lands on Students and
-highlights the wrong item. Also B4.
+`/submissions` was a `redirectTo` stub the topbar linked to, so «הגשות» landed on Students and
+highlighted the wrong item. **A submission is always a submission *of a student***, which is why every
+live route here is nested under `students/:studentId`. Stub and navigation item both deleted in B4.
+
+**Submission edit is edit-only.** The same component once carried a create branch — two dropdowns to
+pick a lesson and an assignment, then a POST — with no route to reach it. A student submits through her
+own area; a teacher edits what already exists. That branch is gone too.
 
 ## Functional Requirements
 

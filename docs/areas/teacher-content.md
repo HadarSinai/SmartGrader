@@ -36,13 +36,13 @@ shape of it constantly.
 | `lessons/:lessonId/assignments` | `/lessons/:lessonId/assignments` | Assignments list |
 | `lessons/:lessonId/assignments/new` | `/lessons/:lessonId/assignments/new` | Assignment form — create |
 | `lessons/:lessonId/assignments/:assignmentId/edit` | `/lessons/…/edit` | Assignment form — edit |
-| `assignments` | `/assignments` → redirects to `lessons` | ⚠️ a stub, and the topbar links to it |
 
 <!-- /gen -->
 
-⚠️ **`/assignments` is a `redirectTo` stub and the topbar links to it.** Clicking «תרגילים» lands on
-Lessons and highlights the wrong navigation item. There is no standalone assignments screen — an
-assignment exists only inside a lesson. Tracked as Plan B's B4.
+**There is no `/assignments` route, and there should not be** — an assignment exists only inside a
+lesson. A `redirectTo` stub carried that path until Plan B's B4, with the topbar linking to it, so
+«תרגילים» landed on Lessons and highlighted the wrong item. The stub and the navigation item are both
+gone; the way to an assignment is through its lesson.
 
 ## Functional Requirements
 
@@ -248,8 +248,8 @@ validation and test authoring — not by line count.
 
 ## Explicitly Not Supported
 
-- **An assignment cannot exist outside a lesson.** There is no flat assignments screen and no flat API
-  route; `/assignments` is a redirect.
+- **An assignment cannot exist outside a lesson.** There is no flat assignments screen, no flat API
+  route, and since B4 no `/assignments` path at all.
 - **A lesson has no topic entity** — `Subject` is free text, so two lessons about loops are two
   unrelated strings and nothing groups them.
 - **A course belongs to one teacher.** Two teachers teaching C# keep two separate courses; there is no

@@ -6,76 +6,23 @@
           class="flex flex-column md:flex-row md:align-items-end md:justify-content-between gap-3 px-4 pt-4 pb-2"
         >
           <div class="sg-title">
-            <div class="sg-h1">
-              {{ isEditMode ? "עריכת הגשה" : "הגשה חדשה" }}
-            </div>
-            <div class="sg-h2">בחירת תרגיל והדבקת קוד</div>
+            <div class="sg-h1">עריכת הגשה</div>
+            <div class="sg-h2">עריכת הקוד שהוגש</div>
           </div>
         </div>
       </ng-template>
 
       <form class="px-4 pb-4" [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="formgrid grid">
-          <ng-container *ngIf="!isEditMode; else assignmentReadonly">
-            <div class="field col-12 md:col-6">
-              <label class="block font-bold mb-2" for="lesson"
-                >שיעור *</label
-              >
-              <p-dropdown
-                inputId="lesson"
-                styleClass="w-full"
-                [options]="lessonOptions"
-                formControlName="lessonId"
-                placeholder="בחירת שיעור"
-                (onChange)="onLessonChange()"
-                optionLabel="label"
-                optionValue="value"
-                [showClear]="true"
-              >
-              </p-dropdown>
+          <div class="field col-12">
+            <label class="block font-bold mb-2">תרגיל</label>
+            <div class="sg-readonly-field">
+              {{ submission?.assignmentName || "—" }}
             </div>
-
-            <div class="field col-12 md:col-6">
-              <label class="block font-bold mb-2" for="assignment"
-                >תרגיל *</label
-              >
-              <p-dropdown
-                inputId="assignment"
-                styleClass="w-full"
-                [options]="assignmentOptions"
-                formControlName="assignmentId"
-                placeholder="בחירת תרגיל"
-                optionLabel="label"
-                optionValue="value"
-                [disabled]="!form.get('lessonId')?.value"
-                [showClear]="true"
-              >
-              </p-dropdown>
-              <small
-                class="p-error"
-                *ngIf="
-                  form.get('assignmentId')?.invalid &&
-                  form.get('assignmentId')?.touched
-                "
-              >
-                יש לבחור תרגיל
-              </small>
-            </div>
-          </ng-container>
-
-          <ng-template #assignmentReadonly>
-            <div class="field col-12">
-              <label class="block font-bold mb-2">תרגיל</label>
-              <div class="sg-readonly-field">
-                {{ submission?.assignmentName || "—" }}
-              </div>
-            </div>
-          </ng-template>
+          </div>
 
           <div class="field col-12">
-            <label class="block font-bold mb-2" for="sourceCode"
-              >קוד *</label
-            >
+            <label class="block font-bold mb-2" for="sourceCode">קוד *</label>
             <textarea
               pInputTextarea
               id="sourceCode"
@@ -106,7 +53,7 @@
             type="button"
           ></p-button>
           <p-button
-            [label]="isEditMode ? 'שמירה' : 'יצירה'"
+            label="שמירה"
             type="submit"
             styleClass="sg-btn-primary"
             [loading]="loading"

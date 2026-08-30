@@ -288,7 +288,6 @@ human column; it is what nesting produces.
 | `lessons/:lessonId/assignments/new` | `/lessons/:lessonId/assignments/new` | `teacherGuard` | app |
 | `lessons/:lessonId/assignments/:assignmentId/edit` | same | `teacherGuard` | app |
 | `lessons/:lessonId/results` | `/lessons/:lessonId/results` | `teacherGuard` | app |
-| `students/:studentId/lessons/:lessonId/result` | same | `teacherGuard` | app |
 | `students/:studentId/submissions` | same | `teacherGuard` | app |
 | `students/:studentId/submissions/:submissionId` | same | `teacherGuard` | app |
 | `students/:studentId/submissions/:submissionId/edit` | same | `teacherGuard` | app |
@@ -297,8 +296,6 @@ human column; it is what nesting produces.
 | `teachers/new` | `/teachers/new` | `adminGuard` | app |
 | `teachers/:id/edit` | `/teachers/:id/edit` | `adminGuard` | app |
 | `profile` | `/profile` | `teacherGuard` | app |
-| `assignments` | `/assignments` → redirects to `lessons` | — | app |
-| `submissions` | `/submissions` → redirects to `students` | — | app |
 | `my` | `/my` — the shell itself | `studentGuard` | student |
 | `` | `/my` → redirects to `lessons` | inherited | student |
 | `lessons` | `/my/lessons` | inherited | student |
@@ -319,9 +316,11 @@ parent, because `authGuard` alone would let a student through.
 section; the name and email fields are hidden from her, which matches `PUT api/auth/me` being
 teacher-and-admin only.
 
-⚠️ **`assignments` and `submissions` are `redirectTo` stubs, and the topbar links to them.** Clicking
-"תרגילים" lands on Lessons and highlights the wrong item. This is a live defect, tracked as Plan B's
-B4 — recorded here because a route table that hid it would be describing a system that does not exist.
+**`assignments` and `submissions` no longer appear here.** They were `redirectTo` stubs the topbar
+linked to, so "תרגילים" landed on Lessons and highlighted the wrong item; Plan B's B4 removed the
+items and then the routes. Neither resource is reachable at the top level, which is correct — every
+route to one is nested under the lesson or the student that owns it, and that nesting is where the
+guard applies.
 
 ---
 

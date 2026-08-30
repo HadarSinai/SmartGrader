@@ -15,7 +15,6 @@ import { CourseFormComponent } from "./pages/courses/course-form.component";
 import { CoursesListComponent } from "./pages/courses/courses-list.component";
 import { LoginComponent } from "./pages/auth/login.component";
 import { DashboardComponent } from "./pages/dashboard/dashboard.component";
-import { LessonResultDetailComponent } from "./pages/lesson-results/lesson-result-detail.component";
 import { LessonResultsListComponent } from "./pages/lesson-results/lesson-results-list.component";
 import { LessonFormComponent } from "./pages/lessons/lesson-form.component";
 import { LessonsListComponent } from "./pages/lessons/lessons-list.component";
@@ -145,11 +144,6 @@ export const routes: Routes = [
         canActivate: [teacherGuard],
       },
       {
-        path: "students/:studentId/lessons/:lessonId/result",
-        component: LessonResultDetailComponent,
-        canActivate: [teacherGuard],
-      },
-      {
         path: "students/:studentId/submissions",
         component: SubmissionsListComponent,
         canActivate: [teacherGuard],
@@ -200,8 +194,6 @@ export const routes: Routes = [
           ),
         canActivate: [teacherGuard],
       },
-      { path: "assignments", redirectTo: "lessons", pathMatch: "full" },
-      { path: "submissions", redirectTo: "students", pathMatch: "full" },
     ],
   },
   {

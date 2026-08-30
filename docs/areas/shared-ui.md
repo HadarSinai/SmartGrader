@@ -215,14 +215,15 @@ nothing at all (`B-34`). The bell itself does need an empty state, and it must n
 
 | | |
 |---|---|
-| **Comes off** | **The two fake items.** «תרגילים» and «הגשות» point at `redirectTo` stubs, so they land on the wrong screen and highlight the wrong item (`SH-11`). |
+| **Came off** | **The two fake items.** «תרגילים» and «הגשות» pointed at `redirectTo` stubs, so they landed on the wrong screen and highlighted the wrong item (`SH-11`). Both are gone. |
 | **Eye hits first** | The current location. |
 | **Reading order** | **By the two real hierarchies**: courses → lessons → assignments, and classes → students → submissions. |
 | **Per row** | — |
 
-The nav order should follow the hierarchies the area docs establish, which is why Plan B's B4 was
-blocked on this phase. It no longer is. **Topbar first, then the routes** — reversed, a wrong highlight
-becomes a hard 404.
+The nav order follows the hierarchies the area docs establish, which is why Plan B's B4 was blocked on
+this phase. **Topbar first, then the routes** — reversed, a wrong highlight becomes a hard 404. That is
+the order B4 was carried out in: the items were removed with the A5 screen decisions, and the stub
+routes only afterwards.
 
 The hero strip renders on the dashboard only (`SH-12`); a decorative band on every screen is a band
 nobody sees and everybody scrolls past.
@@ -250,8 +251,11 @@ written as a requirement because it was a real defect: the widget and the servic
 
 ## Explicitly Not Supported
 
-- ⚠️ **`SH-11` fails today.** The topbar links to `/assignments` and `/submissions`, which are
-  `redirectTo` stubs — so «תרגילים» lands on Lessons and highlights the wrong item. Plan B's B4.
+- **There is no navigation item for assignments or for submissions, and there must not be.** Both are
+  nested resources — an assignment lives in a lesson, a submission belongs to a student — so a
+  top-level item for either can only point somewhere else. The two that existed pointed at `redirectTo`
+  stubs and highlighted the wrong item; item and stub were both removed in Plan B's B4, which is what
+  `SH-11` now passes on.
 - **There is no notification entity and no notifications table, and one must not be added** (`B-25`).
   Every signal is computed on demand from submission rows in a date window; a table would only record
   what the date range already determines.
