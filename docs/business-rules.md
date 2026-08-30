@@ -1,12 +1,13 @@
 # Business Rules
 
-> SmartGrader · Version 1.2 · Last updated 2026-08-30 · Status: as-built
+> SmartGrader · Version 1.3 · Last updated 2026-08-30 · Status: as-built
 
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-08-27 | First edition. `B-1 … B-52`. |
 | 1.1 | 2026-08-30 | `B-50` closed: the seeder fills a missing admin email, and startup warns for every admin still without one. |
 | 1.2 | 2026-08-30 | `B-53 … B-56` added — the deletion policy, and bulk deletion built on it. |
+| 1.3 | 2026-08-30 | `B-8` closed: the deployment database starts empty, so the two lock conditions are sufficient and the third is not built. |
 
 **What this document answers:** every non-grading rule the system enforces, with a stable id and a
 place in the code to look.
@@ -36,7 +37,7 @@ in its own test.
 | B-5 | When the sandbox was unavailable, the student shall not be offered a fix-and-resubmit action — the failure is not hers and there is nothing to correct. | `client/src/app/pages/my/my-feedback.component.ts` |
 | B-6 | A teacher's extra-attempt grant shall override the retry threshold, shall require a written reason, and shall be consumed by the next submission. | `server/Domain/Entities/Submission.cs` |
 | B-7 | A finalised lesson result or an archived class shall lock the affected submissions, overriding both the retry threshold and any teacher grant. | `server/Application/Common/Authorization/SubmissionLock.cs` |
-| B-8 | ⚠️ A third lock condition — submissions predating the grading engine — was specified and **never implemented**; going live against a database with real history reopens every old submission below the threshold. | `server/Application/Common/Authorization/SubmissionLock.cs` |
+| B-8 | The system shall be deployed only against a database holding no submission that predates the grading engine, because nothing in the two lock conditions excludes such a submission from another attempt. | `server/Application/Common/Authorization/SubmissionLock.cs` |
 | B-9 | Reopening a submission shall archive the current attempt and clear its score, breakdown, feedback, results and grading time together. | `server/Domain/Entities/Submission.cs` |
 | B-10 | Only the ten most recent attempts shall retain their full content; older ones shall keep score, status and timestamps only. | `server/Domain/Entities/SubmissionAttempt.cs` |
 | B-11 | Login shall return one identical message for every failure — unknown username, wrong password and locked account alike. | `server/Application/UseCases/Auth/Login/LoginHandler.cs` |
@@ -101,12 +102,18 @@ threshold **and** a teacher's explicit grant, because a final grade that has alr
 student must not move underneath her. Reopening the lesson result is the way back — deliberately a
 different, more visible action than granting an attempt.
 
-**`B-8` is a go-live risk, and it is written here rather than in a comment for that reason.** A third
-condition — "submitted before the grading engine shipped" — was specified and never built, on the
-decision that the database held development data that would be wiped. If the system goes live against
-a database with real submission history, **every old submission below the retry threshold reopens on
-the day of deployment.** The decision to accept or close that belongs to a person, before deployment,
-not to whoever next reads `SubmissionLock.cs`.
+**`B-8` is the premise the other two conditions rest on.** A third condition — "submitted before the
+grading engine shipped" — was specified and never built. On 2026-08-30 the owner decided the
+deployment database is wiped and starts empty, which is what makes the third condition unnecessary:
+where no submission is older than the engine, none can reopen. It is recorded as a rule rather than
+left in a comment because it is a premise about **data**, and no code enforces it — the two conditions
+in `SubmissionLock.IsLockedAsync` are correct only while it holds.
+
+⚠️ **If the premise stops holding, the third condition goes back in before that deployment, not
+after.** Restoring an earlier database, or importing submission history, reopens every old submission
+below the retry threshold on the day it lands: the student's screen offers «תיקון והגשה מחדש» on last
+year's work, she takes it, and the new attempt overwrites the score she was given. There is no error
+and nothing in a log — the screen simply invites her, and the system does what she asked.
 
 ### `B-11`, `B-16`, `B-17` — one message, on purpose
 

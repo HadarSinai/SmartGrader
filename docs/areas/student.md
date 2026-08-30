@@ -109,7 +109,7 @@ toast.
 | `B-4` | what makes a submission resubmittable |
 | `B-5` | `JudgeUnavailable` offers her nothing to fix |
 | `B-6` | a teacher's grant beats the retry threshold |
-| `B-7`, `B-8` | the lock, and the condition that was never built |
+| `B-7`, `B-8` | the lock, and the empty-database premise its two conditions rest on |
 | `B-21` | she cannot recover her own password — her teacher does it |
 | `B-46` | hidden and core default in her disfavour, on purpose |
 | `B-51` | her own submitted code is rendered as escaped text |

@@ -176,9 +176,11 @@ restated in two places drifts, and the copy is the one that ends up wrong.
 Grading itself — how a number is produced — is [docs/grading-rules.md](../docs/grading-rules.md),
 `G-1` … `G-25`.
 
-**One go-live risk still carries an id for a reason:** `B-8` — a submission lock condition specified
-and never implemented — needs a human decision before deployment. `B-50` was the second; it is closed
-in code, and the startup warning names any account it could not fix.
+**Both go-live risks are now closed.** `B-50` is closed in code, and the startup warning names any
+account it could not fix. `B-8` is closed by decision rather than by code: the deployment database
+starts empty, so the missing third lock condition has nothing to lock. That makes `B-8` a premise
+about data — restoring an old database or importing submission history breaks it, and the condition
+has to be built before such a deployment, not after it.
 
 ### Implementation constraints that are not rules
 
