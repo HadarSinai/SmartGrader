@@ -52,7 +52,7 @@
             optionLabel="label"
             optionValue="value"
             placeholder="כל הסטטוסים"
-            aria-label="סינון לפי סטטוס"
+            ariaLabel="סינון לפי סטטוס"
           ></p-dropdown>
 
           <p-button
@@ -60,7 +60,7 @@
             label="איפוס"
             [text]="true"
             (onClick)="clearFilters()"
-            aria-label="איפוס סינון"
+            ariaLabel="איפוס סינון"
           ></p-button>
         </div>
       </ng-template>
@@ -148,7 +148,7 @@
                   label="סיום שיעור"
                   icon="pi pi-flag"
                   [text]="true"
-                  [attr.aria-label]="'סיום שיעור עבור ' + row.studentName"
+                  [ariaLabel]="'סיום שיעור עבור ' + row.studentName"
                   (onClick)="openFinalize(row)"
                 ></p-button>
                 <!-- ⚠️ עד עכשיו ציון סופי שגוי לא היה ניתן לתיקון בשום דרך.
@@ -158,7 +158,7 @@
                   label="פתיחה מחדש"
                   icon="pi pi-lock-open"
                   [text]="true"
-                  [attr.aria-label]="
+                  [ariaLabel]="
                     'פתיחת השיעור מחדש עבור ' + row.studentName
                   "
                   (onClick)="confirmReopen(row)"
@@ -245,7 +245,7 @@
                     label="סיום שיעור"
                     icon="pi pi-flag"
                     [outlined]="true"
-                    [attr.aria-label]="
+                    [ariaLabel]="
                       'סיום שיעור עבור ' + item.studentName
                     "
                     (onClick)="openFinalize(item)"
@@ -255,7 +255,7 @@
                     label="פתיחה מחדש"
                     icon="pi pi-lock-open"
                     [outlined]="true"
-                    [attr.aria-label]="
+                    [ariaLabel]="
                       'פתיחת השיעור מחדש עבור ' + item.studentName
                     "
                     (onClick)="confirmReopen(item)"

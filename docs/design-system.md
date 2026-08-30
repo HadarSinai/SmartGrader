@@ -28,8 +28,10 @@ filter row → selection toolbar, shown only when something is selected → tabl
 
 Full anatomy: [client-list-table-pattern](../.claude/skills/client-list-table-pattern/SKILL.md).
 
-⚠️ **The selection toolbar is design-only.** "מחיקת נבחרים" raises an information toast; there is no
-bulk-delete endpoint. Building it for real is Plan B's B5.
+**The selection toolbar deletes for real** on students, lessons, assignments and submissions (Plan B's
+B5). It raised an information toast until then. **Its outcome is a dialog, not a toast**, because
+partial success is the normal result (`B-55`): a row protected by the deletion policy is refused with
+its reason while the rest go. The remaining instances below still carry the toast.
 
 **Instances:** students · lessons · assignments · submissions · lesson results · classes · courses ·
 teachers · logs · my lessons · my grades.
@@ -266,6 +268,9 @@ Plan B's B3; the requirement is what stops it recurring.
 | hardcoded colours in `client/src/app` do not increase | `DesignTokenTests`, ratcheted |
 | no component redefines a selector `styles.css` already defines | `DesignTokenTests` |
 | every component keeps its template and styles in files of their own | `ComponentFileLayoutTests` |
+| every form control has an accessible name (`D-6`) | `AccessibleNameTests`, ratcheted at 0 |
+| every icon-only button has an accessible name (`D-5`) | `AccessibleNameTests`, ratcheted at 0 |
+| no PrimeNG component carries a name that never reaches the user | `AccessibleNameTests`, ratcheted at 0 |
 
 **The colour ratchet is currently 0 files.** A6 converted all fourteen. From here on, one hardcoded
 colour anywhere under `client/src/app` is a failing test — and the failure names the file.
@@ -291,6 +296,24 @@ no fallback at all, so the declaration was simply invalid and the colour was inh
 
 A fallback is not a safety net here. It is the thing that hides a typo in a token name for months.
 
-`D-1` … `D-15` are **not** machine-verified. Every one of them needs a person with a keyboard, a
-screen reader, or a contrast meter. Saying so plainly is better than a green test that checked
-something easier.
+**`D-5` and `D-6` are now machine-verified; the other thirteen are not.** Whether a control carries a
+name is readable from the template, so it is asserted and ratcheted at 0. Whether that name is the
+*right* one, whether tab order follows the reading order, whether contrast reaches 4.5:1 — those
+still need a person with a keyboard, a screen reader, or a contrast meter. Saying so plainly is
+better than a green test that checked something easier.
+
+**What the check found when it was first run.** The screen it was written for — the assignment form —
+was the smaller half. The larger half was that **39 PrimeNG components across the client carried a
+name a screen reader never announces**: nearly every row action and every filter on every list
+screen. `<p-button [attr.aria-label]="…">` puts the attribute on the `<p-button>` wrapper, and
+PrimeNG renders the real `<button>` inside it, passing down only its own `ariaLabel` input. An
+`aria-label` on an element with no role is ignored outright. So the name was in the source, was in
+the DOM, and was silent. It read as correct in review for the same reason the `var(--token, #hex)`
+fallbacks did: nothing looked wrong.
+
+**The accessibility widget was among them.** The screen whose entire purpose is accessibility shipped
+six unnamed switches and an English `aria-label` on its open button, in a Hebrew-only interface.
+
+A name that is present but unreachable is worse than a missing one — a missing name shows up in an
+audit, and this did not. `ariaLabel`, `ariaLabelledBy` and `inputId` are the inputs that reach the
+rendered element; the raw attribute is now a failing test on any PrimeNG tag.

@@ -1,7 +1,9 @@
 <div class="sg-shell min-h-screen relative overflow-x-hidden">
   <header class="sg-header">
     <div class="sg-page">
-      <p-toolbar class="sg-topbar" aria-label="סרגל עליון">
+      <!-- ⚠️ ariaLabelledBy ולא aria-label: ר' ההערה ב-topbar.component.html. -->
+      <p-toolbar class="sg-topbar" ariaLabelledBy="student-topbar-label">
+        <span id="student-topbar-label" class="sr-only">סרגל עליון</span>
         <div class="p-toolbar-group-left">
           <a
             class="sg-brand"

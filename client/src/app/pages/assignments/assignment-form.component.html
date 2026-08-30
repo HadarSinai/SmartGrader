@@ -118,12 +118,17 @@
           </div>
 
           <div class="field col-12">
-            <label class="block font-bold mb-2">סוג ההגשה *</label>
+            <!-- ⚠️ span ולא label: p-selectButton מרנדר role="group" ולא שדה יחיד,
+                 ואין למה ש-for יצביע. השם מגיע דרך aria-labelledby. -->
+            <span class="block font-bold mb-2" id="gradingMode-label"
+              >סוג ההגשה *</span
+            >
             <p-selectButton
               [options]="gradingModeOptions"
               formControlName="gradingMode"
               optionLabel="label"
               optionValue="value"
+              ariaLabelledBy="gradingMode-label"
             ></p-selectButton>
             <small class="sg-hint block mt-2">{{
               gradingModeDescription
@@ -194,37 +199,47 @@
                     icon="pi pi-trash"
                     severity="danger"
                     [text]="true"
+                    ariaLabel="מחיקת קובץ צפוי {{ i + 1 }}"
                     (onClick)="removeExpectedFile(i)"
                     type="button"
                   ></p-button>
                 </div>
 
+                <!-- ⚠️ המזהים נבנים מהאינדקס ולא קבועים בקוד: השורות חוזרות, ושני
+                     שדות עם אותו id היו מקשרים כל תווית לשורה הראשונה בלבד. -->
                 <div class="grid">
                   <div class="col-12 md:col-4">
-                    <label class="block font-bold mb-2">שם קובץ</label>
+                    <label class="block font-bold mb-2" [for]="'expected-file-name-' + i"
+                      >שם קובץ</label
+                    >
                     <input
                       pInputText
                       class="w-full"
+                      [id]="'expected-file-name-' + i"
                       formControlName="fileName"
                       placeholder="לדוגמה: Calculator.cs"
                     />
                   </div>
                   <div class="col-12 md:col-4" *ngIf="!isFullProgramMode">
-                    <label class="block font-bold mb-2"
+                    <label class="block font-bold mb-2" [for]="'expected-file-method-' + i"
                       >שם המתודה בקובץ</label
                     >
                     <input
                       pInputText
                       class="w-full"
+                      [id]="'expected-file-method-' + i"
                       formControlName="methodName"
                       placeholder="לדוגמה: Sum"
                     />
                   </div>
                   <div class="col-12 md:col-4">
-                    <label class="block font-bold mb-2">תיאור</label>
+                    <label class="block font-bold mb-2" [for]="'expected-file-desc-' + i"
+                      >תיאור</label
+                    >
                     <input
                       pInputText
                       class="w-full"
+                      [id]="'expected-file-desc-' + i"
                       formControlName="description"
                       placeholder="הסבר קצר לקובץ"
                     />
@@ -328,16 +343,20 @@
                   <div
                     class="flex align-items-center justify-content-between gap-2 flex-wrap mb-2"
                   >
+                    <!-- ⚠️ אין כאן תווית גלויה — שם הקובץ *הוא* כותרת השורה. השם
+                         לקורא המסך מגיע מ-aria-label, ולא מה-placeholder. -->
                     <input
                       pInputText
                       class="sg-ref-filename"
                       formControlName="fileName"
+                      [attr.aria-label]="'שם קובץ ייחוס ' + (i + 1)"
                       placeholder="שם קובץ (לדוגמה: Solution.cs)"
                     />
                     <p-button
                       icon="pi pi-trash"
                       severity="danger"
                       [text]="true"
+                      ariaLabel="מחיקת קובץ ייחוס {{ i + 1 }}"
                       (onClick)="removeReferenceFile(i)"
                       type="button"
                     ></p-button>
@@ -348,6 +367,7 @@
                     class="w-full sg-code-input"
                     formControlName="content"
                     rows="10"
+                    [attr.aria-label]="'קוד הפתרון לקובץ ייחוס ' + (i + 1)"
                     [placeholder]="referenceSolutionHint"
                   ></textarea>
                 </div>
@@ -464,6 +484,7 @@
                     icon="pi pi-trash"
                     severity="danger"
                     [text]="true"
+                    ariaLabel="מחיקת מקרה בדיקה {{ i + 1 }}"
                     (onClick)="removeTestCase(i)"
                     type="button"
                   ></p-button>
@@ -471,20 +492,26 @@
 
                 <div class="grid">
                   <div class="col-12 md:col-6">
-                    <label class="block font-bold mb-2">קלט</label>
+                    <label class="block font-bold mb-2" [for]="'test-input-' + i"
+                      >קלט</label
+                    >
                     <textarea
                       pInputTextarea
                       class="w-full"
+                      [id]="'test-input-' + i"
                       formControlName="input"
                       rows="2"
                       placeholder="הקלידי קלט"
                     ></textarea>
                   </div>
                   <div class="col-12 md:col-6">
-                    <label class="block font-bold mb-2">פלט צפוי</label>
+                    <label class="block font-bold mb-2" [for]="'test-expected-' + i"
+                      >פלט צפוי</label
+                    >
                     <textarea
                       pInputTextarea
                       class="w-full"
+                      [id]="'test-expected-' + i"
                       formControlName="expected"
                       rows="2"
                       placeholder="הקלידי פלט צפוי"
@@ -601,7 +628,7 @@
                     icon="pi pi-trash"
                     severity="danger"
                     [text]="true"
-                    [attr.aria-label]="'מחיקת דרישה ' + (i + 1)"
+                    ariaLabel="מחיקת דרישה {{ i + 1 }}"
                     (onClick)="removeRule(i)"
                     type="button"
                   ></p-button>
@@ -609,9 +636,12 @@
 
                 <div class="grid">
                   <div class="col-12 md:col-4">
-                    <label class="block font-bold mb-2">סוג הדרישה</label>
+                    <label class="block font-bold mb-2" [for]="'rule-kind-' + i"
+                      >סוג הדרישה</label
+                    >
                     <p-dropdown
                       [options]="ruleKindOptions"
+                      [inputId]="'rule-kind-' + i"
                       formControlName="kind"
                       optionLabel="label"
                       optionValue="value"
@@ -621,8 +651,11 @@
                   </div>
 
                   <div class="col-6 md:col-2" *ngIf="needsThreshold(i)">
-                    <label class="block font-bold mb-2">כמה</label>
+                    <label class="block font-bold mb-2" [for]="'rule-threshold-' + i"
+                      >כמה</label
+                    >
                     <p-inputNumber
+                      [inputId]="'rule-threshold-' + i"
                       formControlName="threshold"
                       [min]="1"
                       [showButtons]="true"
@@ -636,9 +669,12 @@
                       needsThreshold(i) ? 'md:col-4' : 'md:col-6'
                     "
                   >
-                    <label class="block font-bold mb-2">מבנה בקוד</label>
+                    <label class="block font-bold mb-2" [for]="'rule-construct-' + i"
+                      >מבנה בקוד</label
+                    >
                     <p-dropdown
                       [options]="constructOptions"
+                      [inputId]="'rule-construct-' + i"
                       [group]="true"
                       [filter]="true"
                       filterBy="label"
@@ -652,9 +688,12 @@
                   </div>
 
                   <div class="col-12 md:col-8">
-                    <label class="block font-bold mb-2">חומרה</label>
+                    <span class="block font-bold mb-2" [id]="'rule-severity-label-' + i"
+                      >חומרה</span
+                    >
                     <p-selectButton
                       [options]="severityOptions"
+                      [ariaLabelledBy]="'rule-severity-label-' + i"
                       formControlName="severity"
                       optionLabel="label"
                       optionValue="value"
@@ -662,8 +701,11 @@
                   </div>
 
                   <div class="col-6 md:col-4" *ngIf="isScored(i)">
-                    <label class="block font-bold mb-2">נקודות *</label>
+                    <label class="block font-bold mb-2" [for]="'rule-points-' + i"
+                      >נקודות *</label
+                    >
                     <p-inputNumber
+                      [inputId]="'rule-points-' + i"
                       formControlName="points"
                       [min]="0"
                       [max]="maxScore"

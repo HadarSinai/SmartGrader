@@ -56,7 +56,7 @@
             onIcon="pi pi-box"
             offIcon="pi pi-box"
             (onChange)="loadClasses()"
-            aria-label="הצגת כיתות בארכיון"
+            ariaLabel="הצגת כיתות בארכיון"
           ></p-toggleButton>
         </div>
       </ng-template>
@@ -120,7 +120,7 @@
                   *ngIf="!schoolClass.isArchived"
                   icon="pi pi-ellipsis-h"
                   [text]="true"
-                  [attr.aria-label]="'פעולות נוספות: ' + schoolClass.name"
+                  [ariaLabel]="'פעולות נוספות: ' + schoolClass.name"
                   (onClick)="openRowMenu($event, rowMenu, schoolClass)"
                 ></p-button>
                 <span

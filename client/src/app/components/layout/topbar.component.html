@@ -1,4 +1,7 @@
-<p-toolbar class="sg-topbar" aria-label="סרגל עליון">
+<!-- ⚠️ ariaLabelledBy ולא aria-label: ל-p-toolbar אין קלט ariaLabel, ותכונה
+     גולמית על האלמנט המארח אינה מגיעה ל-div שנושא את role="toolbar". -->
+<p-toolbar class="sg-topbar" ariaLabelledBy="topbar-label">
+  <span id="topbar-label" class="sr-only">סרגל עליון</span>
   <div class="p-toolbar-group-left">
     <a class="sg-brand" routerLink="/" aria-label="SmartGrader – דף הבית">
       <img

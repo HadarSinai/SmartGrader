@@ -4,7 +4,7 @@
   class="a11y-fab"
   type="button"
   (click)="visible = true"
-  aria-label="Open accessibility menu">
+  aria-label="פתיחת תפריט הנגישות">
 </button>
 
 <p-sidebar [(visible)]="visible" position="right" styleClass="a11y-sidebar">
@@ -19,7 +19,7 @@
         <div class="font-semibold">מצב כהה</div>
         <small class="text-500">נוחות בעבודה בלילה</small>
       </div>
-      <p-inputSwitch [ngModel]="a11y.state.dark" (onChange)="a11y.update({ dark: $event.checked })"></p-inputSwitch>
+      <p-inputSwitch ariaLabel="מצב כהה" [ngModel]="a11y.state.dark" (onChange)="a11y.update({ dark: $event.checked })"></p-inputSwitch>
     </div>
 
     <div class="flex align-items-center justify-content-between">
@@ -27,7 +27,7 @@
         <div class="font-semibold">טקסט גדול</div>
         <small class="text-500">הגדלת גופן בכל המערכת</small>
       </div>
-      <p-inputSwitch [ngModel]="a11y.largeText" (onChange)="setLargeText($event.checked)"></p-inputSwitch>
+      <p-inputSwitch ariaLabel="טקסט גדול" [ngModel]="a11y.largeText" (onChange)="setLargeText($event.checked)"></p-inputSwitch>
     </div>
 
     <div class="flex align-items-center justify-content-between">
@@ -35,12 +35,14 @@
         <div class="font-semibold">הפחתת אנימציות</div>
         <small class="text-500">מינימום תנועה ואפקטים</small>
       </div>
-      <p-inputSwitch [ngModel]="a11y.state.reduceMotion" (onChange)="a11y.update({ reduceMotion: $event.checked })"></p-inputSwitch>
+      <p-inputSwitch ariaLabel="הפחתת אנימציות" [ngModel]="a11y.state.reduceMotion" (onChange)="a11y.update({ reduceMotion: $event.checked })"></p-inputSwitch>
     </div>
 
     <div class="border-top-1 pt-3" style="border-color: var(--app-border);">
-      <label class="font-semibold block mb-2">גודל טקסט מדויק</label>
+      <!-- ⚠️ span ולא label: p-slider אינו שדה טופס שאפשר להצביע עליו ב-for. -->
+      <span class="font-semibold block mb-2" id="a11y-scale-label">גודל טקסט מדויק</span>
       <p-slider
+        ariaLabelledBy="a11y-scale-label"
         [min]="1"
         [max]="1.4"
         [step]="0.05"
@@ -51,12 +53,12 @@
 
     <div class="flex align-items-center justify-content-between">
       <span class="font-semibold">ניגודיות גבוהה</span>
-      <p-inputSwitch [ngModel]="a11y.state.highContrast" (onChange)="a11y.update({ highContrast: $event.checked })"></p-inputSwitch>
+      <p-inputSwitch ariaLabel="ניגודיות גבוהה" [ngModel]="a11y.state.highContrast" (onChange)="a11y.update({ highContrast: $event.checked })"></p-inputSwitch>
     </div>
 
     <div class="flex align-items-center justify-content-between">
       <span class="font-semibold">הדגשת קישורים</span>
-      <p-inputSwitch [ngModel]="a11y.state.highlightLinks" (onChange)="a11y.update({ highlightLinks: $event.checked })"></p-inputSwitch>
+      <p-inputSwitch ariaLabel="הדגשת קישורים" [ngModel]="a11y.state.highlightLinks" (onChange)="a11y.update({ highlightLinks: $event.checked })"></p-inputSwitch>
     </div>
   </div>
 </p-sidebar>
