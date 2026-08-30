@@ -20,6 +20,15 @@ namespace SmartGrader.Domain.Abstractions
         Task<IReadOnlyList<User>> GetByRoleAsync(UserRole role, CancellationToken ct = default);
 
         /// <summary>
+        /// שורות בתפקיד מסוים שאין להן מייל כלל — בדיקת האתחול של B-50.
+        /// <para>
+        /// ⚠️ זו אינה שאילתה שמסך כלשהו מציג. <see cref="GetByEmailAsync"/> לעולם אינה מתאימה
+        /// ל-NULL, ולכן שורת מנהלת בלי מייל אינה ניתנת לשחזור סיסמה — ואין מעליה מי שיאפס אותה.
+        /// </para>
+        /// </summary>
+        Task<IReadOnlyList<User>> GetByRoleWithoutEmailAsync(UserRole role, CancellationToken ct = default);
+
+        /// <summary>
         /// ⚠️ <paramref name="excludingUserId"/> אינו קישוט: בעריכת מורה בלי שינוי המייל,
         /// בלעדיו היא מתנגשת עם עצמה ומקבלת 409.
         /// </summary>

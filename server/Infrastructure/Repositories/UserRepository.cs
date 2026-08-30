@@ -54,6 +54,17 @@ namespace SmartGrader.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IReadOnlyList<User>> GetByRoleWithoutEmailAsync(UserRole role, CancellationToken ct = default)
+        {
+            // מייל ריק ומייל NULL הם אותה תקלה מבחינת השחזור: GetByEmailAsync משווה למחרוזת
+            // מנורמלת ולא מתאימה לאף אחד מהם.
+            return await _context.Users
+                .Where(u => u.Role == role && (u.Email == null || u.Email == ""))
+                .OrderBy(u => u.Username)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
         public async Task<bool> ExistsByEmailAsync(string email, int? excludingUserId, CancellationToken ct = default)
         {
             var normalized = email.Trim().ToLowerInvariant();

@@ -175,9 +175,9 @@ restated in two places drifts, and the copy is the one that ends up wrong.
 Grading itself — how a number is produced — is [docs/grading-rules.md](../docs/grading-rules.md),
 `G-1` … `G-25`.
 
-**Two go-live risks carry an id for a reason:** `B-8` (a submission lock condition specified and never
-implemented) and `B-50` (an admin row with no email can never recover a password). Both need a human
-decision before deployment.
+**One go-live risk still carries an id for a reason:** `B-8` — a submission lock condition specified
+and never implemented — needs a human decision before deployment. `B-50` was the second; it is closed
+in code, and the startup warning names any account it could not fix.
 
 ### Implementation constraints that are not rules
 

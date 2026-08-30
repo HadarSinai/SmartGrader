@@ -1,10 +1,11 @@
 # Business Rules
 
-> SmartGrader · Version 1.0 · Last updated 2026-08-27 · Status: as-built
+> SmartGrader · Version 1.1 · Last updated 2026-08-30 · Status: as-built
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0 | 2026-08-27 | First edition. `B-1 … B-49`. |
+| 1.0 | 2026-08-27 | First edition. `B-1 … B-52`. |
+| 1.1 | 2026-08-30 | `B-50` closed: the seeder fills a missing admin email, and startup warns for every admin still without one. |
 
 **What this document answers:** every non-grading rule the system enforces, with a stable id and a
 place in the code to look.
@@ -76,7 +77,7 @@ in its own test.
 | B-47 | A teacher who owns lessons or courses shall not be deleted, and the refusal shall count them. | `server/Application/UseCases/Teachers/DeleteTeacher/DeleteTeacherHandler.cs` |
 | B-48 | ⚠️ Deleting a teacher shall orphan four audit columns that carry no foreign key, degrading the audit trail rather than failing; there is no way to transfer lessons or courses to another teacher. | `server/Infrastructure/Data/GradeSheetContext.cs` |
 | B-49 | An Excel import shall succeed partially: errors shall be collected per row with its number, and one bad row shall never roll back the others. | `server/Application/UseCases/Student/ImportStudents/ImportStudentsHandler.cs` |
-| B-50 | ⚠️ The seeder shall never overwrite an existing admin's password or email, with the consequence that an admin row created before the email column exists holds no address and can never recover a forgotten password. | `server/Api/Program.cs` |
+| B-50 | The seeder shall never overwrite an existing admin's password or email, shall fill an address in only where none is held at all, and startup shall warn for every admin account still left without one. | `server/Api/Program.cs` |
 | B-51 | Student-submitted source code shall be rendered as escaped text and never as HTML, because the session token lives in browser storage and any injection reads it. | `client/src/app/components/submitted-code/submitted-code.component.ts` |
 | B-52 | Swagger and the Hangfire dashboard shall be served in development only. | `server/Api/Program.cs` |
 
@@ -155,13 +156,30 @@ Widening the delete guard, or nulling these on delete, was left open rather than
 Related and also open: there is no way to transfer lessons or courses to another teacher, which is the
 intended route past the guard.
 
-**`B-50`.** The seeder writes the admin's email only at creation, and never overwrites — correctly,
-because overwriting would silently revert a value the admin has since changed, on every restart. The
-consequence is that an admin row created before the email column existed holds none, cannot be matched
-by recovery, and **is the one account with nobody above it to reset the password.**
+**`B-50`.** The seeder never overwrites the admin's email — correctly, because overwriting would
+silently revert a value the admin has since changed, on every restart. The consequence used to be that
+an admin row created before the email column existed held none, could not be matched by recovery, and
+**was the one account with nobody above it to reset the password.**
 
-The live database was checked and has no such row. A fresh environment, or a restore from an older
-backup, reproduces it silently — and it only surfaces on the day the admin forgets her password.
+**Filling is not overwriting, and that is the whole fix.** Where the row holds no address at all,
+startup writes `AdminUser:Email` into it; where it holds one, that value stands even if the
+configuration disagrees. An empty address is not a choice the admin made — it is an account with no way
+back.
+
+Filling only reaches the username in `AdminUser:Username`, and only when `AdminUser:Email` is
+configured. So startup also **counts every `Admin` row still holding no address and logs a warning
+naming them.** A fresh environment, a restore from an older backup, or a second admin created some
+other way each reproduce the hole silently, and it otherwise surfaces on the day she forgets her
+password — the worst possible moment to discover it.
+
+The warning names the accounts so the one-off repair can be aimed. Where configuration cannot be used:
+
+```sql
+UPDATE Users SET Email = 'her.address@example.com' WHERE Username = 'admin' AND Email IS NULL;
+```
+
+The `Email IS NULL` clause is not decoration — without it the statement overwrites a working address,
+which is the behaviour this rule exists to prevent.
 
 ## Where these rules used to live
 

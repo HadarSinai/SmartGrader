@@ -153,7 +153,8 @@ var app = builder.Build();
 // כי אין מעליה מורה שתאפס אותו.
 //
 // ⚠️ מגבלה שנשארה: שורת מנהלת שנזרעה *לפני* מיגרציית AddUserEmail מחזיקה Email=NULL,
-// ו-GetByEmailAsync לעולם אינה מתאימה ל-NULL. השורה הזו עדיין דורשת UPDATE ידני חד-פעמי.
+// ו-GetByEmailAsync לעולם אינה מתאימה ל-NULL. המילוי למטה סוגר את זה כשיש מייל בקונפיגורציה,
+// ובדיקת האתחול שאחריו צועקת כשאין — ר' B-50.
 using (var scope = app.Services.CreateScope())
 {
     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
@@ -166,7 +167,9 @@ using (var scope = app.Services.CreateScope())
         var hasher = scope.ServiceProvider.GetRequiredService<SmartGrader.Application.Common.Interfaces.IPasswordHasherService>();
         var uow = scope.ServiceProvider.GetRequiredService<SmartGrader.Domain.Abstractions.IUnitOfWork>();
 
-        if (!await users.ExistsByUsernameAsync(adminUsername))
+        var existingAdmin = await users.GetByUsernameAsync(adminUsername);
+
+        if (existingAdmin is null)
         {
             var admin = SmartGrader.Domain.Entities.User.Create(
                 adminUsername,
@@ -178,6 +181,39 @@ using (var scope = app.Services.CreateScope())
             await users.AddAsync(admin);
             await uow.SaveChangesAsync();
         }
+        else if (string.IsNullOrWhiteSpace(existingAdmin.Email)
+                 && !string.IsNullOrWhiteSpace(config["AdminUser:Email"]))
+        {
+            // מילוי, לא דריסה — ולכן זה אינו סותר את הכלל שלמעלה. שורה שאין בה מייל אינה
+            // ערך שהמנהלת בחרה ושדריסה תבטל; היא חשבון שאין ממנו דרך חזרה. מייל קיים —
+            // גם אם הוא שונה מהקונפיגורציה — נשאר בדיוק כפי שהוא.
+            existingAdmin.SetEmail(config["AdminUser:Email"]);
+            await users.UpdateAsync(existingAdmin);
+            await uow.SaveChangesAsync();
+        }
+    }
+}
+
+// --- Startup check: an admin with no email can never recover her password (B-50) ---
+//
+// המילוי למעלה עובד רק כשיש AdminUser:Email בקונפיגורציה ורק על שם המשתמש שמוגדר בה.
+// סביבה חדשה, שחזור מגיבוי ישן, או מנהלת שנייה שנוצרה בדרך אחרת — כולן מייצרות שורה
+// שהאזהרה הזו היא הסימן היחיד לקיומה. בלעדיה התקלה מתגלה ביום שבו המנהלת שוכחת סיסמה,
+// שהוא הרגע הגרוע ביותר לגלות אותה.
+using (var scope = app.Services.CreateScope())
+{
+    var users = scope.ServiceProvider.GetRequiredService<SmartGrader.Domain.Abstractions.IUserRepository>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    var stranded = await users.GetByRoleWithoutEmailAsync(SmartGrader.Domain.Entities.UserRole.Admin);
+
+    if (stranded.Count > 0)
+    {
+        logger.LogWarning(
+            "B-50: {Count} admin account(s) hold no email and cannot recover a password: {Usernames}. " +
+            "Set AdminUser:Email and restart, or run the one-off UPDATE documented in docs/business-rules.md.",
+            stranded.Count,
+            string.Join(", ", stranded.Select(u => u.Username)));
     }
 }
 
