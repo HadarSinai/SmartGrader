@@ -1,11 +1,12 @@
 # Business Rules
 
-> SmartGrader · Version 1.1 · Last updated 2026-08-30 · Status: as-built
+> SmartGrader · Version 1.2 · Last updated 2026-08-30 · Status: as-built
 
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-08-27 | First edition. `B-1 … B-52`. |
 | 1.1 | 2026-08-30 | `B-50` closed: the seeder fills a missing admin email, and startup warns for every admin still without one. |
+| 1.2 | 2026-08-30 | `B-53 … B-56` added — the deletion policy, and bulk deletion built on it. |
 
 **What this document answers:** every non-grading rule the system enforces, with a stable id and a
 place in the code to look.
@@ -80,6 +81,10 @@ in its own test.
 | B-50 | The seeder shall never overwrite an existing admin's password or email, shall fill an address in only where none is held at all, and startup shall warn for every admin account still left without one. | `server/Api/Program.cs` |
 | B-51 | Student-submitted source code shall be rendered as escaped text and never as HTML, because the session token lives in browser storage and any injection reads it. | `client/src/app/components/submitted-code/submitted-code.component.ts` |
 | B-52 | Swagger and the Hangfire dashboard shall be served in development only. | `server/Api/Program.cs` |
+| B-53 | A deletion shall be refused whenever student work would be destroyed with it: an assignment with submissions, a lesson with submissions or final scores, a student with either, and a submission that is being graded or already carries a score. | `server/Application/Common/BulkDelete/BulkDeleteRunner.cs` |
+| B-54 | A bulk deletion shall apply each row's single-row deletion, and shall never restate the guard that deletion enforces. | `server/Application/Common/BulkDelete/BulkDeleteRunner.cs` |
+| B-55 | A bulk deletion shall succeed partially: each refused row shall be reported with its reason, and a refusal shall neither undo a row already deleted nor stop the rows after it. | `server/Application/Common/BulkDelete/BulkDeleteRunner.cs` |
+| B-56 | A bulk deletion shall accept at most 100 ids in one request. | `server/Application/Common/BulkDelete/BulkDeleteRunner.cs` |
 
 <!-- /gen -->
 
@@ -180,6 +185,39 @@ UPDATE Users SET Email = 'her.address@example.com' WHERE Username = 'admin' AND 
 
 The `Email IS NULL` clause is not decoration — without it the statement overwrites a working address,
 which is the behaviour this rule exists to prevent.
+
+### `B-53` … `B-56` — the deletion policy
+
+**One sentence covers every resource: a deletion that would take a student's work with it is refused.**
+Not softened, not confirmed-past — refused. What she wrote, the feedback she received and the score she
+was given are the only records of it, and no undo exists.
+
+| Resource | Refused when | The way through |
+|---|---|---|
+| Assignment | it has any submission | delete the submissions first, if they may go at all |
+| Lesson | it has any submission or any final score | — |
+| Student | she has any submission or any final score | archive her class (`SchoolClass.IsArchived`) instead |
+| Submission | it is being graded, or already carries a score | reopen the lesson result, or override the score |
+| Teacher | she owns any lesson or course (`B-47`) | — |
+
+A lesson with **no** student work still deletes its assignments, explicitly rather than by cascade
+(the relationship is `Restrict`). That is the one place a delete reaches past the row asked for, and it
+is written out in the handler rather than left to the database.
+
+**Bulk deletion adds no policy of its own** (`B-54`). It runs the single-row deletion for each selected
+id, so every guard above applies unchanged. A bulk path that restated the guards would be the second of
+two sources of truth, and the copy is the one that eventually permits what the original refuses — here
+at the cost of a student's work.
+
+**Partial success is the normal outcome, not the error case** (`B-55`). Selecting ten lessons of which
+four have submissions deletes six and refuses four, and says of each refused one what blocks it. The
+alternative — refusing all ten because one is protected — teaches the teacher to select one row at a
+time, and the alternative to *that* — deleting six and reporting success — hides four refusals behind a
+green toast.
+
+⚠️ **This depends on each single-row deletion completing its checks before it touches anything.** All
+five do. A guard that refused *after* staging a change would leave that change pending, and the next
+row's save would commit it — a row nobody asked to delete, deleted.
 
 ## Where these rules used to live
 

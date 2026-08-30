@@ -3,8 +3,11 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SmartGrader.Application.Dtos.Common;
 using SmartGrader.Application.Dtos.Student;
 using SmartGrader.Application.Dtos.Submissions;
+using SmartGrader.Application.UseCases.Students.BulkDeleteStudents;
+using SmartGrader.Application.UseCases.Submissions.BulkDeleteSubmissions;
 using SmartGrader.Application.UseCases.Students.CreateStudent;
 using SmartGrader.Application.UseCases.Students.DeleteStudent;
 using SmartGrader.Application.UseCases.Students.ExportStudents;
@@ -134,6 +137,23 @@ namespace SmartGrader.Api.Controllers
         {
             await _mediator.Send(new DeleteStudentCommand(id), cancellationToken);
             return NoContent();
+        }
+
+        // POST: api/students/bulk-delete
+        //
+        // ⚠️ POST ולא DELETE: גוף בקשה ב-DELETE אינו מובטח לעבור בכל שרת ומתווך, ורשימת
+        // המזהים אינה שייכת ל-query string. ומחזיר 200 ולא 204 גם כשהכול נמחק, כי הצלחה
+        // חלקית היא התוצאה הרגילה והגוף הוא מה שאומר מה סורב. ר' B-53, B-54.
+        [HttpPost("bulk-delete")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<ActionResult<BulkDeleteResultDto>> BulkDelete(
+            [FromBody] BulkDeleteRequestDto dto,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new BulkDeleteStudentsCommand(dto.Ids), cancellationToken);
+
+            return Ok(result);
         }
 
      
@@ -272,6 +292,21 @@ namespace SmartGrader.Api.Controllers
                 cancellationToken);
 
             return NoContent();
+        }
+
+        // POST: api/students/{studentId}/submissions/bulk-delete — ר' ההערה על bulk-delete למעלה
+        [HttpPost("{studentId:int}/submissions/bulk-delete")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<ActionResult<BulkDeleteResultDto>> BulkDeleteSubmissions(
+            int studentId,
+            [FromBody] BulkDeleteRequestDto dto,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new BulkDeleteSubmissionsCommand(studentId, dto.Ids, OwnerScopeTeacherId),
+                cancellationToken);
+
+            return Ok(result);
         }
     }
 }

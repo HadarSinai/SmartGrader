@@ -3,7 +3,9 @@ import { Component, OnInit, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { AssignmentResponseDto } from "@models/assignment.model";
+import { BulkDeleteFailureRow } from "@models/bulk-delete.model";
 import { AssignmentsService } from "@services/assignments.service";
+import { BulkDeleteResultComponent } from "../../components/bulk-delete-result/bulk-delete-result.component";
 import { ConfirmationService, MenuItem, MessageService } from "primeng/api";
 import { ButtonModule } from "primeng/button";
 import { CardModule } from "primeng/card";
@@ -32,6 +34,7 @@ import { TooltipModule } from "primeng/tooltip";
     TooltipModule,
     DataViewModule,
     MenuModule,
+    BulkDeleteResultComponent,
   ],
   providers: [ConfirmationService],
   templateUrl: "./assignments-list.component.html",
@@ -116,12 +119,73 @@ export class AssignmentsListComponent implements OnInit {
     menu.toggle(event);
   }
 
-  bulkDeleteComingSoon(): void {
-    this.messageService.add({
-      severity: "info",
-      summary: "בקרוב",
-      detail: "מחיקה מרובה תהיה זמינה בקרוב",
+  // ── מחיקה מרובה ──────────────────────────────────────────────────────────
+  //
+  // ⚠️ הצלחה חלקית היא התוצאה הרגילה (B-55): תרגיל שיש בו הגשות נחסם בשרת, ולכן
+  // בחירה של כמה תרגילים תמחק את החדשים ותסרב לאלה שכבר עבדו עליהם.
+
+  bulkDeleting = false;
+  bulkResultOpen = false;
+  bulkDeletedCount = 0;
+  bulkFailures: BulkDeleteFailureRow[] = [];
+
+  confirmBulkDelete(): void {
+    const count = this.selectedAssignments.length;
+    if (count === 0) return;
+
+    this.confirmationService.confirm({
+      message: `האם למחוק ${count === 1 ? "תרגיל אחד" : count + " תרגילים"}? תרגיל שיש בו הגשות לא יימחק, ותוצג הסיבה. לא ניתן לשחזר פעולה זו.`,
+      header: "אישור מחיקה",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "מחיקה",
+      rejectLabel: "ביטול",
+      accept: () => this.bulkDelete(),
     });
+  }
+
+  private bulkDelete(): void {
+    const selected = [...this.selectedAssignments];
+    this.bulkDeleting = true;
+
+    this.assignmentsService
+      .bulkDelete(
+        this.lessonId,
+        selected.map((a) => a.id),
+      )
+      .subscribe({
+        next: (result) => {
+          this.bulkDeleting = false;
+          this.bulkDeletedCount = result.deletedCount;
+
+          // השם מגיע מהשורות שכבר על המסך — השרת מחזיר מזהה, ומורה אינה קוראת מזהים.
+          this.bulkFailures = result.failures.map((f) => ({
+            name: selected.find((a) => a.id === f.id)?.title || "תרגיל",
+            message: f.message,
+          }));
+
+          this.clearSelection();
+          this.loadAssignments();
+
+          if (this.bulkFailures.length > 0) {
+            this.bulkResultOpen = true;
+            return;
+          }
+
+          this.messageService.add({
+            severity: "success",
+            summary: "בוצע",
+            detail: `נמחקו ${result.deletedCount === 1 ? "תרגיל אחד" : result.deletedCount + " תרגילים"}`,
+          });
+        },
+        error: () => {
+          this.bulkDeleting = false;
+          this.messageService.add({
+            severity: "error",
+            summary: "שגיאה",
+            detail: "מחיקת התרגילים נכשלה",
+          });
+        },
+      });
   }
 
   clearSelection(): void {

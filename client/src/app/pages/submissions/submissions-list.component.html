@@ -43,7 +43,7 @@
             optionLabel="label"
             optionValue="value"
             placeholder="כל הסטטוסים"
-            aria-label="סינון לפי סטטוס"
+            ariaLabel="סינון לפי סטטוס"
           ></p-dropdown>
 
           <p-button
@@ -51,12 +51,12 @@
             label="איפוס"
             [text]="true"
             (onClick)="clearFilters()"
-            aria-label="איפוס סינון"
+            ariaLabel="איפוס סינון"
           ></p-button>
         </div>
       </ng-template>
 
-      <!-- Selection toolbar (design only — bulk delete is a future task) -->
+      <!-- Selection toolbar -->
       <div
         class="sg-selection-bar"
         *ngIf="selectedSubmissions.length > 0"
@@ -68,7 +68,8 @@
           icon="pi pi-trash"
           severity="danger"
           [text]="true"
-          (onClick)="bulkDeleteComingSoon()"
+          [loading]="bulkDeleting"
+          (onClick)="confirmBulkDelete()"
         ></p-button>
         <p-button
           label="ביטול בחירה"
@@ -121,7 +122,7 @@
             <tr>
               <th style="width: 3rem">
                 <p-tableHeaderCheckbox
-                  aria-label="בחירת כל השורות"
+                  ariaLabel="בחירת כל השורות"
                 ></p-tableHeaderCheckbox>
               </th>
               <th pSortableColumn="assignmentName">
@@ -146,7 +147,7 @@
               <td>
                 <p-tableCheckbox
                   [value]="submission"
-                  [attr.aria-label]="
+                  [ariaLabel]="
                     'בחירת הגשה: ' + (submission.assignmentName || '')
                   "
                 ></p-tableCheckbox>
@@ -190,7 +191,7 @@
                   [text]="true"
                   pTooltip="צפייה בהגשה"
                   tooltipPosition="top"
-                  [attr.aria-label]="
+                  [ariaLabel]="
                     'צפייה בהגשה: ' + (submission.assignmentName || '')
                   "
                   (onClick)="navigateToView(submission.id)"
@@ -201,7 +202,7 @@
                 <p-button
                   icon="pi pi-ellipsis-h"
                   [text]="true"
-                  [attr.aria-label]="
+                  [ariaLabel]="
                     'פעולות נוספות: ' + (submission.assignmentName || '')
                   "
                   (onClick)="openRowMenu($event, rowMenu, submission)"
@@ -275,7 +276,7 @@
                   <p-button
                     icon="pi pi-ellipsis-h"
                     [text]="true"
-                    [attr.aria-label]="
+                    [ariaLabel]="
                       'פעולות נוספות: ' + (item.assignmentName || '')
                     "
                     (onClick)="openRowMenu($event, rowMenu, item)"
@@ -299,3 +300,9 @@
 ></p-menu>
 
 <p-confirmDialog></p-confirmDialog>
+
+<app-bulk-delete-result
+  [(visible)]="bulkResultOpen"
+  [deletedCount]="bulkDeletedCount"
+  [failures]="bulkFailures"
+></app-bulk-delete-result>

@@ -257,8 +257,9 @@ Both are among the **14 files carrying hardcoded colours** that A6 converts to t
 - **A class has no owner.** Any teacher can rename or delete any class, and **nothing records who did
   it.** This is the only resource outside the ownership model, and it is accepted rather than
   overlooked — see *Known Modeling Gaps* in [domain-model.md](../domain-model.md).
-- **There is no real bulk delete.** The checkbox column and «מחיקת נבחרים» toolbar exist on four list
-  screens and raise an information toast; there is no server endpoint. Plan B's B5.
+- **Bulk delete does not widen what a single delete allows.** It runs the single-row deletion per id
+  (`B-54`), so a student with submissions is refused in a selection of twenty exactly as she is on her
+  own. Plan B's B5 built it; before that the toolbar raised an information toast.
 - **A student cannot move between classes with history** — `Student.ClassId` is a single field with no
   record of where she was before.
 - **A teacher cannot transfer a lesson or course to another teacher**, which is also the only way past

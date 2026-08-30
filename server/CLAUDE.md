@@ -171,6 +171,7 @@ restated in two places drifts, and the copy is the one that ends up wrong.
 | Teacher notifications and the daily digest | `B-25` … `B-36` |
 | What the Roslyn analyzer can and cannot see | `B-37` … `B-45` |
 | Test-case defaults, deletion guards, import | `B-46` … `B-50` |
+| The deletion policy, and bulk deletion built on it | `B-53` … `B-56` |
 
 Grading itself — how a number is produced — is [docs/grading-rules.md](../docs/grading-rules.md),
 `G-1` … `G-25`.

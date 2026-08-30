@@ -79,7 +79,7 @@
                 optionLabel="label"
                 optionValue="value"
                 placeholder="כל הכיתות"
-                aria-label="סינון לפי כיתה"
+                ariaLabel="סינון לפי כיתה"
               ></p-dropdown>
             </div>
             <div class="field col-12 md:col-4 flex align-items-end">
@@ -90,7 +90,7 @@
                 onIcon="pi pi-box"
                 offIcon="pi pi-box"
                 (onChange)="loadStudents()"
-                aria-label="הצגת תלמידים מכיתות בארכיון"
+                ariaLabel="הצגת תלמידים מכיתות בארכיון"
               ></p-toggleButton>
             </div>
             <div class="field col-12 md:col-4 flex align-items-end">
@@ -98,7 +98,7 @@
                 label="איפוס"
                 [text]="true"
                 (onClick)="resetFilters()"
-                aria-label="איפוס סינון"
+                ariaLabel="איפוס סינון"
               ></p-button>
             </div>
           </div>
@@ -125,7 +125,7 @@
         </div>
       </ng-template>
 
-      <!-- Selection toolbar (design only — bulk delete is a future task) -->
+      <!-- Selection toolbar -->
       <div
         class="sg-selection-bar"
         *ngIf="selectedStudents.length > 0"
@@ -137,7 +137,8 @@
           icon="pi pi-trash"
           severity="danger"
           [text]="true"
-          (onClick)="bulkDeleteComingSoon()"
+          [loading]="bulkDeleting"
+          (onClick)="confirmBulkDelete()"
         ></p-button>
         <p-button
           label="ביטול בחירה"
@@ -162,7 +163,7 @@
             <tr>
               <th style="width: 3rem">
                 <p-tableHeaderCheckbox
-                  aria-label="בחירת כל השורות"
+                  ariaLabel="בחירת כל השורות"
                 ></p-tableHeaderCheckbox>
               </th>
               <th pSortableColumn="fullName">
@@ -188,7 +189,7 @@
               <td (click)="$event.stopPropagation()">
                 <p-tableCheckbox
                   [value]="student"
-                  [attr.aria-label]="'בחירת ' + (student.fullName || '')"
+                  [ariaLabel]="'בחירת ' + (student.fullName || '')"
                 ></p-tableCheckbox>
               </td>
 
@@ -221,7 +222,7 @@
                   [text]="true"
                   pTooltip="צפייה בהגשות"
                   tooltipPosition="top"
-                  [attr.aria-label]="
+                  [ariaLabel]="
                     'צפייה בהגשות: ' + (student.fullName || '')
                   "
                   (onClick)="viewSubmissions(student.id)"
@@ -233,7 +234,7 @@
                   *ngIf="!student.classIsArchived"
                   icon="pi pi-ellipsis-h"
                   [text]="true"
-                  [attr.aria-label]="
+                  [ariaLabel]="
                     'פעולות נוספות: ' + (student.fullName || '')
                   "
                   (onClick)="openRowMenu($event, rowMenu, student)"
@@ -447,3 +448,9 @@
 </p-dialog>
 
 <p-confirmDialog></p-confirmDialog>
+
+<app-bulk-delete-result
+  [(visible)]="bulkResultOpen"
+  [deletedCount]="bulkDeletedCount"
+  [failures]="bulkFailures"
+></app-bulk-delete-result>

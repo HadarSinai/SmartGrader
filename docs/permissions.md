@@ -165,6 +165,7 @@ admin.
 | POST | `api/lessons` | Teacher,Admin | ✅ | ✅ | ✅ | 403 | 403 |
 | PUT | `api/lessons/{id:int}` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
 | DELETE | `api/lessons/{id:int}` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
+| POST | `api/lessons/bulk-delete` | Teacher,Admin | ✅ | ✅ | 404 per row | 403 | 403 |
 | GET | `api/lessons/{lessonId:int}/assignments` | (any) | ✅ | ✅ | 404 | 🔒 | 404 |
 | GET | `api/lessons/{lessonId:int}/assignments/{assignmentId:int}` | (any) | ✅ | ✅ | 404 | 🔒 | 404 |
 | POST | `api/lessons/{lessonId:int}/assignments` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
@@ -172,6 +173,7 @@ admin.
 | POST | `api/lessons/{lessonId:int}/assignments/verify-tests` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
 | POST | `api/lessons/{lessonId:int}/assignments/suggest-tests` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
 | DELETE | `api/lessons/{lessonId:int}/assignments/{assignmentId:int}` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
+| POST | `api/lessons/{lessonId:int}/assignments/bulk-delete` | Teacher,Admin | ✅ | ✅ | 404 per row | 403 | 403 |
 
 **"Her own student"** means a student in a class the lesson was assigned to. A student outside that
 class gets 404 for the lesson and everything under it.
@@ -206,6 +208,7 @@ solution is the complete answer to the exercise.
 | POST | `api/students` | Teacher,Admin | ✅ | ✅ | ✅ | 403 | 403 |
 | PUT | `api/students/{id:int}` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
 | DELETE | `api/students/{id:int}` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
+| POST | `api/students/bulk-delete` | Teacher,Admin | ✅ | ✅ | ✅ | 403 | 403 |
 | GET | `api/students/{studentId:int}/submissions` | (any) | ✅ | ✅ | 404 | 🔒 | 404 |
 | GET | `api/students/{studentId:int}/submissions/{submissionId:int}` | (any) | ✅ | ✅ | 404 | 🔒 | 404 |
 | POST | `api/students/{studentId:int}/submissions` | (any) | ✅ | ✅ | 404 | ✅ | 404 |
@@ -213,6 +216,7 @@ solution is the complete answer to the exercise.
 | POST | `api/students/{studentId:int}/submissions/{submissionId:int}/extra-attempt` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
 | PUT | `api/students/{studentId:int}/submissions/{submissionId:int}/score` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
 | DELETE | `api/students/{studentId:int}/submissions/{submissionId:int}` | Teacher,Admin | ✅ | ✅ | 404 | 403 | 403 |
+| POST | `api/students/{studentId:int}/submissions/bulk-delete` | Teacher,Admin | ✅ | ✅ | 404 per row | 403 | 403 |
 
 "✅ scoped" means the endpoint succeeds but returns only the students reachable through that teacher's
 own lessons. The distinction matters: `GET api/students` is not owned by anyone, it is **filtered per

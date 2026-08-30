@@ -6,6 +6,10 @@ import {
   UpdateStudentRequestDto,
 } from "@models/student.model";
 import { Observable } from "rxjs";
+import {
+  BulkDeleteRequestDto,
+  BulkDeleteResultDto,
+} from "@models/bulk-delete.model";
 import { ApiClient } from "../core/http/api-client";
 
 @Injectable({ providedIn: "root" })
@@ -39,6 +43,14 @@ export class StudentsService {
     return this.api.http.put<StudentResponseDto>(
       this.api.url(`/api/students/${id}`),
       request,
+    );
+  }
+
+  /** ר' bulkDelete: אותם שומרים בדיוק, שורה אחת בכל פעם. */
+  bulkDelete(ids: number[]): Observable<BulkDeleteResultDto> {
+    return this.api.http.post<BulkDeleteResultDto>(
+      this.api.url("/api/students/bulk-delete"),
+      { ids } as BulkDeleteRequestDto,
     );
   }
 

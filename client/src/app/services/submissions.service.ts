@@ -1,5 +1,9 @@
 import { Injectable } from "@angular/core";
 import {
+  BulkDeleteRequestDto,
+  BulkDeleteResultDto,
+} from "@models/bulk-delete.model";
+import {
   CreateSubmissionRequestDto,
   GrantExtraAttemptRequestDto,
   OverrideScoreRequestDto,
@@ -95,6 +99,21 @@ export class SubmissionsService {
   delete(studentId: number, submissionId: number): Observable<void> {
     return this.api.http.delete<void>(
       this.api.url(`/api/students/${studentId}/submissions/${submissionId}`),
+    );
+  }
+
+  /**
+   * ר' bulkDelete בשירות השיעורים.
+   * ⚠️ דווקא כאן רוב השורות ייענו בסירוב: הגשה שנבדקה נושאת ציון ואינה נמחקת, וזה
+   * המסך שבו הצגת הסיבות היא כל ההבדל בין תשובה למסך שנראה תקוע.
+   */
+  bulkDelete(
+    studentId: number,
+    ids: number[],
+  ): Observable<BulkDeleteResultDto> {
+    return this.api.http.post<BulkDeleteResultDto>(
+      this.api.url(`/api/students/${studentId}/submissions/bulk-delete`),
+      { ids } as BulkDeleteRequestDto,
     );
   }
 

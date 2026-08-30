@@ -21,6 +21,8 @@ import {
   HebrewDateValue,
   getHebrewToday,
 } from "@components/hebrew-date-picker/hebrew-date-picker.component";
+import { BulkDeleteResultComponent } from "../../components/bulk-delete-result/bulk-delete-result.component";
+import { BulkDeleteFailureRow } from "@models/bulk-delete.model";
 import { SchoolClassResponseDto } from "@models/class.model";
 import { LessonResponseDto } from "@models/lesson.model";
 import { ClassesService } from "@services/classes.service";
@@ -46,6 +48,7 @@ import { downloadBlob } from "../../core/utils/download";
     TooltipModule,
     MenuModule,
     HebrewDatePickerComponent,
+    BulkDeleteResultComponent,
   ],
   providers: [ConfirmationService],
   styleUrls: ["./lessons-list.component.css"],
@@ -159,12 +162,77 @@ export class LessonsListComponent implements OnInit {
     menu.toggle(event);
   }
 
-  bulkDeleteComingSoon(): void {
-    this.messageService.add({
-      severity: "info",
-      summary: "בקרוב",
-      detail: "מחיקה מרובה תהיה זמינה בקרוב",
+  // ── מחיקה מרובה ──────────────────────────────────────────────────────────
+  //
+  // ⚠️ הצלחה חלקית היא התוצאה הרגילה (B-55): שיעור שיש בו הגשות או ציונים סופיים נחסם
+  // בשרת, ובחירה של עשרה שיעורים תמחק את אלה שאין בהם עבודה ותסרב לשאר. לכן התוצאה
+  // נפתחת בדיאלוג עם סיבה לכל שורה, ולא כהודעה ירוקה שסופרת רק מה שהצליח.
+
+  bulkDeleting = false;
+  bulkResultOpen = false;
+  bulkDeletedCount = 0;
+  bulkFailures: BulkDeleteFailureRow[] = [];
+
+  confirmBulkDelete(): void {
+    const count = this.selectedLessons.length;
+    if (count === 0) return;
+
+    this.confirmationService.confirm({
+      // ⚠️ אותו נוסח כמו במחיקה בודדת, ובמכוון: הכלל זהה, ורק מספר השורות שונה.
+      message: `האם למחוק ${count === 1 ? "שיעור אחד" : count + " שיעורים"}? כל התרגילים שלהם יימחקו גם הם. שיעור שיש בו הגשות או ציונים סופיים לא יימחק, ותוצג הסיבה. לא ניתן לשחזר פעולה זו.`,
+      header: "אישור מחיקה",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "מחיקה",
+      rejectLabel: "ביטול",
+      accept: () => this.bulkDelete(),
     });
+  }
+
+  private bulkDelete(): void {
+    const selected = [...this.selectedLessons];
+    this.bulkDeleting = true;
+
+    this.lessonsService.bulkDelete(selected.map((l) => l.id)).subscribe({
+      next: (result) => {
+        this.bulkDeleting = false;
+        this.bulkDeletedCount = result.deletedCount;
+
+        // השם מגיע מהשורות שכבר על המסך — השרת מחזיר מזהה, ומורה אינה קוראת מזהים.
+        this.bulkFailures = result.failures.map((f) => ({
+          name: this.describeLesson(selected.find((l) => l.id === f.id)),
+          message: f.message,
+        }));
+
+        this.clearSelection();
+        this.loadLessons();
+
+        if (this.bulkFailures.length > 0) {
+          this.bulkResultOpen = true;
+          return;
+        }
+
+        this.messageService.add({
+          severity: "success",
+          summary: "בוצע",
+          detail: `נמחקו ${result.deletedCount === 1 ? "שיעור אחד" : result.deletedCount + " שיעורים"}`,
+        });
+      },
+      error: () => {
+        this.bulkDeleting = false;
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "מחיקת השיעורים נכשלה",
+        });
+      },
+    });
+  }
+
+  private describeLesson(lesson: LessonResponseDto | undefined): string {
+    if (!lesson) return "שיעור שאינו ברשימה";
+    return lesson.subject
+      ? `${lesson.courseName} — ${lesson.subject}`
+      : lesson.courseName;
   }
 
   clearSelection(): void {

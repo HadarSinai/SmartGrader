@@ -22,7 +22,9 @@ import {
   ImportStudentsResultDto,
   StudentResponseDto,
 } from "@models/student.model";
+import { BulkDeleteFailureRow } from "@models/bulk-delete.model";
 import { StudentGradesSummaryDto } from "@models/lesson-result.model";
+import { BulkDeleteResultComponent } from "../../components/bulk-delete-result/bulk-delete-result.component";
 import { ClassesService } from "@services/classes.service";
 import { LessonResultsService } from "@services/lesson-results.service";
 import { StudentsService } from "@services/students.service";
@@ -46,6 +48,7 @@ import { downloadBlob } from "../../core/utils/download";
     MenuModule,
     ToggleButtonModule,
     TooltipModule,
+    BulkDeleteResultComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: "./students-list.component.html",
@@ -170,11 +173,67 @@ export class StudentsListComponent implements OnInit {
     menu.toggle(event);
   }
 
-  bulkDeleteComingSoon(): void {
-    this.messageService.add({
-      severity: "info",
-      summary: "בקרוב",
-      detail: "מחיקה מרובה תהיה זמינה בקרוב",
+  // ── מחיקה מרובה ──────────────────────────────────────────────────────────
+  //
+  // ⚠️ הצלחה חלקית היא התוצאה הרגילה (B-55): תלמידה שיש לה הגשות או ציונים סופיים
+  // נחסמת בשרת, וההודעה משם מציעה ארכוב הכיתה כדרך להוציא אותה בלי לאבד את עבודתה.
+
+  bulkDeleting = false;
+  bulkResultOpen = false;
+  bulkDeletedCount = 0;
+  bulkFailures: BulkDeleteFailureRow[] = [];
+
+  confirmBulkDelete(): void {
+    const count = this.selectedStudents.length;
+    if (count === 0) return;
+
+    this.confirmationService.confirm({
+      message: `האם למחוק ${count === 1 ? "תלמידה אחת" : count + " תלמידות"}? חשבון הכניסה שלהן יימחק גם הוא. תלמידה שיש לה הגשות או ציונים סופיים לא תימחק, ותוצג הסיבה. לא ניתן לשחזר פעולה זו.`,
+      header: "אישור מחיקה",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "מחיקה",
+      rejectLabel: "ביטול",
+      accept: () => this.bulkDelete(),
+    });
+  }
+
+  private bulkDelete(): void {
+    const selected = [...this.selectedStudents];
+    this.bulkDeleting = true;
+
+    this.studentsService.bulkDelete(selected.map((s) => s.id)).subscribe({
+      next: (result) => {
+        this.bulkDeleting = false;
+        this.bulkDeletedCount = result.deletedCount;
+
+        // השם מגיע מהשורות שכבר על המסך — השרת מחזיר מזהה, ומורה אינה קוראת מזהים.
+        this.bulkFailures = result.failures.map((f) => ({
+          name: selected.find((s) => s.id === f.id)?.fullName || "תלמידה",
+          message: f.message,
+        }));
+
+        this.clearSelection();
+        this.loadStudents();
+
+        if (this.bulkFailures.length > 0) {
+          this.bulkResultOpen = true;
+          return;
+        }
+
+        this.messageService.add({
+          severity: "success",
+          summary: "בוצע",
+          detail: `נמחקו ${result.deletedCount === 1 ? "תלמידה אחת" : result.deletedCount + " תלמידות"}`,
+        });
+      },
+      error: () => {
+        this.bulkDeleting = false;
+        this.messageService.add({
+          severity: "error",
+          summary: "שגיאה",
+          detail: "מחיקת התלמידות נכשלה",
+        });
+      },
     });
   }
 

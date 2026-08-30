@@ -23,7 +23,9 @@ import {
     SubmissionStatusSeverity,
     statusPresentation,
 } from "@models/submission.model";
+import { BulkDeleteFailureRow } from "@models/bulk-delete.model";
 import { SubmissionsService } from "@services/submissions.service";
+import { BulkDeleteResultComponent } from "../../components/bulk-delete-result/bulk-delete-result.component";
 import { ConfirmationService, MenuItem, MessageService } from "primeng/api";
 
 @Component({
@@ -44,6 +46,7 @@ import { ConfirmationService, MenuItem, MessageService } from "primeng/api";
     MenuModule,
     DropdownModule,
     InputTextModule,
+    BulkDeleteResultComponent,
   ],
   providers: [ConfirmationService],
   templateUrl: "./submissions-list.component.html",
@@ -179,12 +182,75 @@ export class SubmissionsListComponent implements OnInit {
     menu.toggle(event);
   }
 
-  bulkDeleteComingSoon(): void {
-    this.messageService.add({
-      severity: "info",
-      summary: "בקרוב",
-      detail: "מחיקה מרובה תהיה זמינה בקרוב",
+  // ── מחיקה מרובה ──────────────────────────────────────────────────────────
+  //
+  // 🔴 דווקא כאן רוב השורות ייענו בסירוב, וזו התנהגות נכונה: הגשה שנבדקה נושאת ציון
+  // ואינה נמחקת, והגשה שהבדיקה עליה פועלת אינה נמחקת גם היא (B-53). זה המסך שבו
+  // הצגת הסיבות היא כל ההבדל בין תשובה למסך שנראה תקוע.
+
+  bulkDeleting = false;
+  bulkResultOpen = false;
+  bulkDeletedCount = 0;
+  bulkFailures: BulkDeleteFailureRow[] = [];
+
+  confirmBulkDelete(): void {
+    const count = this.selectedSubmissions.length;
+    if (count === 0) return;
+
+    this.confirmationService.confirm({
+      message: `האם למחוק ${count === 1 ? "הגשה אחת" : count + " הגשות"}? הגשה שכבר נבדקה וקיבלה ציון, או שהבדיקה עליה פועלת, לא תימחק — ותוצג הסיבה. לא ניתן לשחזר פעולה זו.`,
+      header: "אישור מחיקה",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "מחיקה",
+      rejectLabel: "ביטול",
+      accept: () => this.bulkDelete(),
     });
+  }
+
+  private bulkDelete(): void {
+    const selected = [...this.selectedSubmissions];
+    this.bulkDeleting = true;
+
+    this.submissionsService
+      .bulkDelete(
+        this.studentId,
+        selected.map((s) => s.id),
+      )
+      .subscribe({
+        next: (result) => {
+          this.bulkDeleting = false;
+          this.bulkDeletedCount = result.deletedCount;
+
+          // השם מגיע מהשורות שכבר על המסך — השרת מחזיר מזהה, ומורה אינה קוראת מזהים.
+          this.bulkFailures = result.failures.map((f) => ({
+            name:
+              selected.find((s) => s.id === f.id)?.assignmentName || "הגשה",
+            message: f.message,
+          }));
+
+          this.clearSelection();
+          this.loadSubmissions();
+
+          if (this.bulkFailures.length > 0) {
+            this.bulkResultOpen = true;
+            return;
+          }
+
+          this.messageService.add({
+            severity: "success",
+            summary: "בוצע",
+            detail: `נמחקו ${result.deletedCount === 1 ? "הגשה אחת" : result.deletedCount + " הגשות"}`,
+          });
+        },
+        error: () => {
+          this.bulkDeleting = false;
+          this.messageService.add({
+            severity: "error",
+            summary: "שגיאה",
+            detail: "מחיקת ההגשות נכשלה",
+          });
+        },
+      });
   }
 
   clearSelection(): void {

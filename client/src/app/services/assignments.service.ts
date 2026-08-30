@@ -1,5 +1,9 @@
 import { Injectable } from "@angular/core";
 import {
+  BulkDeleteRequestDto,
+  BulkDeleteResultDto,
+} from "@models/bulk-delete.model";
+import {
   AssignmentResponseDto,
   CreateAssignmentRequestDto,
   SuggestTestCasesRequestDto,
@@ -66,6 +70,17 @@ export class AssignmentsService {
   delete(lessonId: number, assignmentId: number): Observable<void> {
     return this.api.http.delete<void>(
       this.api.url(`/api/lessons/${lessonId}/assignments/${assignmentId}`),
+    );
+  }
+
+  /** ר' bulkDelete בשירות השיעורים: אותם שומרים בדיוק, שורה אחת בכל פעם. */
+  bulkDelete(
+    lessonId: number,
+    ids: number[],
+  ): Observable<BulkDeleteResultDto> {
+    return this.api.http.post<BulkDeleteResultDto>(
+      this.api.url(`/api/lessons/${lessonId}/assignments/bulk-delete`),
+      { ids } as BulkDeleteRequestDto,
     );
   }
 

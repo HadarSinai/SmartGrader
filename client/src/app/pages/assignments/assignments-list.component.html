@@ -54,7 +54,7 @@
         </div>
       </ng-template>
 
-      <!-- Selection toolbar (design only — bulk delete is a future task) -->
+      <!-- Selection toolbar -->
       <div
         class="sg-selection-bar"
         *ngIf="selectedAssignments.length > 0"
@@ -66,7 +66,8 @@
           icon="pi pi-trash"
           severity="danger"
           [text]="true"
-          (onClick)="bulkDeleteComingSoon()"
+          [loading]="bulkDeleting"
+          (onClick)="confirmBulkDelete()"
         ></p-button>
         <p-button
           label="ביטול בחירה"
@@ -92,7 +93,7 @@
             <tr>
               <th style="width: 3rem">
                 <p-tableHeaderCheckbox
-                  aria-label="בחירת כל השורות"
+                  ariaLabel="בחירת כל השורות"
                 ></p-tableHeaderCheckbox>
               </th>
               <th pSortableColumn="title">
@@ -111,7 +112,7 @@
               <td>
                 <p-tableCheckbox
                   [value]="assignment"
-                  [attr.aria-label]="'בחירת ' + (assignment.title || '')"
+                  [ariaLabel]="'בחירת ' + (assignment.title || '')"
                 ></p-tableCheckbox>
               </td>
               <td>
@@ -148,7 +149,7 @@
                 <p-button
                   icon="pi pi-ellipsis-h"
                   [text]="true"
-                  [attr.aria-label]="
+                  [ariaLabel]="
                     'פעולות נוספות: ' + (assignment.title || '')
                   "
                   (onClick)="openRowMenu($event, rowMenu, assignment)"
@@ -213,7 +214,7 @@
                   <p-button
                     icon="pi pi-ellipsis-h"
                     [text]="true"
-                    [attr.aria-label]="
+                    [ariaLabel]="
                       'פעולות נוספות: ' + (item.title || '')
                     "
                     (onClick)="openRowMenu($event, rowMenu, item)"
@@ -254,3 +255,9 @@
 ></p-menu>
 
 <p-confirmDialog></p-confirmDialog>
+
+<app-bulk-delete-result
+  [(visible)]="bulkResultOpen"
+  [deletedCount]="bulkDeletedCount"
+  [failures]="bulkFailures"
+></app-bulk-delete-result>

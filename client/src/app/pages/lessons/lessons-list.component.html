@@ -48,7 +48,7 @@
             optionValue="value"
             placeholder="כל הכיתות"
             [showClear]="true"
-            aria-label="סינון לפי כיתה"
+            ariaLabel="סינון לפי כיתה"
           ></p-dropdown>
 
           <div class="sg-active-filters" aria-label="מסננים פעילים">
@@ -69,7 +69,7 @@
         </div>
       </ng-template>
 
-      <!-- Selection toolbar (design only — bulk delete is a future task) -->
+      <!-- Selection toolbar -->
       <div
         class="sg-selection-bar"
         *ngIf="selectedLessons.length > 0"
@@ -81,7 +81,8 @@
           icon="pi pi-trash"
           severity="danger"
           [text]="true"
-          (onClick)="bulkDeleteComingSoon()"
+          [loading]="bulkDeleting"
+          (onClick)="confirmBulkDelete()"
         ></p-button>
         <p-button
           label="ביטול בחירה"
@@ -107,7 +108,7 @@
             <tr>
               <th style="width: 3rem">
                 <p-tableHeaderCheckbox
-                  aria-label="בחירת כל השורות"
+                  ariaLabel="בחירת כל השורות"
                 ></p-tableHeaderCheckbox>
               </th>
               <th pSortableColumn="courseName">
@@ -130,7 +131,7 @@
               <td>
                 <p-tableCheckbox
                   [value]="lesson"
-                  [attr.aria-label]="'בחירת ' + lesson.courseName"
+                  [ariaLabel]="'בחירת ' + lesson.courseName"
                 ></p-tableCheckbox>
               </td>
               <td class="font-bold text-color">{{ lesson.courseName }}</td>
@@ -149,7 +150,7 @@
                   styleClass="sg-btn-secondary"
                   pTooltip="מעבר לתרגילי השיעור"
                   tooltipPosition="top"
-                  [attr.aria-label]="
+                  [ariaLabel]="
                     'תרגילי השיעור: ' + lesson.courseName
                   "
                   (onClick)="viewAssignments(lesson.id)"
@@ -160,7 +161,7 @@
                 <p-button
                   icon="pi pi-ellipsis-h"
                   [text]="true"
-                  [attr.aria-label]="
+                  [ariaLabel]="
                     'פעולות נוספות: ' + lesson.courseName
                   "
                   (onClick)="openRowMenu($event, rowMenu, lesson)"
@@ -239,7 +240,7 @@
                   <p-button
                     icon="pi pi-ellipsis-h"
                     [text]="true"
-                    [attr.aria-label]="
+                    [ariaLabel]="
                       'פעולות נוספות: ' + item.courseName
                     "
                     (onClick)="openRowMenu($event, rowMenu, item)"
@@ -304,3 +305,9 @@
     ></p-button>
   </ng-template>
 </p-dialog>
+
+<app-bulk-delete-result
+  [(visible)]="bulkResultOpen"
+  [deletedCount]="bulkDeletedCount"
+  [failures]="bulkFailures"
+></app-bulk-delete-result>

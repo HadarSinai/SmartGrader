@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SmartGrader.Application.Dtos.Lessons;
 using SmartGrader.Application.Dtos.Assignments;
+using SmartGrader.Application.Dtos.Common;
+using SmartGrader.Application.UseCases.Lessons.BulkDeleteLessons;
+using SmartGrader.Application.UseCases.Assignments.BulkDeleteAssignments;
 using SmartGrader.Application.UseCases.Lessons.GetLessons;
 using SmartGrader.Application.UseCases.Lessons.GetLessonById;
 using SmartGrader.Application.UseCases.Lessons.CreateLesson;
@@ -106,6 +109,25 @@ namespace SmartGrader.Api.Controllers
         {
             await _mediator.Send(new DeleteLessonCommand(id, OwnerScopeTeacherId), cancellationToken);
             return NoContent();
+        }
+
+        // POST: api/lessons/bulk-delete
+        //
+        // ⚠️ POST ולא DELETE: גוף בקשה ב-DELETE אינו מובטח לעבור בכל שרת ומתווך, ורשימת
+        // המזהים אינה שייכת ל-query string — שם היא מוגבלת באורך ונכתבת ליומני גישה.
+        //
+        // ⚠️ ומחזיר 200 ולא 204, גם כשהכול נמחק: הצלחה חלקית היא התוצאה הרגילה כאן, וגוף
+        // התשובה הוא מה שאומר למורה מה סורב ולמה. ר' B-53, B-54.
+        [HttpPost("bulk-delete")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<ActionResult<BulkDeleteResultDto>> BulkDelete(
+            [FromBody] BulkDeleteRequestDto dto,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new BulkDeleteLessonsCommand(dto.Ids, OwnerScopeTeacherId), cancellationToken);
+
+            return Ok(result);
         }
         //--------------------------------------------------------------
 
@@ -232,6 +254,21 @@ namespace SmartGrader.Api.Controllers
                 cancellationToken);
 
             return NoContent();
+        }
+
+        // POST: api/lessons/{lessonId}/assignments/bulk-delete — ר' ההערה על bulk-delete למעלה
+        [HttpPost("{lessonId:int}/assignments/bulk-delete")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<ActionResult<BulkDeleteResultDto>> BulkDeleteAssignments(
+            int lessonId,
+            [FromBody] BulkDeleteRequestDto dto,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new BulkDeleteAssignmentsCommand(lessonId, dto.Ids, OwnerScopeTeacherId),
+                cancellationToken);
+
+            return Ok(result);
         }
     }
 }
