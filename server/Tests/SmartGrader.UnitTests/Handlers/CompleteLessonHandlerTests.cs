@@ -213,19 +213,38 @@ namespace SmartGrader.UnitTests.Handlers
             await act.Should().ThrowAsync<BusinessRuleException>();
         }
 
-        // ⚠️ עם תרגיל בונוס בשיעור התקרה עולה ל-150 — מפני שכך התרגילים בנויים,
-        // ולא מפני שתיבה סומנה בדפדפן
+        // ⚠️ עם תרגיל בונוס התקרה עולה ל-100 ועוד ה-BonusValue שלו — מפני שכך התרגילים
+        // בנויים, ולא מפני שתיבה סומנה בדפדפן ולא לתקרה שטוחה של 150
         [Fact]
         [Trait("Rule", "G-21")]
-        public async Task Handle_RaisesTheCeiling_WhenTheLessonHasABonusAssignment()
+        public async Task Handle_RaisesTheCeiling_ByTheBonusValue()
         {
-            GivenAssignments(new TestAssignment(1), new TestAssignment(2, isBonus: true));
+            GivenAssignments(
+                new TestAssignment(1),
+                new TestAssignment(2, isBonus: true, bonusValue: 20));
             GivenSubmissions(new SubmissionBuilder(StudentId, 1).Graded(80).Build());
 
             var result = await Handler().Handle(
                 Command(finalScore: 120, overrideReason: "כולל בונוס"), CancellationToken.None);
 
             result.FinalScore.Should().Be(120);
+        }
+
+        // ⚠️ ואותו שיעור עצמו דוחה 121: התקרה היא הבונוס שהמורה הזינה, לא מספר עגול
+        // שנבחר פעם אחת. במודל הקודם 150 היה עובר כאן.
+        [Fact]
+        [Trait("Rule", "G-21")]
+        public async Task Handle_Throws_WhenTheOverrideExceedsTheBonusCeiling()
+        {
+            GivenAssignments(
+                new TestAssignment(1),
+                new TestAssignment(2, isBonus: true, bonusValue: 20));
+            GivenSubmissions(new SubmissionBuilder(StudentId, 1).Graded(80).Build());
+
+            var act = async () => await Handler().Handle(
+                Command(finalScore: 150, overrideReason: "סיבה"), CancellationToken.None);
+
+            await act.Should().ThrowAsync<BusinessRuleException>();
         }
 
         // ── אין ממה לחשב ──

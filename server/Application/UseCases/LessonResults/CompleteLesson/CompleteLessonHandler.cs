@@ -68,8 +68,9 @@ public class CompleteLessonHandler
         var assignments = await _assignments.GetByLessonIdAsync(command.LessonId, ct);
         var summary = LessonScoreCalculator.Calculate(assignments, submissions);
 
-        // התקרה נגזרת מהתרגילים בפועל ולא ממה שהלקוח סימן.
-        var maxScore = summary.HasBonus ? 150 : 100;
+        // התקרה נגזרת מהתרגילים בפועל ולא ממה שהלקוח סימן: 100 ועוד סכום ה-BonusValue
+        // של תרגילי הבונוס בשיעור. התקרה השטוחה 150 לא נגזרה משום דבר.
+        var maxScore = summary.MaxScore;
 
         var result = await _repository.GetAsync(command.StudentId, command.LessonId, ct)
                      ?? LessonResult.Create(command.StudentId, command.LessonId);
@@ -80,11 +81,17 @@ public class CompleteLessonHandler
         if (!isOverride)
         {
             if (summary.ComputedScore is null)
+                // ⚠️ שני מצבים שונים ומסר נפרד לכל אחד. שיעור שכולו בונוס לעולם לא ייסגר
+                // לבד — אין בו תרגיל חובה שממנו נגזר בסיס — והודעה על "אף תרגיל לא נבדק"
+                // הייתה שולחת את המורה לחפש הגשה תקועה שאינה קיימת.
                 throw new BusinessRuleException(
-                    "לא ניתן לסכם את השיעור — אף תרגיל לא נבדק, ואין ציון מחושב. " +
-                    "אפשר לקבוע ציון סופי ידנית, ואז יש לציין סיבה.");
+                    summary.HasRequiredAssignment
+                        ? "לא ניתן לסכם את השיעור — אף תרגיל חובה לא נבדק, ואין ציון מחושב. " +
+                          "אפשר לקבוע ציון סופי ידנית, ואז יש לציין סיבה."
+                        : "לא ניתן לסכם את השיעור — כל התרגילים בו הם בונוס, ואין ממה לחשב ציון בסיס. " +
+                          "אפשר לקבוע ציון סופי ידנית, ואז יש לציין סיבה.");
 
-            result.CompleteWith(summary.ComputedScore.Value, summary.HasBonus);
+            result.CompleteWith(summary.ComputedScore.Value, maxScore);
         }
         else
         {
@@ -105,7 +112,7 @@ public class CompleteLessonHandler
                 command.FinalScore.Value,
                 command.TeacherUserId,
                 command.OverrideReason,
-                summary.HasBonus);
+                maxScore);
         }
 
         if (result.Id == 0)

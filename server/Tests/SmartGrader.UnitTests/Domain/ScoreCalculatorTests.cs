@@ -55,16 +55,6 @@ namespace SmartGrader.UnitTests.Domain
             result.Total.Should().Be(100);
         }
 
-        // תרגיל בונוס שכולו שערים → התקרה המוגדלת, לא 100
-        [Fact]
-        [Trait("Rule", "G-9")]
-        public void Total_IsBonusMaxScore_WhenAllGatesAndMaxScoreAbove100()
-        {
-            var result = ScoreCalculator.Calculate(0, NoTests, NoRules, maxScore: 120);
-
-            result.Total.Should().Be(120);
-        }
-
         // רשימות null לא מפילות — מתנהגות כמו ריקות (שורות 36-37)
         [Fact]
         public void Calculate_TreatsNullListsAsEmpty()
@@ -153,17 +143,18 @@ namespace SmartGrader.UnitTests.Domain
             result.Total.Should().Be(100);
         }
 
-        // תרגיל בונוס: תקרה מעל 100 מכובדת — החיתוך הוא ב-maxScore, לא ב-100
+        // ⚠️ אין תקרה חלופית: גם רובריקה שסוכמת 130 נחתכת ב-100, ותרגיל בונוס אינו יוצא
+        // מן הכלל. הבונוס מוסיף לציון השיעור — ר' LessonScoreCalculator — ולא לזה.
         [Fact]
         [Trait("Rule", "G-12")]
-        public void Total_HonoursBonusMaxScore()
+        public void Total_IsCappedAtOneHundred_EvenWhenTheRubricSumsHigher()
         {
             var tests = new[] { PassedTest() };
             var rules = new[] { Rule(RuleSeverity.Scored, 30, passed: true) };
 
-            var result = ScoreCalculator.Calculate(100, tests, rules, maxScore: 120);
+            var result = ScoreCalculator.Calculate(100, tests, rules);
 
-            result.Total.Should().Be(120);
+            result.Total.Should().Be(100);
         }
 
         // ── דרישה היא תנאי, לא מדידה (שורה 59) ──

@@ -63,7 +63,7 @@ public class GetLessonScoreSuggestionHandler
                 Score = submission?.Score,
                 Status = DescribeStatus(submission),
                 IsBonus = assignment.IsBonus,
-                MaxScore = assignment.MaxScore
+                BonusValue = assignment.IsBonus ? Math.Max(assignment.BonusValue, 0) : 0
             };
         }).ToList();
 
@@ -81,7 +81,9 @@ public class GetLessonScoreSuggestionHandler
             SuggestedScore = summary.ComputedScore,
             GradedCount = summary.GradedCount,
             UngradedCount = summary.UngradedCount,
-            HasBonus = summary.HasBonus
+            BaseScore = summary.BaseScore,
+            BonusPoints = summary.BonusPoints,
+            MaxScore = summary.MaxScore
         };
     }
 

@@ -337,17 +337,18 @@ namespace SmartGrader.Domain.Entities
         /// לתיקון בשום דרך.
         /// </para>
         /// </summary>
-        /// <param name="maxScore">
-        /// תקרת הציון של התרגיל (<see cref="Assignment.MaxScore"/>) — מעל 100 בתרגיל בונוס.
-        /// </param>
-        public void OverrideScore(double score, int maxScore, int teacherUserId, string reason)
+        /// <remarks>
+        /// התחום הוא תמיד <c>0..100</c>, גם בתרגיל בונוס: הבונוס מוסיף לציון השיעור ואינו
+        /// מרים את תקרת התרגיל (<see cref="Assignment.TotalPoints"/>).
+        /// </remarks>
+        public void OverrideScore(double score, int teacherUserId, string reason)
         {
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ArgumentException("A reason is required — it is the audit trail", nameof(reason));
 
-            if (score < 0 || score > maxScore)
+            if (score < 0 || score > Assignment.TotalPoints)
                 throw new ArgumentOutOfRangeException(
-                    nameof(score), $"Score must be between 0 and {maxScore}");
+                    nameof(score), $"Score must be between 0 and {Assignment.TotalPoints}");
 
             Score = score;
             Status = SubmissionStatus.Done;

@@ -37,7 +37,6 @@ import {
   describeRule,
   hasValidRubric,
   isGradeable,
-  maxScoreOf,
   scoredRulePoints,
 } from "@models/assignment.model";
 import { AssignmentsService } from "@services/assignments.service";
@@ -78,14 +77,8 @@ function gradeabilityValidator(
   // "או", לא "וגם": תרגיל מחלקות מנוקד על המבנה בלבד.
   if (!isGradeable(testsCount, rules)) errors["notGradeable"] = true;
 
-  const maxScore = maxScoreOf(
-    !!control.get("isBonus")?.value,
-    Number(control.get("bonusValue")?.value ?? 0),
-  );
-
   if (
     !hasValidRubric(
-      maxScore,
       Number(control.get("testsAllocation")?.value ?? 0),
       testsCount,
       rules,
@@ -322,12 +315,13 @@ export class AssignmentFormComponent implements OnInit {
     return this.rulesValue.some((r) => r.severity === "Scored");
   }
 
-  /** התקרה: 100, או 100 + הבונוס. נגזרת ואינה עמודה נפרדת — ר' Assignment.MaxScore. */
+  /**
+   * התקרה: 100, בכל תרגיל.
+   * ⚠️ גם בתרגיל בונוס. הבונוס אינו מרים את התקרה של התרגיל אלא מוסיף לציון השיעור —
+   * ר' TOTAL_POINTS ו-LessonScoreCalculator בשרת.
+   */
   get maxScore(): number {
-    return maxScoreOf(
-      !!this.form.get("isBonus")?.value,
-      Number(this.form.get("bonusValue")?.value ?? 0),
-    );
+    return TOTAL_POINTS;
   }
 
   get rulesAllocation(): number {
@@ -348,7 +342,6 @@ export class AssignmentFormComponent implements OnInit {
 
   get rubricValid(): boolean {
     return hasValidRubric(
-      this.maxScore,
       this.testsAllocationValue,
       this.tests.length,
       this.rulesValue,

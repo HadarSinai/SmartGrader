@@ -41,9 +41,9 @@ and CI fails here. The `Meaning` column is prose and is not asserted.
 | תרגיל | `Assignment` | One exercise inside a lesson. |
 | שם המתודה | `Assignment.MethodName` | The method the runner calls, in the method-based grading modes. |
 | אופן בדיקה | `GradingMode` | Whole program, single method, or multi-file project. |
-| תרגיל בונוס | `Assignment.IsBonus` | Its ceiling exceeds 100. |
-| ערך הבונוס | `Assignment.BonusValue` | By how much the ceiling exceeds 100. |
-| תקרת ציון | `Assignment.MaxScore` | Derived, never stored: 100, or 100 + the bonus value. |
+| תרגיל בונוס | `Assignment.IsBonus` | Graded out of 100 like any other; it adds to the lesson instead of entering its average. |
+| ערך הבונוס | `Assignment.BonusValue` | How many points it adds to the **lesson** score when done in full. |
+| תקרת ציון | `Assignment.TotalPoints` | 100, for every assignment. The lesson ceiling is 100 + the bonus values. |
 | הקצאה למקרי בדיקה | `Assignment.TestsAllocation` | How many of the points go to the tests. 0 is legal. |
 | סף הגשה חוזרת | `Assignment.RetryThreshold` | Below this score the student may submit again. Default 85. |
 | מקרה בדיקה | `TestCase` | One input and its expected output. |

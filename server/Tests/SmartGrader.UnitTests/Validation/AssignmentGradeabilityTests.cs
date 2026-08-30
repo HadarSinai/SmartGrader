@@ -73,7 +73,7 @@ namespace SmartGrader.UnitTests.Validation
         [Trait("Rule", "G-14")]
         public void HasValidRubric_AcceptsTestsAloneAtFullAllocation()
         {
-            AssignmentGradeability.HasValidRubric(100, 100, new[] { Test() }, Array.Empty<StructuralRuleDto>())
+            AssignmentGradeability.HasValidRubric(100, new[] { Test() }, Array.Empty<StructuralRuleDto>())
                 .Should().BeTrue();
         }
 
@@ -82,7 +82,7 @@ namespace SmartGrader.UnitTests.Validation
         [Trait("Rule", "G-14")]
         public void HasValidRubric_AcceptsTestsAndScoredRulesThatSumToTheCeiling()
         {
-            AssignmentGradeability.HasValidRubric(100, 80, new[] { Test() }, new[] { Scored(20) })
+            AssignmentGradeability.HasValidRubric(80, new[] { Test() }, new[] { Scored(20) })
                 .Should().BeTrue();
         }
 
@@ -91,7 +91,7 @@ namespace SmartGrader.UnitTests.Validation
         [Trait("Rule", "G-14")]
         public void HasValidRubric_RejectsAnOverAllocatedRubric()
         {
-            AssignmentGradeability.HasValidRubric(100, 100, new[] { Test() }, new[] { Scored(10) })
+            AssignmentGradeability.HasValidRubric(100, new[] { Test() }, new[] { Scored(10) })
                 .Should().BeFalse();
         }
 
@@ -100,7 +100,7 @@ namespace SmartGrader.UnitTests.Validation
         [Trait("Rule", "G-14")]
         public void HasValidRubric_RejectsAnUnderAllocatedRubric()
         {
-            AssignmentGradeability.HasValidRubric(100, 70, new[] { Test() }, new[] { Scored(20) })
+            AssignmentGradeability.HasValidRubric(70, new[] { Test() }, new[] { Scored(20) })
                 .Should().BeFalse();
         }
 
@@ -110,7 +110,7 @@ namespace SmartGrader.UnitTests.Validation
         [Trait("Rule", "G-9")]
         public void HasValidRubric_AcceptsBlockingRulesOnlyWithNothingToAllocate()
         {
-            AssignmentGradeability.HasValidRubric(100, 0, Array.Empty<TestCaseDto>(), new[] { Blocking() })
+            AssignmentGradeability.HasValidRubric(0, Array.Empty<TestCaseDto>(), new[] { Blocking() })
                 .Should().BeTrue();
         }
 
@@ -119,7 +119,7 @@ namespace SmartGrader.UnitTests.Validation
         [Trait("Rule", "G-14")]
         public void HasValidRubric_RequiresScoredRulesAloneToCoverTheCeiling()
         {
-            AssignmentGradeability.HasValidRubric(100, 0, Array.Empty<TestCaseDto>(), new[] { Scored(90) })
+            AssignmentGradeability.HasValidRubric(0, Array.Empty<TestCaseDto>(), new[] { Scored(90) })
                 .Should().BeFalse();
         }
 
@@ -129,7 +129,7 @@ namespace SmartGrader.UnitTests.Validation
         [Trait("Rule", "G-14")]
         public void HasValidRubric_RejectsTestsWorthNothing()
         {
-            AssignmentGradeability.HasValidRubric(100, 0, new[] { Test() }, Array.Empty<StructuralRuleDto>())
+            AssignmentGradeability.HasValidRubric(0, new[] { Test() }, Array.Empty<StructuralRuleDto>())
                 .Should().BeFalse();
         }
 
@@ -142,7 +142,7 @@ namespace SmartGrader.UnitTests.Validation
         [Trait("Rule", "G-14")]
         public void HasValidRubric_RejectsANegativeTestsAllocation()
         {
-            AssignmentGradeability.HasValidRubric(100, -1, new[] { Test() }, new[] { Scored(101) })
+            AssignmentGradeability.HasValidRubric(-1, new[] { Test() }, new[] { Scored(101) })
                 .Should().BeFalse();
         }
 
@@ -151,35 +151,27 @@ namespace SmartGrader.UnitTests.Validation
         [Trait("Rule", "G-14")]
         public void HasValidRubric_RejectsAnAllocationAboveTheCeiling()
         {
-            AssignmentGradeability.HasValidRubric(100, 101, new[] { Test() }, new[] { Scored(-1) })
+            AssignmentGradeability.HasValidRubric(101, new[] { Test() }, new[] { Scored(-1) })
                 .Should().BeFalse();
         }
 
-        // ⚠️ "התקרה", לא "100": בתרגיל בונוס הרובריקה מסתכמת גבוה יותר
+        // ⚠️ 100 גם בתרגיל בונוס. BonusValue אינו מרים את התקרה של התרגיל — הוא מוסיף
+        // לציון השיעור — ולכן רובריקה שמסתכמת ב-120 היא רובריקה שגויה, לא רובריקת בונוס.
         [Fact]
         [Trait("Rule", "G-17")]
-        public void HasValidRubric_UsesTheBonusCeiling()
+        public void HasValidRubric_RejectsARubricAboveOneHundred_EvenForABonusAssignment()
         {
-            AssignmentGradeability.HasValidRubric(120, 120, new[] { Test() }, Array.Empty<StructuralRuleDto>())
-                .Should().BeTrue();
+            AssignmentGradeability.HasValidRubric(120, new[] { Test() }, Array.Empty<StructuralRuleDto>())
+                .Should().BeFalse();
         }
 
-        // ── התקרה בטופס והתקרה בישות הן אותו מספר ──
-
-        // 🔴 שני חישובים נפרדים לאותו דבר: אם יסטו, הטופס והציון ימדדו שני דברים שונים
-        [Theory]
-        [InlineData(false, 0)]
-        [InlineData(false, 20)]
-        [InlineData(true, 0)]
-        [InlineData(true, 20)]
-        [InlineData(true, -5)]
-        [InlineData(true, 19.6)]
+        // הרובריקה של תרגיל בונוס נבדקת בדיוק כמו כל אחרת: 100 בדיוק
+        [Fact]
         [Trait("Rule", "G-17")]
-        public void MaxScoreOf_AgreesWithTheEntity(bool isBonus, double bonusValue)
+        public void HasValidRubric_AcceptsOneHundredForABonusAssignment()
         {
-            var assignment = new TestAssignment(1, isBonus) { BonusValue = bonusValue };
-
-            AssignmentGradeability.MaxScoreOf(isBonus, bonusValue).Should().Be(assignment.MaxScore);
+            AssignmentGradeability.HasValidRubric(80, new[] { Test() }, new[] { Scored(20) })
+                .Should().BeTrue();
         }
 
         // ── דרישה מנוקדת חייבת לשאת נקודות ──

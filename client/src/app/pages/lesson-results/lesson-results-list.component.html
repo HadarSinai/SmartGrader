@@ -301,7 +301,9 @@
         >
           <span class="sg-suggestion__name">
             {{ item.title || "תרגיל" }}
-            <span class="sg-bonus-chip" *ngIf="item.isBonus">בונוס</span>
+            <span class="sg-bonus-chip" *ngIf="item.isBonus"
+              >בונוס +{{ item.bonusValue }}</span
+            >
           </span>
           <span class="sg-suggestion__score" *ngIf="item.score !== null">
             {{ item.score }}
@@ -311,8 +313,22 @@
           </span>
         </div>
 
+        <!-- ⚠️ הבסיס והתוספת בשתי שורות ולא במספר אחד: מורה שרואה רק "105" אינה יכולה
+             לדעת אם הבונוס נספר, וזו בדיוק השאלה שהמודל הקודם הקשה לענות עליה. -->
+        <div class="sg-suggestion__total" *ngIf="hasBonus">
+          <span>ממוצע תרגילי החובה</span>
+          <span>{{
+            suggestion.baseScore !== null ? suggestion.baseScore : "—"
+          }}</span>
+        </div>
+
+        <div class="sg-suggestion__total" *ngIf="hasBonus">
+          <span>תוספת בונוס</span>
+          <span>+{{ suggestion.bonusPoints }}</span>
+        </div>
+
         <div class="sg-suggestion__total">
-          <span>ממוצע</span>
+          <span>{{ hasBonus ? "סך הכול" : "ממוצע" }}</span>
           <span>{{
             suggestion.suggestedScore !== null
               ? suggestion.suggestedScore
@@ -325,16 +341,17 @@
           {{ suggestion.ungradedCount }} תרגילים ללא ציון לא נכללו בממוצע,
           שחושב על {{ suggestion.gradedCount }} תרגילים.
         </small>
-        <small class="sg-hint" *ngIf="suggestion.gradedCount === 0">
-          אף תרגיל לא נבדק, ולכן אין ממוצע להציע — אפשר להזין ציון ידנית.
+        <small class="sg-hint" *ngIf="suggestion.suggestedScore === null">
+          אין תרגיל חובה שנבדק, ולכן אין בסיס לחשב ממנו — אפשר להזין ציון ידנית.
         </small>
       </div>
 
       <!-- ⚠️ תיבת סימון "כולל בונוס" הוסרה: היא נשלחה לשרת וקבעה את תקרת הציון,
-           כלומר המסך קבע לעצמו את הטווח החוקי. הבונוס נגזר מהתרגילים בפועל. -->
-      <div class="sg-hint" *ngIf="!suggestionLoading && suggestion?.hasBonus">
+           כלומר המסך קבע לעצמו את הטווח החוקי. התקרה מגיעה מהשרת ונגזרת מהתרגילים. -->
+      <div class="sg-hint" *ngIf="!suggestionLoading && hasBonus">
         <i class="pi pi-star" aria-hidden="true"></i>
-        בשיעור יש תרגיל בונוס, ולכן הציון הסופי יכול להגיע עד {{ maxScore }}.
+        תרגיל בונוס מנוקד מתוך 100 כמו כל תרגיל, ומוסיף את ערכו לציון השיעור — ולכן
+        התקרה כאן היא {{ maxScore }}.
       </div>
 
       <div>

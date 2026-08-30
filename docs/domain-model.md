@@ -124,7 +124,7 @@ rather than the whole school.
 | `Title`, `Description` | both nullable in the schema |
 | `MethodName` | the method the runner calls in `Method` / `MultiFileMethod` mode |
 | `GradingMode` | how the code is executed — see the enum below |
-| `IsBonus`, `BonusValue` | a bonus assignment's ceiling exceeds 100 by `BonusValue` |
+| `IsBonus`, `BonusValue` | a bonus assignment is graded out of 100 like any other; `BonusValue` is what it adds to the **lesson** score |
 | `TestsAllocation` | how many of the points go to the test cases. Default 100. **0 is legal** — a classes exercise has nothing to run and is graded on structure alone. |
 | `RetryThreshold` | below this score the student may submit again. Default 85. |
 
@@ -139,12 +139,13 @@ rather than the whole school.
 | `StructuralRules` | `StructuralRulesJson` | `StructuralRule` — the requirements checked by Roslyn |
 
 **Derived, not stored:**
-- `MaxScore` = `100`, or `100 + round(BonusValue)` when `IsBonus`. `[NotMapped]` on purpose: a stored
-  copy diverges the moment a teacher edits `BonusValue` and forgets the second field.
 - `ScoredRules` = the structural rules whose severity is `Scored`.
 
-⚠️ `MaxScore` is the assignment's ceiling **and** the sum its rubric must add up to. Plan B's B2 changes
-this rule; this document describes what is built today.
+⚠️ **The assignment has no ceiling field, and that is the point.** `Assignment.TotalPoints` — 100 — is
+the ceiling and the sum every rubric must add up to, bonus or not (`G-17`). A derived `MaxScore` that
+returned `100 + BonusValue` lived here until Plan B's B2; it made a bonus of 20 worth 6.7 in a
+three-assignment lesson, because the bonus was averaged in rather than added. `BonusValue` is now read
+only by `LessonScoreCalculator`.
 
 ### `Submission` — the current state of one student's work
 
@@ -206,8 +207,9 @@ so without collapsing the archive grows without bound.
 - Reopening keeps the score, as the starting point for the correction.
 - Re-completing after a reopen clears any previous override, so a score that became computed again does
   not keep looking hand-entered.
-- The ceiling in `GuardCanComplete` is **150 with a bonus, 100 without** — a flat number that Plan B's
-  B2 replaces with `100 + Σ BonusValue`.
+- `GuardCanComplete` takes the ceiling as an argument rather than deriving it, and the only caller
+  passes what `LessonScoreCalculator` computed: `100 + Σ BonusValue` (`G-21`). It was a flat 150 with a
+  bonus and 100 without until Plan B's B2 — a number no bonus value ever produced.
 
 ### `Log` — system events
 
@@ -405,7 +407,7 @@ OpenAI outage cannot erase a fact already established.
 |---|---|---|
 | `Submission.MinResubmitInterval` | 1 minute | the gap between two attempts; also absorbs a double-click |
 | `Assignment.DefaultRetryThreshold` | 85 | below this the student may resubmit |
-| `Assignment.TotalPoints` | 100 | what a non-bonus rubric must sum to |
+| `Assignment.TotalPoints` | 100 | what every rubric must sum to, and every assignment's ceiling |
 | `User.MaxFailedLoginAttempts` | 5 | consecutive failures that lock an account |
 | `User.LockoutDuration` | 15 minutes | |
 | `PasswordResetToken.Lifetime` | 1 hour | long enough to open an email, short enough to be useless to an attacker |

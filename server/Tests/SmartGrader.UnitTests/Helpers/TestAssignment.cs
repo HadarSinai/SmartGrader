@@ -14,11 +14,16 @@ namespace SmartGrader.UnitTests.Helpers
     /// </remarks>
     public sealed class TestAssignment : Assignment
     {
-        public TestAssignment(int id, bool isBonus = false, int testsAllocation = TotalPoints)
+        public TestAssignment(
+            int id,
+            bool isBonus = false,
+            int testsAllocation = TotalPoints,
+            double bonusValue = 0)
         {
             typeof(Assignment).GetProperty(nameof(Id))!.SetValue(this, id);
             IsBonus = isBonus;
             TestsAllocation = testsAllocation;
+            BonusValue = bonusValue;
         }
     }
 }

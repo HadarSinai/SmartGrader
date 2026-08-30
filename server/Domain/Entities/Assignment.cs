@@ -8,7 +8,15 @@ namespace SmartGrader.Domain.Entities
         /// <summary>סף הציון שמתחתיו התלמידה רשאית להגיש שוב, כברירת מחדל.</summary>
         public const int DefaultRetryThreshold = 85;
 
-        /// <summary>סך הנקודות שרובריקת תרגיל <b>רגיל</b> חייבת להסתכם בהן.</summary>
+        /// <summary>
+        /// סך הנקודות שרובריקת תרגיל חייבת להסתכם בהן, וגם תקרת הציון שלו.
+        /// <para>
+        /// <b>כל תרגיל, כולל בונוס.</b> <see cref="BonusValue"/> אינו מרים את התקרה של
+        /// התרגיל — הוא נוסף לציון <i>השיעור</i>, ר' <c>LessonScoreCalculator</c>. כשהתקרה
+        /// כאן הייתה משתנה, אותו בונוס של 20 היה שווה 6.7 בשיעור בן שלושה תרגילים ו-2
+        /// בשיעור בן עשרה, כי הוא נכנס לממוצע במקום להתווסף לו.
+        /// </para>
+        /// </summary>
         public const int TotalPoints = 100;
 
         public int Id { get; private set; }
@@ -16,6 +24,11 @@ namespace SmartGrader.Domain.Entities
         public string? Title { get; set; }
         public string? Description { get; set; }
         public bool IsBonus { get; set; }
+
+        /// <summary>
+        /// כמה נקודות תרגיל בונוס מוסיף <b>לציון השיעור</b> כשהוא נעשה במלואו.
+        /// חלקי מוסיף חלקית: <c>BonusValue × (הציון ÷ 100)</c>. ר' <c>LessonScoreCalculator</c>.
+        /// </summary>
         public double BonusValue { get; set; }
         public string MethodName { get; set; } = "";
         public GradingMode GradingMode { get; set; } = GradingMode.FullProgram;
@@ -47,23 +60,6 @@ namespace SmartGrader.Domain.Entities
         /// </para>
         /// </summary>
         public int TestsAllocation { get; set; } = TotalPoints;
-
-        /// <summary>
-        /// תקרת הציון של התרגיל — וגם הסכום שהרובריקה חייבת להסתכם בו.
-        /// <para>
-        /// תרגיל רגיל: 100. <b>תרגיל בונוס עובר 100</b>, והמורה היא שקובעת בכמה: היא מזינה
-        /// <see cref="BonusValue"/> — כמה נקודות מקבלים על התרגיל מעבר למאה — והתקרה נגזרת
-        /// ממנו. כך יש רק כלל אחד לזכור: <i>הרובריקה מסתכמת בתקרה</i>.
-        /// </para>
-        /// <para>
-        /// נגזר ולא נשמר בעמודה משלו בכוונה: שני מקורות אמת לאותו מספר נפרדים זה מזה ברגע
-        /// שהמורה עורכת את <see cref="BonusValue"/> ושוכחת לעדכן את השני.
-        /// </para>
-        /// </summary>
-        [NotMapped]
-        public int MaxScore => IsBonus
-            ? TotalPoints + (int)Math.Round(Math.Max(BonusValue, 0))
-            : TotalPoints;
 
         /// <summary>
         /// הציון שמתחתיו ההגשה נשארת פתוחה להגשה חוזרת, בלי הגבלת מספר ניסיונות.

@@ -36,9 +36,18 @@ namespace SmartGrader.Application.Dtos.LessonResults
         public int UngradedCount { get; set; }
 
         /// <summary>
-        /// יש בשיעור תרגיל בונוס, ולכן הציון הסופי רשאי לעבור 100.
+        /// הממוצע על תרגילי החובה שנבדקו, לפני הבונוס. <c>null</c> כשאין אף אחד כזה.
         /// </summary>
-        public bool HasBonus { get; set; }
+        public double? BaseScore { get; set; }
+
+        /// <summary>כמה נקודות תרגילי הבונוס הוסיפו בפועל. 0 כשאין בונוס או שלא הוגש.</summary>
+        public double BonusPoints { get; set; }
+
+        /// <summary>
+        /// תקרת השיעור: <c>100 + Σ BonusValue</c>. ⚠️ נגזרת מהתרגילים בפועל — הדיאלוג
+        /// חייב לקרוא אותה מכאן ולא לחשב אותה לעצמו.
+        /// </summary>
+        public double MaxScore { get; set; }
     }
 
     public class AssignmentScoreDto
@@ -52,9 +61,13 @@ namespace SmartGrader.Application.Dtos.LessonResults
         /// <summary>סטטוס ההגשה, כדי שהדיאלוג יסביר <i>למה</i> אין ציון.</summary>
         public string Status { get; set; } = "לא הוגש";
 
+        /// <summary>
+        /// תרגיל בונוס. הציון שלו הוא עדיין מתוך 100 — מה שמשתנה הוא שהוא אינו נכנס
+        /// לממוצע אלא מוסיף <c>BonusValue × (הציון ÷ 100)</c> לציון השיעור.
+        /// </summary>
         public bool IsBonus { get; set; }
 
-        /// <summary>תקרת הציון של התרגיל — 100, או יותר בתרגיל בונוס.</summary>
-        public int MaxScore { get; set; }
+        /// <summary>כמה נקודות התרגיל הזה מוסיף לשיעור כשהוא נעשה במלואו. 0 כשאינו בונוס.</summary>
+        public double BonusValue { get; set; }
     }
 }

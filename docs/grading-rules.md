@@ -1,9 +1,10 @@
 # Grading Rules
 
-> SmartGrader · Version 1.0 · Last updated 2026-08-27 · Status: as-built
+> SmartGrader · Version 1.1 · Last updated 2026-08-30 · Status: as-built
 
 | Version | Date | Change |
 |---|---|---|
+| 1.1 | 2026-08-30 | The bonus model. `G-17`, `G-18`, `G-20` and `G-21` restated; `G-26` added. A bonus no longer raises an assignment's ceiling — it adds to the lesson. |
 | 1.0 | 2026-08-27 | First edition. `G-1 … G-25`. |
 
 **What this document answers:** how a grade is produced — written so the owner can explain any number
@@ -79,15 +80,16 @@ area doc lists `G-7`, it does not restate it.
 | G-14 | The system shall reject an assignment whose rubric does not sum to exactly its ceiling. | ✅ |
 | G-15 | The system shall reject an assignment that has neither a test case nor a structural requirement. | ✅ |
 | G-16 | The system shall reject a Scored requirement carrying fewer than one point. | ✅ |
-| G-17 | The assignment ceiling shall be 100, or 100 + the bonus value for a bonus assignment. | ✅ |
-| G-18 | The lesson's computed score shall be the unweighted average of the assignments that have a score. | ✅ |
+| G-17 | The assignment ceiling shall be 100, for a bonus assignment as for every other. | ✅ |
+| G-18 | The lesson's base score shall be the unweighted average of the non-bonus assignments that have a score. | ✅ |
 | G-19 | The system shall exclude an ungraded assignment from the lesson average, and shall not count it as zero. | ✅ |
-| G-20 | When no assignment in a lesson has a score, the computed score shall be absent, and a final score shall be possible only as an explicitly reasoned override. | ✅ |
-| G-21 | The lesson ceiling shall be 150 when the lesson contains a bonus assignment and 100 otherwise, derived from the assignments and never from the request. | ✅ |
+| G-20 | When no non-bonus assignment in a lesson has a score, the computed score shall be absent, and a final score shall be possible only as an explicitly reasoned override. | ✅ |
+| G-21 | The lesson ceiling shall be 100 plus the sum of the bonus values of the bonus assignments in the lesson, derived from the assignments and never from the request. | ✅ |
 | G-22 | The system shall treat an entered final score within 0.05 of the computed score as agreement, not as an override. | ✅ |
 | G-23 | An override of a submission's score shall carry a written reason and shall lie between 0 and the assignment ceiling. | ✅ |
 | G-24 | An override of a lesson's final score shall carry a written reason, and the computed score shall be retained beside it. | ✅ |
 | G-25 | Only the latest attempt on an assignment shall count toward any score. | ✅ |
+| G-26 | Each bonus assignment that has a score shall add its bonus value multiplied by that score divided by 100 to the lesson's base score. | ✅ |
 
 <!-- /gen -->
 
@@ -163,14 +165,34 @@ automatically, so an ordinary assignment stays as quick to create as it ever was
 She loses **all 25**, not a quarter of them. A requirement is a **condition, not a measurement**:
 there is no meaningful sense in which four `if`s is 75% of at most three.
 
-### A bonus assignment — `G-12`, `G-17`
+### A bonus assignment — `G-17`, `G-21`, `G-26`
 
-`IsBonus = true`, `BonusValue = 20` → ceiling **120**, and the rubric must sum to 120. A student who
-does everything scores 120. `G-12` caps at 120 even if a mis-saved rubric would produce more.
+**A bonus assignment is graded out of 100, exactly like every other one.** Its rubric sums to 100, and
+a student who does everything on it scores 100 on it. What `BonusValue = 20` changes is what that 100
+does to the **lesson**: the assignment does not enter the average — it adds `20 × (her score ÷ 100)`
+to it, and it raises the lesson's ceiling to 120.
 
-⚠️ **Plan B's B2 replaces this model.** Under B2 every assignment is graded out of 100 and the bonus
-becomes a lesson-level addition. This document describes what is built **today**; when B2 ships,
-`G-17`, `G-21` and their examples change together, in one version bump.
+A lesson with three assignments; the third is a bonus worth 20. Ceiling = **120**.
+
+| Student | #1 | #2 | #3 (bonus) | Base | Bonus added | Final |
+|---|---|---|---|---|---|---|
+| Did everything | 100 | 100 | 100 | 100 | 20 | **120** |
+| Partial on the bonus | 100 | 100 | 70 | 100 | 20 × 0.7 = 14 | **114** |
+| Skipped the bonus | 80 | 90 | — | 85 | 0 | **85** |
+| Weaker, strong bonus | 80 | 90 | 100 | 85 | 20 | **105** |
+
+Read the last two rows together: **skipping a bonus is never a penalty.** It contributes nothing to
+the base and adds nothing, so the student who skipped it is judged on her required work alone.
+
+⚠️ **Under the previous model the first student scored 106.7, not 120.** The bonus was averaged in
+rather than added, so a bonus of 20 was worth 6.7 here — and would have been worth 2 in a
+ten-assignment lesson. The ceiling was a flat 150 that no bonus value ever produced. The size of the
+bonus now means what it says.
+
+**A student with a graded bonus and no graded required assignment has no score** — `G-20` holds and
+`G-26` has no base to add to. The bonus points are computed and shown, but a final grade is possible
+only as a reasoned override. The same is true of a lesson whose assignments are **all** bonus: it can
+never be finalised on its own, and the system says so rather than reporting nothing graded.
 
 ### The lesson score — `G-18`, `G-19`, `G-20`
 

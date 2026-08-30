@@ -17,11 +17,11 @@ namespace SmartGrader.Application.Common.Validation
             "אחרת אי אפשר לנקד אותו וכל התלמידות יקבלו 0.";
 
         /// <summary>
-        /// ⚠️ "התקרה", לא "100": בתרגיל בונוס התקרה גבוהה מ-100 והמורה קובעת בכמה —
-        /// ר' <c>Assignment.MaxScore</c>.
+        /// ⚠️ 100 בכל תרגיל, בונוס או לא: הבונוס אינו מרים את תקרת התרגיל אלא מוסיף לציון
+        /// השיעור — ר' <c>Assignment.TotalPoints</c> ו-<c>LessonScoreCalculator</c>.
         /// </summary>
-        public static string RubricMessage(int maxScore) =>
-            $"הניקוד חייב להסתכם ב-{maxScore} בדיוק: בדיקות + סכום הנקודות של הדרישות המנוקדות.";
+        public static readonly string RubricMessage =
+            $"הניקוד חייב להסתכם ב-{Assignment.TotalPoints} בדיוק: בדיקות + סכום הנקודות של הדרישות המנוקדות.";
 
         public const string ScoredPointsMessage =
             "דרישה מנוקדת חייבת לשאת לפחות נקודה אחת. דרישה חוסמת והמלצה אינן נושאות ניקוד.";
@@ -49,11 +49,12 @@ namespace SmartGrader.Application.Common.Validation
         /// </para>
         /// </summary>
         public static bool HasValidRubric(
-            int maxScore,
             int testsAllocation,
             IReadOnlyCollection<TestCaseDto>? tests,
             IReadOnlyCollection<StructuralRuleDto>? rules)
         {
+            const int maxScore = Assignment.TotalPoints;
+
             if (testsAllocation < 0 || testsAllocation > maxScore)
                 return false;
 
@@ -70,15 +71,6 @@ namespace SmartGrader.Application.Common.Validation
 
             return effectiveTestsAllocation + rulesAllocation == maxScore;
         }
-
-        /// <summary>
-        /// תקרת הציון לפי מה שהמורה הזינה בטופס, לפני שיש ישות. חייב להישאר זהה
-        /// ל-<c>Assignment.MaxScore</c> — אחרת הטופס והציון מודדים שני דברים שונים.
-        /// </summary>
-        public static int MaxScoreOf(bool isBonus, double bonusValue) =>
-            isBonus
-                ? Assignment.TotalPoints + (int)Math.Round(Math.Max(bonusValue, 0))
-                : Assignment.TotalPoints;
 
         /// <summary>דרישה מנוקדת בלי נקודות אינה עושה כלום — כנראה נשכח למלא את השדה.</summary>
         public static bool ScoredRulesCarryPoints(IReadOnlyCollection<StructuralRuleDto>? rules) =>

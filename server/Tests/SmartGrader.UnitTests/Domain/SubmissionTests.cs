@@ -207,31 +207,32 @@ namespace SmartGrader.UnitTests.Domain
 
         // ── דריסת ציון בידי המורה ──
 
-        // ציון מחוץ לטווח נדחה — התקרה היא של התרגיל, כולל בונוס
+        // ציון מחוץ לטווח נדחה. התחום הוא 0..100 בכל תרגיל
         [Theory]
-        [InlineData(-0.5, 100)]
-        [InlineData(100.5, 100)]
-        [InlineData(121, 120)]
+        [InlineData(-0.5)]
+        [InlineData(100.5)]
+        [InlineData(120)]
         [Trait("Rule", "G-23")]
-        public void OverrideScore_RejectsOutOfRange(double score, int maxScore)
+        public void OverrideScore_RejectsOutOfRange(double score)
         {
             var submission = new SubmissionBuilder(7, 1).Graded(64).Build();
 
-            var act = () => submission.OverrideScore(score, maxScore, 3, "תיקון");
+            var act = () => submission.OverrideScore(score, 3, "תיקון");
 
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        // תקרת בונוס מכובדת: 120 מתוך 120 חוקי
+        // ⚠️ 100 הוא התחום גם בתרגיל בונוס. הבונוס מוסיף לציון השיעור ואינו מרים את
+        // תקרת התרגיל, ולכן דריסה ל-120 על הגשה בודדת היא שגיאה ולא "בונוס מלא".
         [Fact]
         [Trait("Rule", "G-23")]
-        public void OverrideScore_AllowsBonusMaxScore()
+        public void OverrideScore_AllowsExactlyOneHundred()
         {
             var submission = new SubmissionBuilder(7, 1).Graded(64).Build();
 
-            submission.OverrideScore(120, maxScore: 120, teacherUserId: 3, reason: "בונוס מלא");
+            submission.OverrideScore(100, teacherUserId: 3, reason: "פתרון מלא");
 
-            submission.Score.Should().Be(120);
+            submission.Score.Should().Be(100);
         }
 
         // ⚠️ הפירוק נמחק בדריסה: "בדיקות 64 · דרישות 0" ליד ציון ידני 90 משקר
@@ -241,7 +242,7 @@ namespace SmartGrader.UnitTests.Domain
         {
             var submission = new SubmissionBuilder(7, 1).Graded(64).Build();
 
-            submission.OverrideScore(90, 100, teacherUserId: 3, reason: "בדיקה ידנית");
+            submission.OverrideScore(90, teacherUserId: 3, reason: "בדיקה ידנית");
 
             submission.Score.Should().Be(90);
             submission.ScoreBreakdown.Should().BeNull();
@@ -257,7 +258,7 @@ namespace SmartGrader.UnitTests.Domain
         {
             var submission = new SubmissionBuilder(7, 1).Graded(64).Build();
 
-            var act = () => submission.OverrideScore(90, 100, 3, "");
+            var act = () => submission.OverrideScore(90, 3, "");
 
             act.Should().Throw<ArgumentException>();
         }

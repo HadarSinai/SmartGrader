@@ -145,7 +145,7 @@ From `server/`: `dotnet test`. Additional gates:
 | Judge0 | Needs Docker; a test red for external reasons trains you to ignore red |
 | SMTP | Only that `ILogWriter` recorded the send failure |
 | Trivial AutoMapper profiles | Restating a mapping can't find a fault in it; computed `ForMember` fields are the exception |
-| Trivial validators (`NotEmpty` on a name) | Only validators with a real rule (rubric total vs MaxScore, Hebrew date ranges) earn a test |
+| Trivial validators (`NotEmpty` on a name) | Only validators with a real rule (rubric total vs the 100-point ceiling, Hebrew date ranges) earn a test |
 | Coverage % as a target | The criterion is "if this breaks, will anyone notice before a student gets a wrong grade?" |
 
 ## Common pitfalls

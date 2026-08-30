@@ -29,15 +29,13 @@ namespace SmartGrader.Application.UseCases.Assignments.UpdateAssignment
                 .Must(dto => AssignmentGradeability.IsGradeable(dto.Tests, dto.StructuralRules))
                 .WithMessage(AssignmentGradeability.Message);
 
-            // הרובריקה מסתכמת בתקרה בדיוק. בתרגיל בונוס התקרה גבוהה מ-100 — ר' Assignment.MaxScore.
+            // הרובריקה מסתכמת ב-100 בדיוק — גם בתרגיל בונוס, שתקרתו כתקרת כל תרגיל אחר.
             RuleFor(x => x.Dto)
                 .Must(dto => AssignmentGradeability.HasValidRubric(
-                    AssignmentGradeability.MaxScoreOf(dto.IsBonus, dto.BonusValue),
                     dto.TestsAllocation,
                     dto.Tests,
                     dto.StructuralRules))
-                .WithMessage(dto => AssignmentGradeability.RubricMessage(
-                    AssignmentGradeability.MaxScoreOf(dto.Dto.IsBonus, dto.Dto.BonusValue)));
+                .WithMessage(AssignmentGradeability.RubricMessage);
 
             RuleFor(x => x.Dto.StructuralRules)
                 .Must(AssignmentGradeability.ScoredRulesCarryPoints)

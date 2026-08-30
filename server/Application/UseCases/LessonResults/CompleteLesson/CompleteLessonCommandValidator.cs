@@ -12,12 +12,12 @@ public class CompleteLessonCommandValidator : AbstractValidator<CompleteLessonCo
         RuleFor(x => x.LessonId)
             .GreaterThan(0).WithMessage("Lesson Id must be greater than 0.");
 
-        // ⚠️ כאן רק התקרה המוחלטת. התקרה האמיתית (100 או 150) תלויה בשאלה אם יש בשיעור
-        // תרגיל בונוס, וזו עובדה שיושבת במסד הנתונים ולא בבקשה — ולכן היא נבדקת ב-handler
-        // אחרי שהתרגילים נטענו. הגרסה הקודמת גזרה אותה מ-HasBonus שהלקוח שלח, כלומר
-        // הלקוח קבע לעצמו את הטווח החוקי.
+        // ⚠️ רק הרצפה נבדקת כאן. התקרה היא 100 ועוד סכום ה-BonusValue של תרגילי הבונוס
+        // בשיעור — עובדה שיושבת במסד הנתונים ולא בבקשה — ולכן היא נבדקת ב-handler אחרי
+        // שהתרגילים נטענו. הגרסה הקודמת גזרה אותה מ-HasBonus שהלקוח שלח, כלומר הלקוח קבע
+        // לעצמו את הטווח החוקי; ואחריה עמד כאן 150 קבוע, שאינו התקרה של אף שיעור בפרט.
         RuleFor(x => x.FinalScore!.Value)
-            .InclusiveBetween(0, 150).WithMessage("הציון הסופי חייב להיות בין 0 ל-150.")
+            .GreaterThanOrEqualTo(0).WithMessage("הציון הסופי אינו יכול להיות שלילי.")
             .When(x => x.FinalScore.HasValue);
 
         RuleFor(x => x.OverrideReason)

@@ -17,8 +17,8 @@ namespace SmartGrader.Application.Dtos.Submissions
     public class OverrideScoreRequestDto
     {
         /// <summary>
-        /// הציון החדש. הגבול העליון תלוי בתרגיל — בתרגיל בונוס הוא מעל 100, ר'
-        /// <c>Assignment.MaxScore</c> — ולכן נבדק ב-handler שיש לו את הישות.
+        /// הציון החדש, תמיד <c>0..100</c> — גם בתרגיל בונוס, שכן הבונוס מוסיף לציון
+        /// השיעור ואינו מרים את תקרת התרגיל (<c>Assignment.TotalPoints</c>).
         /// </summary>
         public double Score { get; set; }
 

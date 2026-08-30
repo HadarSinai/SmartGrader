@@ -44,9 +44,13 @@ export interface AssignmentScoreDto {
   score: number | null;
   /** סטטוס ההגשה, כדי שהדיאלוג יסביר *למה* אין ציון. */
   status: string;
+  /**
+   * תרגיל בונוס. הציון שלו הוא עדיין מתוך 100 — מה שמשתנה הוא שהוא אינו נכנס לממוצע
+   * אלא מוסיף bonusValue × (הציון ÷ 100) לציון השיעור.
+   */
   isBonus: boolean;
-  /** תקרת הציון של התרגיל — 100, או יותר בתרגיל בונוס. */
-  maxScore: number;
+  /** כמה נקודות התרגיל מוסיף לשיעור כשהוא נעשה במלואו. 0 כשאינו בונוס. */
+  bonusValue: number;
 }
 
 export interface LessonScoreSuggestionDto {
@@ -54,12 +58,21 @@ export interface LessonScoreSuggestionDto {
   lessonId: number;
   studentName: string | null;
   assignmentScores: AssignmentScoreDto[];
-  /** הממוצע על התרגילים שיש להם ציון — הצעה בלבד, ניתנת לעריכה. null כשאין מה לחשב. */
+  /** הבסיס ועוד הבונוס — הצעה בלבד, ניתנת לעריכה. null כשאין מה לחשב. */
   suggestedScore: number | null;
   gradedCount: number;
   /** ⚠️ הדיאלוג חייב לומר זאת במפורש — ממוצע שמדלג על תרגיל בשקט נראה נכון ואינו נכון. */
   ungradedCount: number;
-  hasBonus: boolean;
+  /** הממוצע על תרגילי החובה שנבדקו, לפני הבונוס. null כשאין אף אחד כזה. */
+  baseScore: number | null;
+  /** כמה נקודות תרגילי הבונוס הוסיפו בפועל. */
+  bonusPoints: number;
+  /**
+   * תקרת השיעור: 100 + סכום ה-bonusValue.
+   * ⚠️ נקראת מהשרת ולא מחושבת כאן — הדפדפן שקבע לעצמו את הטווח החוקי הוא בדיוק הבאג
+   * שבגללו hasBonus הוסר מהבקשה.
+   */
+  maxScore: number;
 }
 
 export interface StudentGradeItemDto {

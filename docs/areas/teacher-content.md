@@ -125,7 +125,8 @@ then the save is rejected with «לתרגיל חייב להיות לפחות מ�
 then the save is rejected and the message names 100 as the required total.
 
 **AC-4 (TC-12)** Given a bonus assignment with a bonus value of 20, when she saves a rubric summing to
-120, then the save succeeds.
+120, then the save is rejected and the message names 100 as the required total — a bonus assignment is
+graded out of 100 like any other (`G-17`), and its bonus value is added to the lesson (`G-26`).
 
 **AC-5 (TC-14)** Given an assignment with a reference solution, when a student requests it, then the
 response's reference solution is an empty list.
@@ -206,11 +207,16 @@ requirements with five fields each, the rubric total, and the AI test-case gener
 | **1 — התרגיל** | title · description · grading mode · method name · expected files · bonus and its value | *what does the student have to do* |
 | **2 — הניקוד** | test cases · structural requirements · the rubric total · the reference solution | *how is it graded* |
 
-**Why steps rather than tabs**, which was the obvious alternative: the rubric must sum to the
-assignment's ceiling (`G-14`), and **the ceiling is decided in step 1** — it is `100`, or
-`100 + BonusValue` (`G-17`). With free tab navigation a teacher can allocate points before declaring
-the bonus, and be told her rubric does not sum to a number the screen never showed her. Steps make the
-dependency the order.
+**Why steps rather than tabs**, which was the obvious alternative: step 2 divides a fixed 100 points
+(`G-14`, `G-17`) among the very test cases and requirements that step 1's grading mode decides are
+possible at all — a `Method` assignment with no method name has nothing to run, so there is nothing to
+allocate test points to. Free tab navigation lets a teacher allocate points against an exercise she has
+not yet described. Steps make the dependency the order.
+
+⚠️ **The ceiling is no longer part of that argument.** Until Plan B's B2 the bonus in step 1 raised the
+ceiling to `100 + BonusValue`, and that was the reason given here. It is now 100 for every assignment,
+and the bonus value only says what the assignment adds to the lesson (`G-21`, `G-26`). The two steps
+survive on the reason above and on the one below; the ceiling argument does not.
 
 **Why not one long form:** she cannot see the rubric total and the points she is entering at the same
 time. Today the sum is at the bottom and the requirement rows are above it, so she edits a number,

@@ -41,13 +41,13 @@ public class OverrideScoreHandler
         if (submission is null)
             throw new NotFoundException(nameof(Submission), request.SubmissionId);
 
-        // התקרה מגיעה מהתרגיל ולא מקבוע: בתרגיל בונוס היא מעל 100 — ר' Assignment.MaxScore.
-        var maxScore = submission.Assignment?.MaxScore ?? Assignment.TotalPoints;
+        // ציון של הגשה הוא תמיד 0..100, גם בתרגיל בונוס: הבונוס מוסיף לציון השיעור ואינו
+        // מרים את תקרת התרגיל. הבדיקה כאן מחזירה 400 עם הסבר, במקום ה-500 שהחריגה מהישות
+        // הייתה נראית כמוהו.
+        if (request.Score < 0 || request.Score > Assignment.TotalPoints)
+            throw new BusinessRuleException($"הציון חייב להיות בין 0 ל-{Assignment.TotalPoints}.");
 
-        if (request.Score < 0 || request.Score > maxScore)
-            throw new BusinessRuleException($"הציון חייב להיות בין 0 ל-{maxScore}.");
-
-        submission.OverrideScore(request.Score, maxScore, request.TeacherUserId, request.Reason);
+        submission.OverrideScore(request.Score, request.TeacherUserId, request.Reason);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -179,7 +179,8 @@ Four columns: תרגיל · בונוס · סטטוס · ציון.
 | **Per row** | Four is already minimal. |
 
 The «בונוס» column earns its place: a bonus assignment is optional, and skipping it is never a penalty
-(`G-19`). Without the marker she cannot tell an optional exercise from one she missed.
+(`G-26`) — it adds to her lesson score and never enters the average that her required work sets.
+Without the marker she cannot tell an optional exercise from one she missed.
 
 ### My feedback — `/my/submissions/:submissionId`
 

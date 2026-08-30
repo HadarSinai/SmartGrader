@@ -18,21 +18,22 @@ namespace SmartGrader.Domain.Services
         /// <param name="testsAllocation">כמה מהנקודות מוקצות לטסטים. 0 חוקי (תרגיל מחלקות).</param>
         /// <param name="testResults">תוצאות ההרצה. ריק = לא רצה בדיקה כלל, לא "הכל נכשל".</param>
         /// <param name="ruleResults">תוצאות הדרישות המבניות, כולל החוסמות וההמלצות.</param>
-        /// <param name="maxScore">
-        /// תקרת הציון (<see cref="Assignment.MaxScore"/>). 100 לתרגיל רגיל, <b>יותר מ-100
-        /// לתרגיל בונוס</b> — שם המורה קובעת בכמה. זהו גם הסכום שהרובריקה מסתכמת בו, ולכן
-        /// גם הציון שמקבלת תלמידה שעשתה הכול.
-        /// </param>
         /// <remarks>
         /// ⚠️ להיקרא רק אחרי שכל הדרישות החוסמות עברו. דרישה חוסמת שנכשלה אינה מורידה ציון —
         /// היא מבטלת אותו לגמרי, וזו החלטה של <c>AiWorker</c> לפני שמגיעים לכאן.
+        /// <para>
+        /// אין כאן פרמטר תקרה, ובכוונה: <b>כל תרגיל מנוקד מתוך 100</b>, בונוס או לא. תקרה
+        /// משתנה ברמת התרגיל הייתה מה שהפך בונוס של 20 לשווה 6.7 — הבונוס נמדד עכשיו ברמת
+        /// השיעור, ב-<c>LessonScoreCalculator</c>.
+        /// </para>
         /// </remarks>
         public static ScoreBreakdown Calculate(
             int testsAllocation,
             IReadOnlyList<TestCaseResult> testResults,
-            IReadOnlyList<StructuralRuleResult> ruleResults,
-            int maxScore = Assignment.TotalPoints)
+            IReadOnlyList<StructuralRuleResult> ruleResults)
         {
+            const int maxScore = Assignment.TotalPoints;
+
             testResults ??= Array.Empty<TestCaseResult>();
             ruleResults ??= Array.Empty<StructuralRuleResult>();
 
@@ -78,7 +79,7 @@ namespace SmartGrader.Domain.Services
                     AllCorePassed: allCorePassed);
             }
 
-            // חיתוך בתקרה. הרובריקה אמורה להסתכם בדיוק ב-maxScore, אבל הוולידציה יושבת
+            // חיתוך בתקרה. הרובריקה אמורה להסתכם בדיוק ב-100, אבל הוולידציה יושבת
             // בשכבה שמעל — וכאן מובטח שגם רובריקה שנשמרה עקומה לא תייצר ציון שאין לו כיסוי.
             var total = Math.Min(testPoints + rulePoints, maxScore);
 

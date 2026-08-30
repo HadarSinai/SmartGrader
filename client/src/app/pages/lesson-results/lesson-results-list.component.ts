@@ -19,6 +19,7 @@ import { TagModule } from "primeng/tag";
 import { TooltipModule } from "primeng/tooltip";
 
 import { FormsModule } from "@angular/forms";
+import { TOTAL_POINTS } from "@models/assignment.model";
 import {
   CompleteLessonRequestDto,
   LessonResultResponseDto,
@@ -116,11 +117,17 @@ export class LessonResultsListComponent implements OnInit {
   suggestionLoading = false;
 
   /**
-   * ⚠️ נגזר מההצעה שהשרת החזיר, לא מתיבת סימון. עד כה המסך שלח `hasBonus` והשרת קיבל
-   * אותו כלשונו — כלומר הדפדפן קבע לעצמו אם מותר לעבור 100.
+   * ⚠️ מגיע מההצעה שהשרת החזיר, ואינו מחושב כאן. עד כה המסך שלח `hasBonus` והשרת קיבל
+   * אותו כלשונו — כלומר הדפדפן קבע לעצמו אם מותר לעבור 100. אחר כך הוא גזר 150 בעצמו,
+   * מספר שלא היה התקרה של אף שיעור בפרט; התקרה היא 100 ועוד סכום הבונוסים בשיעור.
    */
   get maxScore(): number {
-    return this.suggestion?.hasBonus ? 150 : 100;
+    return this.suggestion?.maxScore ?? TOTAL_POINTS;
+  }
+
+  /** יש בשיעור בונוס כלשהו — כלומר התקרה עוברת 100. */
+  get hasBonus(): boolean {
+    return this.maxScore > TOTAL_POINTS;
   }
 
   /**

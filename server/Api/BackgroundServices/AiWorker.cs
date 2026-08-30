@@ -171,8 +171,7 @@ public class AiWorker : IGradeSubmissionJob
             var breakdown = ScoreCalculator.Calculate(
                 assignment.TestsAllocation,
                 runnerResult.Details,
-                analysis.Results,
-                assignment.MaxScore);
+                analysis.Results);
 
             // ── 4. המשוב המילולי ──────────────────────────────────────────────
             // 🔴 הציון כבר חושב, ולכן הקריאה הזו עטופה: קודם היה כאן catch חיצוני שסימן

@@ -57,31 +57,32 @@ namespace SmartGrader.UnitTests.Domain
 
         // ── התקרה: 100 בלי בונוס, 150 איתו ──
 
-        // ציון מחוץ לטווח נדחה, והטווח תלוי בקיום בונוס בשיעור
+        // ציון מחוץ לטווח נדחה, והטווח הוא התקרה שהמחשבון גזר מהתרגילים
         [Theory]
-        [InlineData(-0.5, false)]
-        [InlineData(100.5, false)]
-        [InlineData(150.5, true)]
+        [InlineData(-0.5, 100)]
+        [InlineData(100.5, 100)]
+        [InlineData(120.5, 120)]
         [Trait("Rule", "G-21")]
-        public void CompleteWith_RejectsOutOfRange(double score, bool hasBonus)
+        public void CompleteWith_RejectsOutOfRange(double score, double maxScore)
         {
             var result = NewResult();
 
-            var act = () => result.CompleteWith(score, hasBonus);
+            var act = () => result.CompleteWith(score, maxScore);
 
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        // עם בונוס אפשר להגיע עד 150
+        // ⚠️ התקרה היא 100 ועוד סכום הבונוסים, ולא 150 קבוע: שיעור עם בונוס אחד של 20
+        // עוצר ב-120, ו-150 בו הוא ציון פסול שהמודל הקודם היה מקבל.
         [Fact]
         [Trait("Rule", "G-21")]
-        public void CompleteWith_AllowsBonusCeiling()
+        public void CompleteWith_AllowsExactlyTheDerivedCeiling()
         {
             var result = NewResult();
 
-            result.CompleteWith(150, hasBonus: true);
+            result.CompleteWith(120, maxScore: 120);
 
-            result.FinalScore.Should().Be(150);
+            result.FinalScore.Should().Be(120);
         }
 
         // ── דריסה: המורה קובעת ציון אחר מהמחושב ──

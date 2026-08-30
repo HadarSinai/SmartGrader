@@ -259,26 +259,6 @@ export const TOTAL_POINTS = 100;
 /** ברירת המחדל של סף ההגשה החוזרת. תואם ל-Assignment.DefaultRetryThreshold. */
 export const DEFAULT_RETRY_THRESHOLD = 85;
 
-/**
- * עיגול חצי-לזוגי, כמו Math.Round של .NET.
- * ⚠️ לא קפדנות יתר: JS מעגל 2.5 ל-3 ו-C# ל-2. בונוס של 2.5 היה מייצר תקרה שונה בטופס
- * ובשרת, כלומר שמירה שנפסלת בלי סיבה נראית לעין.
- */
-function roundHalfToEven(value: number): number {
-  const floor = Math.floor(value);
-  const diff = value - floor;
-  if (diff > 0.5) return floor + 1;
-  if (diff < 0.5) return floor;
-  return floor % 2 === 0 ? floor : floor + 1;
-}
-
-/** תקרת הציון: 100, או 100 + הבונוס. תואם ל-Assignment.MaxScore. */
-export function maxScoreOf(isBonus: boolean, bonusValue: number): number {
-  return isBonus
-    ? TOTAL_POINTS + roundHalfToEven(Math.max(bonusValue ?? 0, 0))
-    : TOTAL_POINTS;
-}
-
 /** סכום הנקודות של הדרישות המנוקדות. חוסמת והמלצה אינן נושאות ניקוד. */
 export function scoredRulePoints(rules: StructuralRuleDto[] | null): number {
   return (rules ?? [])
@@ -292,11 +272,13 @@ export function scoredRulePoints(rules: StructuralRuleDto[] | null): number {
  * של תרגיל מחלקות. אין למה להקצות נקודות, והוא חוקי: תלמידה שקיימה כל שער מקבלת 100.
  */
 export function hasValidRubric(
-  maxScore: number,
   testsAllocation: number,
   testsCount: number,
   rules: StructuralRuleDto[] | null,
 ): boolean {
+  // ⚠️ 100 גם בתרגיל בונוס: הבונוס אינו מרים את תקרת התרגיל אלא מוסיף לציון השיעור.
+  const maxScore = TOTAL_POINTS;
+
   if (testsAllocation < 0 || testsAllocation > maxScore) return false;
 
   const rulesAllocation = scoredRulePoints(rules);

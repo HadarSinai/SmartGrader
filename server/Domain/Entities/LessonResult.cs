@@ -46,9 +46,14 @@
         /// היחיד שבו הציון הסופי נגזר היה המסך.
         /// </para>
         /// </summary>
-        public void CompleteWith(double computedScore, bool hasBonus = false)
+        /// <param name="maxScore">
+        /// תקרת השיעור — <c>100 + Σ BonusValue</c>, מ-<c>LessonScoreCalculator</c>.
+        /// ⚠️ לא דגל בונוס ולא 150: התקרה השטוחה ההיא לא נגזרה משום דבר, וגודל הבונוס
+        /// שהמורה הזינה לא השפיע עליה.
+        /// </param>
+        public void CompleteWith(double computedScore, double maxScore = Assignment.TotalPoints)
         {
-            GuardCanComplete(computedScore, hasBonus);
+            GuardCanComplete(computedScore, maxScore);
 
             FinalScore = computedScore;
             ComputedScore = computedScore;
@@ -79,12 +84,12 @@
             double overrideScore,
             int teacherUserId,
             string reason,
-            bool hasBonus = false)
+            double maxScore = Assignment.TotalPoints)
         {
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ArgumentException("A reason is required — it is the audit trail", nameof(reason));
 
-            GuardCanComplete(overrideScore, hasBonus);
+            GuardCanComplete(overrideScore, maxScore);
 
             FinalScore = overrideScore;
             ComputedScore = computedScore;
@@ -97,15 +102,17 @@
             CalculatedAt = DateTime.UtcNow;
         }
 
-        private void GuardCanComplete(double score, bool hasBonus)
+        private void GuardCanComplete(double score, double maxScore)
         {
             if (IsComplete) throw new InvalidOperationException("Already completed.");
-            // עם בונוס הציון יכול להגיע עד 150, בלי בונוס עד 100
-            double maxScore = hasBonus ? 150 : 100;
-            if (score < 0 || score > maxScore)
+
+            // התקרה מגיעה מהמחשבון ולא מקבוע: היא 100 בשיעור בלי בונוס, ו-100 ועוד סכום
+            // ה-BonusValue של תרגילי הבונוס שבו. הסובלנות היא כדי שהתקרה עצמה תתקבל אחרי
+            // עיגול לספרה אחת, בדיוק כמו שהציון המחושב מתקבל.
+            if (score < 0 || score > maxScore + 0.05)
                 throw new ArgumentOutOfRangeException(
                     nameof(score),
-                    $"Score must be between 0 and {maxScore} (hasBonus: {hasBonus}).");
+                    $"Score must be between 0 and {maxScore}.");
         }
 
         /// <summary>

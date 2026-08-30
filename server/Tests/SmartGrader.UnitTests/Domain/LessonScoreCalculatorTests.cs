@@ -112,20 +112,120 @@ namespace SmartGrader.UnitTests.Domain
             result.ComputedScore.Should().Be(90);
         }
 
-        // ── ⚠️ HasBonus נגזר מהתרגילים בפועל, לא ממה שהלקוח שלח (שורה 74) ──
+        // ── ⚠️ התקרה נגזרת מהתרגילים בפועל, לא ממה שהלקוח שלח ──
 
-        // תרגיל בונוס בשיעור → התקרה 150; בלעדיו → 100
+        // התקרה היא 100 ועוד סכום ה-BonusValue — לא 150 קבוע, ולא דגל
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
+        [InlineData(false, 0, 100)]
+        [InlineData(true, 20, 120)]
+        [InlineData(true, 0, 100)]
+        [InlineData(true, -5, 100)]   // BonusValue שלילי מנוטרל ולא מוריד את התקרה
         [Trait("Rule", "G-21")]
-        public void HasBonus_DerivesFromAssignments(bool isBonus)
+        public void MaxScore_IsOneHundredPlusTheBonusValues(
+            bool isBonus, double bonusValue, double expected)
         {
-            var assignments = new Assignment[] { new TestAssignment(1, isBonus: isBonus) };
+            var assignments = new Assignment[]
+            {
+                new TestAssignment(1),
+                new TestAssignment(2, isBonus: isBonus, bonusValue: bonusValue)
+            };
 
             var result = LessonScoreCalculator.Calculate(assignments, NoSubmissions);
 
-            result.HasBonus.Should().Be(isBonus);
+            result.MaxScore.Should().Be(expected);
+        }
+
+        // שני תרגילי בונוס מצטברים בתקרה
+        [Fact]
+        [Trait("Rule", "G-21")]
+        public void MaxScore_SumsEveryBonusInTheLesson()
+        {
+            var assignments = new Assignment[]
+            {
+                new TestAssignment(1),
+                new TestAssignment(2, isBonus: true, bonusValue: 20),
+                new TestAssignment(3, isBonus: true, bonusValue: 5)
+            };
+
+            var result = LessonScoreCalculator.Calculate(assignments, NoSubmissions);
+
+            result.MaxScore.Should().Be(125);
+        }
+
+        // ── מודל הבונוס: הבסיס הוא ממוצע החובה, והבונוס מתווסף אליו ──
+
+        // שיעור עם 3 תרגילים, השלישי בונוס של 20. תקרה 120.
+        // ⚠️ ארבע השורות של טבלת הדוגמאות בתוכנית, אחת לאחת.
+        [Theory]
+        [InlineData(100, 100, 100.0, 100, 20, 120)]   // עשתה הכול → 120, לא 106.7
+        [InlineData(100, 100, 70.0, 100, 14, 114)]    // בונוס חלקי: 20 × 0.7
+        [InlineData(80, 90, null, 85, 0, 85)]         // דילגה על הבונוס — אין עונש
+        [InlineData(80, 90, 100.0, 85, 20, 105)]      // בסיס חלש, בונוס מלא
+        [Trait("Rule", "G-18")]
+        [Trait("Rule", "G-26")]
+        public void BonusIsAddedToTheBaseAverage_NotAveragedIntoIt(
+            double first, double second, double? bonus,
+            double expectedBase, double expectedBonusPoints, double expectedTotal)
+        {
+            var assignments = new Assignment[]
+            {
+                new TestAssignment(1),
+                new TestAssignment(2),
+                new TestAssignment(3, isBonus: true, bonusValue: 20)
+            };
+
+            var submissions = new List<Submission>
+            {
+                new SubmissionBuilder(7, 1).Graded(first).Build(),
+                new SubmissionBuilder(7, 2).Graded(second).Build()
+            };
+
+            if (bonus.HasValue)
+                submissions.Add(new SubmissionBuilder(7, 3).Graded(bonus.Value).Build());
+
+            var result = LessonScoreCalculator.Calculate(assignments, submissions);
+
+            result.BaseScore.Should().Be(expectedBase);
+            result.BonusPoints.Should().Be(expectedBonusPoints);
+            result.ComputedScore.Should().Be(expectedTotal);
+            result.MaxScore.Should().Be(120);
+        }
+
+        // ⚠️ בונוס שנעשה בלי אף תרגיל חובה שנבדק אינו מייצר ציון: אין בסיס להוסיף אליו,
+        // וציון סופי אז אפשרי רק כדריסה מנומקת
+        [Fact]
+        [Trait("Rule", "G-20")]
+        public void ComputedScore_IsNull_WhenOnlyTheBonusIsGraded()
+        {
+            var assignments = new Assignment[]
+            {
+                new TestAssignment(1),
+                new TestAssignment(2, isBonus: true, bonusValue: 20)
+            };
+            var submissions = new[] { new SubmissionBuilder(7, 2).Graded(100).Build() };
+
+            var result = LessonScoreCalculator.Calculate(assignments, submissions);
+
+            result.ComputedScore.Should().BeNull();
+            result.BaseScore.Should().BeNull();
+            result.BonusPoints.Should().Be(20);
+        }
+
+        // שיעור שכולו בונוס אינו יכול לייצר בסיס — הדגל הוא מה שנותן ל-handler להסביר למה
+        [Fact]
+        [Trait("Rule", "G-20")]
+        public void HasRequiredAssignment_IsFalse_WhenEveryAssignmentIsBonus()
+        {
+            var assignments = new Assignment[]
+            {
+                new TestAssignment(1, isBonus: true, bonusValue: 10),
+                new TestAssignment(2, isBonus: true, bonusValue: 10)
+            };
+
+            var result = LessonScoreCalculator.Calculate(assignments, NoSubmissions);
+
+            result.HasRequiredAssignment.Should().BeFalse();
+            result.MaxScore.Should().Be(120);
         }
 
         // ── Matches: ההצעה המחושבת עצמה אינה "חריגה" (שורות 58-64) ──
